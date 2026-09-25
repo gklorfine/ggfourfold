@@ -1,0 +1,13 @@
+# R
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+
+# MacOS files
+.DS_Store
+
+# Misc
+Rplots.pdf
+inst/doc
+

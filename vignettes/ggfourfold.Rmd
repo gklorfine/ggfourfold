@@ -1,0 +1,24 @@
+---
+title: "Fourfold Displays for 'ggplot2'"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Fourfold Displays for 'ggplot2'}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(ggfourfold)
+library(ggplot2)
+```
+
+`ggfourfold` provides both `geom_fourfold()` and `theme_fourfold()`, allowing for the construction of fourfold displays using `ggplot2`.
+
+## Fourfold displays

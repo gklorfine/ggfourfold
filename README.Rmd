@@ -1,0 +1,74 @@
+---
+output: github_document
+bibliography: vignettes/refs.bib
+csl: vignettes/apa.csl
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  warning = FALSE,
+  message = FALSE,
+  comment = "#>",
+  dpi = 350,
+  fig.height = 4,
+  fig.path = "man/figures/README-"
+)
+```
+
+<!-- README.md is generated from README.Rmd. Please edit README.Rmd. -->
+
+# ggfourfold <img src="man/figures/logo.png" align="right" height="200px" /><br><sub>Fourfold Displays for 'ggplot2'</sub>
+
+***Package is a work in progress. Functionality may not work as intended.***
+
+A `ggplot2` extension that provides a geom and theme for creating fourfold displays. Inspired by the `fourfold` SAS macro [@vcd:Friendly:2000] and `vcd` R package [@vcd:package].
+
+## Installation
+
+Install the latest version of `ggfourfold` from GitHub with:
+
+```{r inst_ggfourfold, eval=FALSE}
+# install.packages("pak")
+pak::pak("gklorfine/ggfourfold")
+```
+
+## Overview
+
+A fourfold display is a visualization of a $2 \times 2$ table, or $2 \times 2 \times k$ tables via faceting. It consists of a circle that is split into quadrants, giving a segment for each cell in the table. In an **unstandardized** display, these quadrants have area proportional to the sample size of their corresponding cell. **Standardized** displays ... This helps with / affords / ... and gives a visual interpretation of the odds ratio, ...
+
+<!-- expand on overview... -->
+
+## Examples
+
+```{r libraries}
+library(ggfourfold)
+library(ggplot2)
+```
+
+```{r ucb_unstd_noFacet}
+ucb <- as.data.frame(UCBAdmissions)
+
+ggplot(ucb, aes(x = Gender, y = Admit, weight = Freq)) +
+  geom_fourfold(std = "ind.max") +  # For unstandardized display
+  theme_fourfold()
+```
+
+```{r ucb_std_noFacet}
+ucb <- as.data.frame(UCBAdmissions)
+
+ggplot(ucb, aes(x = Gender, y = Admit, weight = Freq)) +
+  geom_fourfold() +
+  theme_fourfold()
+```
+
+```{r ucb_facet}
+ggplot(ucb, aes(x = Gender, y = Admit, weight = Freq)) +
+  geom_fourfold() +
+  facet_wrap(vars(Dept), labeller = label_both) +
+  theme_fourfold()
+```
+
+## References

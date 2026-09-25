@@ -1,0 +1,37 @@
+Package: ggfourfold
+Type: Package
+Title: Fourfold Displays for 'ggplot2'
+Version: 0.1.0
+Date: 2026-08-22
+Language: en-US
+Authors@R: c(
+    person(given = "Gavin", family = "Klorfine",
+           role = c("aut", "cre"),
+           email = "gklorfin@yorku.ca",
+           comment = c(ORCID = "0009-0003-0395-4512")),
+    person(given = "Michael", family = "Friendly", 
+           role= "aut", 
+           email="friendly@yorku.ca",
+           comment = c(ORCID = "0000-0002-3237-0941"))
+  )
+Maintainer: Gavin Klorfine <gklorfin@yorku.ca>
+Depends: R (>= 4.1.0)
+Imports:
+    ggplot2 (>= 4.0.0),
+    grDevices,
+    grid,
+    scales,
+    stats
+Suggests:
+    knitr,
+    rmarkdown,
+    testthat (>= 3.0.0),
+    vcd
+Description: Allows for the creation of fourfold displays for the visualization 
+    of odds ratios using 'ggplot2'. Includes a 'fourfold' geom and theme.
+License: GPL (>= 2)
+Encoding: UTF-8
+LazyData: true
+Config/testthat/edition: 3
+Config/roxygen2/version: 8.1.0
+VignetteBuilder: knitr
