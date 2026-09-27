@@ -1,0 +1,9 @@
+url: http://gavinklorfine.com/ggfourfold/
+template:
+  bootstrap: 5
+  # For pkgdown >= 2.1.0, can use: math-rendering: mathjax
+  math-rendering: mathjax
+  bootswatch: sandstone
+  bslib:
+    link-color: "#95B933"
+    link-hover-color: "#7D9C27"
