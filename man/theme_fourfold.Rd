@@ -9,26 +9,26 @@ theme_fourfold(base_size = 12, base_family = "", ...)
 \arguments{
 \item{base_size}{Base font size in points.}
 
-\item{base_family}{Base font family. The default, `""`, uses the graphics
+\item{base_family}{Base font family. The default, \code{""}, uses the graphics
 device's default family.}
 
-\item{...}{Additional arguments passed to [ggplot2::theme()]. They are
+\item{...}{Additional arguments passed to \code{\link[ggplot2:theme]{ggplot2::theme()}}. They are
 applied after the fourfold defaults.}
 }
 \value{
 A complete ggplot2 theme.
 }
 \description{
-`theme_fourfold()` supplies a square, uncluttered panel and responsive
-typography for [geom_fourfold()]. It also styles facet strips like fourfold
+\code{theme_fourfold()} supplies a square, uncluttered panel and responsive
+typography for \code{\link[=geom_fourfold]{geom_fourfold()}}. It also styles facet strips like fourfold
 stratum headings and provides compact spacing that remains readable in both
 the RStudio plot pane and exported graphics.
 }
 \details{
-`base_size` and `base_family` control all text, including the category and
-count labels drawn inside `geom_fourfold()`. Those labels respond to the
+\code{base_size} and \code{base_family} control all text, including the category and
+count labels drawn inside \code{geom_fourfold()}. Those labels respond to the
 physical panel size while retaining a readable lower bound. Additional theme
-elements passed through `...` are applied last and therefore override the
+elements passed through \code{...} are applied last and therefore override the
 defaults.
 
 This theme uses ggplot2's theme-derived geom defaults and requires ggplot2
@@ -47,5 +47,5 @@ ggplot2::ggplot(
 
 }
 \seealso{
-[geom_fourfold()] and [ggplot2::theme()]
+\code{\link[=geom_fourfold]{geom_fourfold()}} and \code{\link[ggplot2:theme]{ggplot2::theme()}}
 }

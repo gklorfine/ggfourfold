@@ -10,10 +10,10 @@ fourfold_palette()
 A character vector containing six hexadecimal colours.
 }
 \description{
-`fourfold_palette()` returns the six colours used by [geom_fourfold()]. The
+\code{fourfold_palette()} returns the six colours used by \code{\link[=geom_fourfold]{geom_fourfold()}}. The
 colours encode the direction and statistical strength of association and
 are drawn directly by the geom rather than through a fill scale.
-Entries 1-2 are used when `extended = FALSE`, entries 3-4 for an extended
+Entries 1-2 are used when \code{extended = FALSE}, entries 3-4 for an extended
 display without adjusted significance, and entries 5-6 for an extended
 display with adjusted significance. Within each pair, the geom assigns the
 two colours according to the sign of association and cell diagonal.

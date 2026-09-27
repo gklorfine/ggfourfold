@@ -5,7 +5,7 @@
 \alias{GeomFourfold}
 \title{Fourfold displays for 2-by-2 tables}
 \format{
-A `GeomFourfold` ggproto object.
+A \code{GeomFourfold} ggproto object.
 }
 \usage{
 GeomFourfold
@@ -20,6 +20,7 @@ geom_fourfold(
   extended = TRUE,
   ticks = 0.15,
   p_adjust_method = stats::p.adjust.methods,
+  shape = c("circle", "square"),
   palette = fourfold_palette(),
   na.rm = FALSE,
   show.legend = FALSE,
@@ -27,90 +28,104 @@ geom_fourfold(
 )
 }
 \arguments{
-\item{mapping}{Set of aesthetic mappings created by [ggplot2::aes()]. If
-supplied and `inherit.aes = TRUE`, these are combined with the plot's
+\item{mapping}{Set of aesthetic mappings created by \code{\link[ggplot2:aes]{ggplot2::aes()}}. If
+supplied and \code{inherit.aes = TRUE}, these are combined with the plot's
 default mappings.}
 
-\item{data}{The data to display in this layer. If `NULL`, the default, the
+\item{data}{The data to display in this layer. If \code{NULL}, the default, the
 data are inherited from the plot.}
 
-\item{...}{Other arguments passed to [ggplot2::layer()], typically fixed
-aesthetics such as `colour` or `linewidth`.}
+\item{...}{Other arguments passed to \code{\link[ggplot2:layer]{ggplot2::layer()}}, typically fixed
+aesthetics such as \code{colour} or \code{linewidth}.}
 
-\item{std}{Standardization method. `"margins"` fixes the selected margins,
-`"ind.max"` divides each panel by its largest cell, and `"all.max"`
+\item{std}{Standardization method. \code{"margins"} fixes the selected margins,
+\code{"ind.max"} divides each panel by its largest cell, and \code{"all.max"}
 divides every panel by the largest cell in the complete layer.}
 
 \item{margin}{Integer vector selecting the table margins when
-`std = "margins"`. Use `c(1, 2)` for both margins, `1` for the `y` margin,
-or `2` for the `x` margin.}
+\code{std = "margins"}. Use \code{c(1, 2)} for both margins, \code{1} for the \code{y} margin,
+or \code{2} for the \code{x} margin.}
 
-\item{conf_level}{Confidence level in `[0, 1)`. Set to `0` to suppress
+\item{conf_level}{Confidence level in \verb{[0, 1)}. Set to \code{0} to suppress
 confidence rings.}
 
-\item{extended}{If `TRUE`, use adjusted p-values to emphasize association
+\item{extended}{If \code{TRUE}, use adjusted p-values to emphasize association
 and draw direction ticks.}
 
 \item{ticks}{Non-negative length of the association direction ticks in the
 geom's normalized panel coordinates.}
 
-\item{p_adjust_method}{Method passed to [stats::p.adjust()] for adjustment
-across panels. Defaults to `"holm"`, the first value in
-[stats::p.adjust.methods].}
+\item{p_adjust_method}{Method passed to \code{\link[stats:p.adjust]{stats::p.adjust()}} for adjustment
+across panels. Defaults to \code{"holm"}, the first value in
+\link[stats:p.adjust.methods]{stats::p.adjust.methods}.}
+
+\item{shape}{Shape of the cell sectors: \code{"circle"} (the default, as in
+\code{vcd::fourfold()}) draws quarter-circles; \code{"square"} draws
+quarter-squares of equal area.}
 
 \item{palette}{Character vector of at least six valid colours in the
-semantic order used by `fourfold_palette()`.}
+semantic order used by \code{fourfold_palette()}.}
 
-\item{na.rm}{If `FALSE`, the default, missing observations are removed with
-a warning. If `TRUE`, they are removed silently.}
+\item{na.rm}{If \code{FALSE}, the default, missing observations are removed with
+a warning. If \code{TRUE}, they are removed silently.}
 
 \item{show.legend}{Logical indicating whether this layer should be included
-in legends. The default is `FALSE` because the semantic fills are not a
+in legends. The default is \code{FALSE} because the semantic fills are not a
 mapped aesthetic.}
 
-\item{inherit.aes}{If `FALSE`, override rather than combine with the plot's
+\item{inherit.aes}{If \code{FALSE}, override rather than combine with the plot's
 default aesthetic mappings.}
 }
 \value{
-A ggplot2 layer that can be added to a [ggplot2::ggplot()] object.
+A ggplot2 layer that can be added to a \code{\link[ggplot2:ggplot]{ggplot2::ggplot()}} object.
 }
 \description{
-`geom_fourfold()` draws a fourfold display in each ggplot2 panel. Sector
+\code{geom_fourfold()} draws a fourfold display in each ggplot2 panel. Sector
 radii represent cell frequencies after the selected standardization, while
 sector colours, confidence rings, and direction ticks show the direction
 and strength of association.
 }
 \details{
-Map the two-level horizontal variable to `x`, the two-level vertical
-variable to `y`, and cell frequencies to `weight`. When `weight` is omitted,
-each row counts as one observation. The first `x` level is drawn on the left
-and the second on the right; the first `y` level is drawn at the top and the
+Map the two-level horizontal variable to \code{x}, the two-level vertical
+variable to \code{y}, and cell frequencies to \code{weight}. When \code{weight} is omitted,
+each row counts as one observation. The first \code{x} level is drawn on the left
+and the second on the right; the first \code{y} level is drawn at the top and the
 second at the bottom. Set factor levels explicitly when their order matters.
 
 One panel must contain exactly one 2-by-2 table. Use
-[ggplot2::facet_grid()] or [ggplot2::facet_wrap()] to display stratified
-tables. Duplicate `x`/`y` combinations within a panel are summed and missing
+\code{\link[ggplot2:facet_grid]{ggplot2::facet_grid()}} or \code{\link[ggplot2:facet_wrap]{ggplot2::facet_wrap()}} to display stratified
+tables. Duplicate \code{x}/\code{y} combinations within a panel are summed and missing
 cells are completed with zero counts.
 
 Odds ratios, Wald confidence intervals, and extended-display p-values match
-the calculations in `vcd::fourfold()`. If any observed cell is zero, 0.5 is
+the calculations in \code{vcd::fourfold()}. If any observed cell is zero, 0.5 is
 added to all four cells for inference. P-values are adjusted across all
 panels in the layer. Confidence intervals themselves are not adjusted.
 
-The six semantic fill colours are supplied by `palette`; they are not mapped
+With \code{shape = "square"}, each cell is drawn as a quarter-square with the
+same area as the corresponding quarter-circle (side
+\eqn{r\sqrt{\pi}/2}{r * sqrt(pi) / 2} for radius \eqn{r}), so the two
+shapes display a table with identical areas. Confidence rings
+become nested square outlines. Cell counts stay inside the frame corners
+unless a square, confidence outline, or direction tick in any panel of the
+layer would reach them, as is always the case with \code{std = "ind.max"}; the
+counts in every panel are then placed just outside the frame corners.
+
+The six semantic fill colours are supplied by \code{palette}; they are not mapped
 through a ggplot2 fill scale. Typography and layout defaults are controlled
-by [theme_fourfold()].
+by \code{\link[=theme_fourfold]{theme_fourfold()}}.
 }
 \section{Aesthetics}{
 
-`geom_fourfold()` understands the following aesthetics:
-
-- `x` (required): a variable with exactly two levels.
-- `y` (required): a variable with exactly two levels.
-- `weight`: non-negative cell frequencies; defaults to `1`.
-- `colour`, `linewidth`, `alpha`, `size`, and `family`: fixed or mapped
-  drawing properties. `size` and `family` default to values inherited from
-  the plot theme.
+\code{geom_fourfold()} understands the following aesthetics:
+\itemize{
+\item \code{x} (required): a variable with exactly two levels.
+\item \code{y} (required): a variable with exactly two levels.
+\item \code{weight}: non-negative cell frequencies; defaults to \code{1}.
+\item \code{colour}, \code{linewidth}, \code{alpha}, \code{size}, and \code{family}: fixed or mapped
+drawing properties. \code{size} and \code{family} default to values inherited from
+the plot theme.
+}
 }
 
 \examples{
@@ -125,8 +140,22 @@ ggplot2::ggplot(
   ggplot2::labs(title = "Berkeley admissions") +
   theme_fourfold()
 
+# Quarter-squares of equal area instead of quarter-circles
+ggplot2::ggplot(
+  ucb,
+  ggplot2::aes(x = Gender, y = Admit, weight = Freq)
+) +
+  geom_fourfold(shape = "square") +
+  ggplot2::facet_wrap(ggplot2::vars(Dept), ncol = 3) +
+  theme_fourfold()
+
+}
+\references{
+Friendly, M. (1994). \emph{A fourfold display for 2 by 2 by k tables}
+(Technical Report No. 217). York University, Psychology Department.
+\url{http://datavis.ca/papers/4fold/4fold.pdf}
 }
 \seealso{
-[theme_fourfold()], [fourfold_palette()],
-  [ggplot2::facet_grid()], and [ggplot2::facet_wrap()]
+\code{\link[=theme_fourfold]{theme_fourfold()}}, \code{\link[=fourfold_palette]{fourfold_palette()}},
+\code{\link[ggplot2:facet_grid]{ggplot2::facet_grid()}}, and \code{\link[ggplot2:facet_wrap]{ggplot2::facet_wrap()}}
 }

@@ -24,6 +24,47 @@ fourfold_palette <- function() {
 
 .fourfold_pt <- 72.27 / 25.4
 
+# Side of a quarter-square with the area of a unit quarter-circle.
+.fourfold_square_side <- sqrt(pi) / 2
+
+# Normalized position of the counts drawn inside the frame corners.
+.fourfold_count_offset <- 0.88
+
+# Squares whose outer corner (or direction tick) extends beyond this
+# normalized coordinate are taken to reach the counts inside the frame
+# corners. At draw time the limit is lowered further when the measured count
+# text extends below it (see makeContent.fourfold_counts()).
+.fourfold_square_count_limit <- 0.80
+
+# How far the squares, their confidence outlines, and direction ticks extend
+# towards the frame corners in any panel of the layer. Counts never need to
+# move for circles, so their reach is -Inf.
+.fourfold_counts_reach <- function(
+    data, shape = NULL, extended = NULL, ticks = NULL) {
+  # Defaults match geom_fourfold() for direct use of GeomFourfold.
+  if (is.null(shape)) shape <- "circle"
+  if (is.null(extended)) extended <- TRUE
+  if (is.null(ticks)) ticks <- 0.15
+  if (shape != "square") {
+    return(-Inf)
+  }
+  radii <- c(data$radius, data$conf_high_radius)
+  reach <- max(radii, na.rm = TRUE) * .fourfold_square_side
+  if (extended && ticks > 0) {
+    tick_cell <- ifelse(data$odds_ratio > 1, data$cell %in% c(1L, 4L),
+                        data$cell %in% c(2L, 3L))
+    tick_reach <- data$radius[tick_cell] * .fourfold_square_side +
+      ticks / sqrt(2)
+    reach <- max(reach, tick_reach)
+  }
+  reach
+}
+
+# The count limit for text of the given height (in normalized units).
+.fourfold_count_limit <- function(text_height) {
+  min(.fourfold_square_count_limit, .fourfold_count_offset - text_height)
+}
+
 .fourfold_match_arg <- function(arg, choices, name) {
   tryCatch(
     match.arg(arg, choices),
@@ -32,10 +73,12 @@ fourfold_palette <- function() {
 }
 
 .fourfold_validate_params <- function(
-    std, margin, conf_level, extended, ticks, p_adjust_method, palette) {
+    std, margin, conf_level, extended, ticks, p_adjust_method, palette,
+    shape = "circle") {
   std <- .fourfold_match_arg(
     std, c("margins", "ind.max", "all.max"), "std"
   )
+  shape <- .fourfold_match_arg(shape, c("circle", "square"), "shape")
   p_adjust_method <- .fourfold_match_arg(
     p_adjust_method, stats::p.adjust.methods, "p_adjust_method"
   )
@@ -74,7 +117,8 @@ fourfold_palette <- function() {
     extended = isTRUE(extended),
     ticks = ticks,
     p_adjust_method = p_adjust_method,
-    palette = palette
+    palette = palette,
+    shape = shape
   )
 }
 
@@ -317,11 +361,23 @@ StatFourfold <- ggplot2::ggproto(
 
 .fourfold_sector_grob <- function(
     radius, from, to, fill = "transparent", colour = "black",
-    alpha = NA_real_, lwd = 1, name = NULL) {
-  angle <- 2 * pi * seq(from, to, length.out = 300L) / 360
+    alpha = NA_real_, lwd = 1, shape = "circle", name = NULL) {
+  if (shape == "square") {
+    # Quarter-square with the same area as the quarter-circle of this radius.
+    side <- radius * .fourfold_square_side
+    middle <- 2 * pi * (from + to) / 2 / 360
+    sx <- sign(round(cos(middle), 8))
+    sy <- sign(round(sin(middle), 8))
+    x <- c(0, sx, sx, 0) * side
+    y <- c(0, 0, sy, sy) * side
+  } else {
+    angle <- 2 * pi * seq(from, to, length.out = 300L) / 360
+    x <- c(cos(angle), 0) * radius
+    y <- c(sin(angle), 0) * radius
+  }
   grid::polygonGrob(
-    x = grid::unit(c(cos(angle), 0) * radius, "native"),
-    y = grid::unit(c(sin(angle), 0) * radius, "native"),
+    x = grid::unit(x, "native"),
+    y = grid::unit(y, "native"),
     gp = grid::gpar(
       fill = scales::alpha(fill, alpha),
       col = scales::alpha(colour, alpha),
@@ -386,6 +442,63 @@ makeContent.fourfold_responsive_text <- function(x) {
   grid::setChildren(x, grid::gList(child))
 }
 
+# Counts are placed when drawn, once the responsive text size is known: inside
+# the frame corners unless the layer's squares or ticks reach the measured
+# count text, and otherwise just outside the corners.
+#' @exportS3Method grid::makeContent
+makeContent.fourfold_counts <- function(x) {
+  panel_width <- grid::convertWidth(
+    grid::unit(1, "npc"), "points", valueOnly = TRUE
+  )
+  panel_height <- grid::convertHeight(
+    grid::unit(1, "npc"), "points", valueOnly = TRUE
+  )
+  gp <- grid::gpar(
+    col = x$colour,
+    fontfamily = x$family,
+    fontsize = .fourfold_responsive_size(
+      panel_width, panel_height, x$relative_size, x$minimum_size
+    ),
+    lineheight = 1
+  )
+  text_height <- max(vapply(
+    x$labels,
+    function(label) {
+      grid::convertHeight(
+        grid::grobHeight(grid::textGrob(label, gp = gp)),
+        "native", valueOnly = TRUE
+      )
+    },
+    numeric(1)
+  ))
+  # Recorded on the drawn grob for inspection (see dev/square-counts.R).
+  x$count_limit <- .fourfold_count_limit(text_height)
+  x$outside <- isTRUE(x$reach > x$count_limit)
+  outside <- x$outside
+
+  offset <- if (outside) 1.02 else .fourfold_count_offset
+  count_x <- c(-1, -1, 1, 1) * offset
+  count_y <- c(1, -1, 1, -1) * offset
+  count_hjust <- c(0, 0, 1, 1)
+  count_vjust <- c(1, 0, 1, 0)
+  if (outside) {
+    count_hjust <- 1 - count_hjust
+    count_vjust <- 1 - count_vjust
+  }
+  children <- lapply(seq_len(4L), function(cell) {
+    grid::textGrob(
+      label = x$labels[cell],
+      x = grid::unit(count_x[cell], "native"),
+      y = grid::unit(count_y[cell], "native"),
+      hjust = count_hjust[cell],
+      vjust = count_vjust[cell],
+      gp = gp,
+      name = paste0("fourfold-count-", cell)
+    )
+  })
+  grid::setChildren(x, do.call(grid::gList, children))
+}
+
 .fourfold_responsive_size <- function(
     panel_width, panel_height, relative_size, minimum_size) {
   max(minimum_size, min(panel_width, panel_height) * relative_size)
@@ -424,10 +537,21 @@ GeomFourfold <- ggplot2::ggproto(
     family = ggplot2::from_theme(family),
     alpha = NA
   ),
-  extra_params = c("na.rm", "palette", "ticks", "extended"),
+  extra_params = c("na.rm", "palette", "ticks", "extended", "shape"),
   draw_key = ggplot2::draw_key_blank,
+  setup_data = function(data, params) {
+    # One layer-wide value, so that every facet places its counts alike.
+    data$counts_reach <- .fourfold_counts_reach(
+      data,
+      shape = params$shape,
+      extended = params$extended,
+      ticks = params$ticks
+    )
+    data
+  },
   draw_panel = function(
-      data, panel_params, coord, palette, ticks, extended, na.rm = FALSE) {
+      data, panel_params, coord, palette, ticks, extended,
+      shape = "circle", na.rm = FALSE) {
     data <- data[order(data$cell), , drop = FALSE]
     colour <- data$colour[1]
     alpha <- data$alpha[1]
@@ -446,7 +570,7 @@ GeomFourfold <- ggplot2::ggproto(
       add(.fourfold_sector_grob(
         data$radius[cell], angle_from[cell], angle_to[cell],
         fill = palette[data$palette_index[cell]],
-        colour = colour, alpha = alpha, lwd = lwd,
+        colour = colour, alpha = alpha, lwd = lwd, shape = shape,
         name = paste0("fourfold-sector-", cell)
       ))
     }
@@ -457,7 +581,7 @@ GeomFourfold <- ggplot2::ggproto(
           add(.fourfold_sector_grob(
             data[[bound]][cell], angle_from[cell], angle_to[cell],
             fill = "transparent", colour = colour, alpha = alpha, lwd = lwd,
-            name = paste0("fourfold-", bound, "-", cell)
+            shape = shape, name = paste0("fourfold-", bound, "-", cell)
           ))
         }
       }
@@ -472,6 +596,10 @@ GeomFourfold <- ggplot2::ggproto(
         angles <- c(pi / 4, -3 * pi / 4)
       }
       radii <- data$radius[cells]
+      if (shape == "square") {
+        # Start the diagonal ticks at the outer corners of the squares.
+        radii <- radii * .fourfold_square_side * sqrt(2)
+      }
       add(.fourfold_segments_grob(
         radii * cos(angles), radii * sin(angles),
         (radii + ticks) * cos(angles), (radii + ticks) * sin(angles),
@@ -507,7 +635,6 @@ GeomFourfold <- ggplot2::ggproto(
     relative_size <- 0.066 * base_size / 12
     minimum_size <- base_size * 5 / 6
     label_offset <- 1.16
-    count_offset <- 0.88
     x_labels <- data$x_label[match(1:2, data$x_index)]
     y_labels <- data$y_label[match(1:2, data$y_index)]
     outer <- list(
@@ -526,20 +653,16 @@ GeomFourfold <- ggplot2::ggproto(
       ))
     }
 
-    count_x <- c(-count_offset, -count_offset, count_offset, count_offset)
-    count_y <- c(count_offset, -count_offset, count_offset, -count_offset)
-    count_hjust <- c(0, 0, 1, 1)
-    count_vjust <- c(1, 0, 1, 0)
-    for (cell in seq_len(4L)) {
-      add(.fourfold_responsive_text_grob(
-        label = as.character(data$count[cell]),
-        x = count_x[cell], y = count_y[cell],
-        hjust = count_hjust[cell], vjust = count_vjust[cell],
-        relative_size = relative_size, minimum_size = minimum_size,
-        colour = colour, alpha = alpha, family = family,
-        name = paste0("fourfold-count-", cell)
-      ))
-    }
+    add(grid::gTree(
+      labels = as.character(data$count),
+      reach = data$counts_reach[1],
+      relative_size = relative_size,
+      minimum_size = minimum_size,
+      colour = scales::alpha(colour, alpha),
+      family = family,
+      name = "fourfold-counts",
+      cl = "fourfold_counts"
+    ))
 
     grid::gTree(
       children = do.call(grid::gList, grobs),
@@ -574,6 +697,15 @@ GeomFourfold <- ggplot2::ggproto(
 #' the calculations in `vcd::fourfold()`. If any observed cell is zero, 0.5 is
 #' added to all four cells for inference. P-values are adjusted across all
 #' panels in the layer. Confidence intervals themselves are not adjusted.
+#'
+#' With `shape = "square"`, each cell is drawn as a quarter-square with the
+#' same area as the corresponding quarter-circle (side
+#' \eqn{r\sqrt{\pi}/2}{r * sqrt(pi) / 2} for radius \eqn{r}), so the two
+#' shapes display a table with identical areas. Confidence rings
+#' become nested square outlines. Cell counts stay inside the frame corners
+#' unless a square, confidence outline, or direction tick in any panel of the
+#' layer would reach them, as is always the case with `std = "ind.max"`; the
+#' counts in every panel are then placed just outside the frame corners.
 #'
 #' The six semantic fill colours are supplied by `palette`; they are not mapped
 #' through a ggplot2 fill scale. Typography and layout defaults are controlled
@@ -611,6 +743,9 @@ GeomFourfold <- ggplot2::ggproto(
 #' @param p_adjust_method Method passed to [stats::p.adjust()] for adjustment
 #'   across panels. Defaults to `"holm"`, the first value in
 #'   [stats::p.adjust.methods].
+#' @param shape Shape of the cell sectors: `"circle"` (the default, as in
+#'   `vcd::fourfold()`) draws quarter-circles; `"square"` draws
+#'   quarter-squares of equal area.
 #' @param palette Character vector of at least six valid colours in the
 #'   semantic order used by `fourfold_palette()`.
 #' @param na.rm If `FALSE`, the default, missing observations are removed with
@@ -622,6 +757,11 @@ GeomFourfold <- ggplot2::ggproto(
 #'   default aesthetic mappings.
 #'
 #' @return A ggplot2 layer that can be added to a [ggplot2::ggplot()] object.
+#'
+#' @references
+#' Friendly, M. (1994). *A fourfold display for 2 by 2 by k tables*
+#' (Technical Report No. 217). York University, Psychology Department.
+#' <http://datavis.ca/papers/4fold/4fold.pdf>
 #'
 #' @seealso [theme_fourfold()], [fourfold_palette()],
 #'   [ggplot2::facet_grid()], and [ggplot2::facet_wrap()]
@@ -638,6 +778,15 @@ GeomFourfold <- ggplot2::ggproto(
 #'   ggplot2::labs(title = "Berkeley admissions") +
 #'   theme_fourfold()
 #'
+#' # Quarter-squares of equal area instead of quarter-circles
+#' ggplot2::ggplot(
+#'   ucb,
+#'   ggplot2::aes(x = Gender, y = Admit, weight = Freq)
+#' ) +
+#'   geom_fourfold(shape = "square") +
+#'   ggplot2::facet_wrap(ggplot2::vars(Dept), ncol = 3) +
+#'   theme_fourfold()
+#'
 #' @importFrom grDevices col2rgb
 #' @importFrom ggplot2 aes ggproto layer Stat
 #' @importFrom stats p.adjust p.adjust.methods pnorm qnorm
@@ -652,12 +801,14 @@ geom_fourfold <- function(
     extended = TRUE,
     ticks = 0.15,
     p_adjust_method = stats::p.adjust.methods,
+    shape = c("circle", "square"),
     palette = fourfold_palette(),
     na.rm = FALSE,
     show.legend = FALSE,
     inherit.aes = TRUE) {
   validated <- .fourfold_validate_params(
-    std, margin, conf_level, extended, ticks, p_adjust_method, palette
+    std, margin, conf_level, extended, ticks, p_adjust_method, palette,
+    shape
   )
   ggplot2::layer(
     data = data,
@@ -676,6 +827,7 @@ geom_fourfold <- function(
         ticks = validated$ticks,
         p_adjust_method = validated$p_adjust_method,
         palette = validated$palette,
+        shape = validated$shape,
         na.rm = na.rm
       ),
       list(...)
