@@ -1,6 +1,15 @@
 
 <!-- README.md is generated from README.Rmd. Please edit README.Rmd. -->
 
+<!-- badges: start -->
+
+[![Lifecycle:
+experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
+[![Last
+Commit](https://img.shields.io/github/last-commit/gklorfine/ggfourfold)](https://github.com/gklorfine/ggfourfold)
+[![Docs](https://img.shields.io/badge/pkgdown%20site-blue)](https://gavinklorfine.com/ggfourfold/)
+<!-- badges: end -->
+
 # ggfourfold <img src="man/figures/logo.png" align="right" height="200px" /><br><sub>Fourfold Displays for ‘ggplot2’</sub>
 
 ***Package is a work in progress. Functionality may not work as
@@ -86,11 +95,11 @@ ggplot(ucb, aes(x = Gender, y = Admit, weight = Freq)) +
 ## References
 
 <div id="refs" class="references csl-bib-body hanging-indent"
-line-spacing="2">
+data-entry-spacing="0" data-line-spacing="2">
 
 <div id="ref-Friendly:94:TR217" class="csl-entry">
 
-Friendly, M. (1994). *A fourfold display for 2 by 2 by $k$ tables*
+Friendly, M. (1994). *A fourfold display for 2 by 2 by $k$ tables* 
 (217). York University, Psychology Dept.
 <http://datavis.ca/papers/4fold/4fold.pdf>
 
