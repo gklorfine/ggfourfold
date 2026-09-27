@@ -147,4 +147,88 @@ other things held constant, much better than an array of pie charts.
 Standardizing the margins adds a further standard for comparison while
 preserving the odds ratio, the quantity the display is designed to show.
 
+## Confidence rings
+
+Each quadrant of a fourfold display is drawn with a pair of thin rings, one
+just inside and one just outside its edge. Together they show the range of
+tables that are consistent with the data at the confidence level given by
+`conf_level` (0.95 by default). They are constructed in three steps.
+
+**1. An interval for the odds ratio.** Inference is simplest on the log
+scale. The log odds ratio, $\hat{\psi} = \log \hat{\theta}$, has an
+approximate standard error
+
+$$
+\hat{s}(\hat{\psi}) = \sqrt{\frac{1}{n_{11}} + \frac{1}{n_{12}} +
+                            \frac{1}{n_{21}} + \frac{1}{n_{22}}} ,
+$$
+
+so an approximate $1 - \alpha$ confidence interval for $\psi$ is
+$\hat{\psi} \pm z_{1 - \alpha/2} \, \hat{s}(\hat{\psi})$. Exponentiating its
+end points, $\hat{\psi}_l$ and $\hat{\psi}_u$, gives the interval
+$\{\exp(\hat{\psi}_l), \exp(\hat{\psi}_u)\}$ for $\theta$. (If any cell is
+zero, 0.5 is first added to every cell, as in `vcd::fourfold()`.) For the
+pooled Berkeley data, $\hat{\psi} = 0.610$ and $\hat{s} = 0.0639$, so the 95%
+interval for the odds ratio runs from 1.624 to 2.087.
+
+**2. A table for each end of the interval.** Each limit is turned into the
+$2 \times 2$ table that has that odds ratio. When both margins are equated,
+such a table has the symmetric form
+
+$$
+\begin{bmatrix} p & 1 - p \\ 1 - p & p \end{bmatrix} ,
+$$
+
+whose odds ratio is $\theta = p^2 / (1 - p)^2$. Solving for $p$ gives
+$p = \sqrt{\theta} / (1 + \sqrt{\theta})$. More generally, the table can be
+found that keeps the observed row and column totals and has the required
+odds ratio; with the margins fixed, the whole table follows from a single
+cell, which is the root of a quadratic equation.
+
+**3. Draw the tables like the data.** Each limiting table is standardized in
+the same way as the observed table (`std`, `margin`) and drawn as outlines
+over the quadrants. For the Berkeley data this gives:
+
+|                 | Odds ratio | $p$   | Male, admitted | Male, rejected | Female, admitted | Female, rejected |
+|:----------------|-----------:|------:|---------------:|---------------:|-----------------:|-----------------:|
+| Lower 95% limit | 1.624      | 0.560 | 1167.1         | 1523.9         | 587.9            | 1247.1           |
+| Observed        | 1.841      | 0.576 | 1198           | 1493           | 557              | 1278             |
+| Upper 95% limit | 2.087      | 0.591 | 1228.4         | 1462.6         | 526.6            | 1308.4           |
+
+Every row has the observed margins, 2691 male and 1835 female applicants, of
+whom 1755 were admitted. Only the balance among the cells changes.
+
+### Reading the rings
+
+The distance between the rings of a quadrant shows the precision of the
+estimate: large samples give narrow rings, like those for the pooled
+Berkeley data above, and small samples give wide ones.
+
+More usefully, the rings give a visual test of independence,
+$H_0: \theta = 1$. When both margins are equated, independence corresponds to
+$p = 1/2$, so all four quadrants would have the same radius. If the
+confidence interval for $\theta$ includes 1, that table of equal quadrants
+lies between the rings, and the rings of each pair of adjacent quadrants
+overlap. If the interval excludes 1, the rings of adjacent quadrants are
+separated. For the pooled Berkeley data, they are clearly separated.
+
+How much of this reading holds depends on the standardization:
+
+- With both margins equated (the default), the test applies in both
+  directions, between horizontally and vertically adjacent quadrants.
+- With `margin = 1`, only the rows are equated. The rings of each upper
+  quadrant and the quadrant below it overlap if and only if the interval
+  includes 1; nothing can be said about quadrants side by side, because the
+  column totals have not been equated.
+- In an unstandardized display (`std = "ind.max"` or `"all.max"`), the rings
+  still show the precision of each cell, but their overlap is not a test of
+  $H_0$.
+
+With several strata, each panel's rings show that stratum's own interval at
+`conf_level`. They are not adjusted for multiple comparisons, as is also the
+case in `vcd::fourfold()`. Only the p-values that decide which panels are
+drawn in the more intense colours are adjusted (Holm's method, by default).
+A stratum whose rings only just separate can therefore still be drawn in the
+paler colours. Set `conf_level = 0` to omit the rings.
+
 ## References

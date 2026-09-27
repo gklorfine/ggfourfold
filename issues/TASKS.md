@@ -129,6 +129,53 @@ As these items are resolved, check them off as [X] and record the fix and verifi
   counts outside. Consider an alternative for squares (e.g. shorter ticks, or ticks drawn
   along the outer edges) so that typical `std = "margins"` displays can keep counts inside.
 
+## Inference
+
+- [ ] **Should the confidence rings be adjusted for multiple comparisons?** (raised
+  2026-09-27 while writing the vignette's "Confidence rings" section)
+
+  *What the adjustment would apply to.* In a 2 × 2 × k table there is one test per
+  stratum, H0: θ_c = 1 for c = 1, …, k. Within a single stratum there is only that one
+  test, so nothing needs adjusting *within* a stratum. Multiplicity arises only
+  *overall*, from the family of k tests across strata, i.e. across the facet panels of one
+  layer. (A single overall test, such as Cochran–Mantel–Haenszel for a common θ = 1 or the
+  Woolf/Breslow–Day test of homogeneity, answers a different question and needs no
+  adjustment.)
+
+  *Current behaviour* (same in `ggfourfold` and `vcd::fourfold()`): the k p-values are
+  adjusted across the panels of the layer with `p_adjust_method` (default Holm), and the
+  adjusted p-values decide only which panels get the intense colours. Each panel's rings are
+  that stratum's own unadjusted interval at `conf_level`. So colour and rings can disagree:
+  a stratum whose rings only just separate (unadjusted p < 0.05) can still be drawn in the
+  pale colours (adjusted p ≥ 0.05). The vignette now describes this.
+
+  *If adjusting rings* (e.g. an `adjust_rings = FALSE` argument): the aim would be
+  *simultaneous* intervals whose joint coverage over all k strata is at least `conf_level`.
+  Holm is a step-down *testing* procedure and has no simple matching confidence intervals,
+  so it can't be used directly for rings. Bonferroni is the natural choice: each stratum's
+  interval at level 1 − α/k. Šidák (1 − (1 − α)^(1/k)) is slightly narrower and assumes
+  independent strata, which holds for disjoint strata. Rings separating would then agree
+  with a Bonferroni test, but not always with the Holm-adjusted colour emphasis. Holm
+  rejects at least as often as Bonferroni, so a panel could be drawn intense while its
+  adjusted rings still overlap. Options: adjust rings with Bonferroni and document the
+  difference; tie the colour emphasis to the same method when rings are adjusted; or leave
+  rings unadjusted (current, vcd-compatible) and just document it. For k = 1 (no facets),
+  all choices coincide. Decision for GK/MF.
+  Files: `R/geom-fourfold.R` (`.fourfold_compute_layer()`), vignette "Confidence rings".
+
+- [ ] **Check the diagnosis of a discrepancy with DDAR, §4.4.2** — in writing the vignette,
+  Claude noted that DDAR (`C:\Dropbox\Documents\VCDR\ch04.Rnw`, about lines 1186–1195,
+  including the footnote on Holm's method) describes the rings in the stratified Berkeley
+  figure as *joint* 95% intervals for θ_c, c = 1, …, k. Reading the `vcd::fourfold()` source
+  (vcd 1.4-14) suggests that `p.adjust(..., method = p_adjust_method)` is applied only to the
+  log odds ratio tests that set the colour emphasis (`p.lor.test`, used in `emphasize`).
+  The rings appear to use `qnorm((1 ± conf_level) / 2)` without adjustment, so they would be
+  individual, not joint, intervals. `ggfourfold` matches that behaviour. To verify (MF):
+  confirm against the vcd source (`vcd:::fourfold`, the `p.lor.test` and `theta <- or *
+  exp(qnorm(...) * se)` lines), check whether earlier vcd versions or the original SAS
+  `fourfold` macro adjusted the rings, and if the book text is wrong, note it for a
+  DDAR errata/2nd edition.
+
 ## Data input
 
 - [ ] **Accept data in table form** (`table`, `xtabs`, `ftable`, `structable`) — at present
