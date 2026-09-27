@@ -33,15 +33,42 @@ pak::pak("gklorfine/ggfourfold")
 A fourfold display (Friendly, 1994; Friendly & Meyer, 2016, Section 4.4)
 is a visualization of a $2 \times 2$ table, or $2 \times 2 \times k$
 tables via faceting. It consists of a circle that is split into
-quadrants, giving a segment for each cell in the table. In an
-**unstandardized** display, these quadrants have area proportional to
-the sample size of their corresponding cell. **Standardized** displays …
-This helps with / affords / … and gives a visual interpretation of the
-odds ratio, …
+quadrants, giving a segment for each cell in the table. Unlike a pie
+chart, the angles of the segments are fixed, and it is the radii that
+vary.
 
-<!-- expand on overview... -->
+In an **unstandardized** display, these quadrants have area proportional
+to the sample size of their corresponding cell. **Standardized**
+displays rescale the table so that the row and/or column totals are
+equal, while preserving the sample odds ratio. This helps with comparing
+the quadrants when one group is much larger than another. A fully
+standardized display (the default) equates both the row *and* column
+totals, and gives a visual interpretation of the sample odds ratio:
+
+$$\hat{\theta} = \frac{n_{11} / n_{12}}{n_{21} / n_{22}}$$
+
+In a fully standardized display, the quadrants form a circle if
+$\hat{\theta} = 1$. Otherwise, one diagonal pair of quadrants is larger
+than the other, with this discrepancy reflecting the strength of
+association between variables. The diagonal with more cases than
+expected under independence is drawn in blue, with the other pair being
+drawn in red. Intense shading is applied when $\hat{\theta}$ differs
+significantly from 1, after adjusting for multiple testing across
+panels. Confidence rings are also drawn, with the rings of adjacent
+quadrants overlapping *iff* the 95% confidence interval for $\theta$
+includes 1.
+
+For more detail on fourfold displays and their use in this package, see
+the [introductory
+vignette](https://gavinklorfine.com/ggfourfold/articles/ggfourfold.html).
 
 ## Examples
+
+The below examples use the `UCBAdmissions` data (Bickel et al., 1975),
+which contains applicants to the six largest graduate departments at UC
+Berkeley in 1973, classified by admission and gender. They examine the
+association between gender and admission, both overall and within each
+department.
 
 ``` r
 library(ggfourfold)
@@ -98,10 +125,17 @@ ggplot(ucb, aes(x = Gender, y = Admit, weight = Freq)) +
 <div id="refs" class="references csl-bib-body hanging-indent"
 data-entry-spacing="0" data-line-spacing="2">
 
+<div id="ref-Bickel-etal:75" class="csl-entry">
+
+Bickel, P. J., Hammel, J. W., & O’Connell, J. W. (1975). Sex bias in
+graduate admissions: Data from Berkeley. *Science*, *187*, 398–403.
+
+</div>
+
 <div id="ref-Friendly:94:TR217" class="csl-entry">
 
-Friendly, M. (1994). *A fourfold display for 2 by 2 by $k$ tables* 
-(217). York University, Psychology Dept.
+Friendly, M. (1994). *A fourfold display for 2 by 2 by $k$ tables* (No.
+217). York University, Psychology Dept.
 <http://datavis.ca/papers/4fold/4fold.pdf>
 
 </div>
