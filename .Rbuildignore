@@ -5,3 +5,7 @@ README.*
 Rplots.pdf
 ^\.positai$
 ^\.claude$
+^_pkgdown\.yml$
+^docs$
+^pkgdown$
+^\.github$
