@@ -19,13 +19,14 @@ pak::pak("gklorfine/ggfourfold")
 
 ## Overview
 
-A fourfold display (Friendly, 1994) is a visualization of a \\2 \times
-2\\ table, or \\2 \times 2 \times k\\ tables via faceting. It consists
-of a circle that is split into quadrants, giving a segment for each cell
-in the table. In an **unstandardized** display, these quadrants have
-area proportional to the sample size of their corresponding cell.
-**Standardized** displays … This helps with / affords / … and gives a
-visual interpretation of the odds ratio, …
+A fourfold display (Friendly, 1994; Friendly & Meyer, 2016, Section 4.4)
+is a visualization of a \\2 \times 2\\ table, or \\2 \times 2 \times k\\
+tables via faceting. It consists of a circle that is split into
+quadrants, giving a segment for each cell in the table. In an
+**unstandardized** display, these quadrants have area proportional to
+the sample size of their corresponding cell. **Standardized** displays …
+This helps with / affords / … and gives a visual interpretation of the
+odds ratio, …
 
 ## Examples
 
@@ -92,6 +93,10 @@ Friendly, M. (1994). *A fourfold display for 2 by 2 by \\k\\ tables*
 
 Friendly, M. (2000). *Visualizing categorical data*. SAS Insitute.
 <http://www.math.yorku.ca/SCS/vcd/>
+
+Friendly, M., & Meyer, D. (2016). *Discrete data analysis with R:
+Visualization and modeling techniques for categorical and count data*.
+Chapman & Hall/CRC. <http://ddar.datavis.ca>
 
 Meyer, D., Zeileis, A., Hornik, K., & Friendly, M. (2026). *Vcd:
 Visualizing categorical data*.

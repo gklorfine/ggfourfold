@@ -176,6 +176,10 @@ Friendly, M. (1994). *A fourfold display for 2 by 2 by k tables*
 (Technical Report No. 217). York University, Psychology Department.
 <http://datavis.ca/papers/4fold/4fold.pdf>
 
+Friendly, M., & Meyer, D. (2016). *Discrete Data Analysis with R:
+Visualization and Modeling Techniques for Categorical and Count Data*
+(Section 4.4). Chapman & Hall/CRC. <http://ddar.datavis.ca>
+
 ## See also
 
 [`theme_fourfold()`](http://gavinklorfine.com/ggfourfold/reference/theme_fourfold.md),

@@ -73,14 +73,292 @@
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="http://gavinklorfine.com/ggfourfold/">ggfourfold</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span></code></pre></div>
-<p><code>ggfourfold</code> provides both <code><a href="../reference/geom_fourfold.html">geom_fourfold()</a></code>
-and <code><a href="../reference/theme_fourfold.html">theme_fourfold()</a></code>, allowing for the construction of
-fourfold displays using <code>ggplot2</code>.</p>
+<p><code>ggfourfold</code> provides <code><a href="../reference/geom_fourfold.html">geom_fourfold()</a></code> and
+<code><a href="../reference/theme_fourfold.html">theme_fourfold()</a></code> for drawing fourfold displays of <span class="math inline">\(2 \times 2\)</span> and <span class="math inline">\(2 \times 2 \times k\)</span> tables with
+<code>ggplot2</code>. This introduction follows the treatment in <span class="citation">Friendly &amp; Meyer (2016, Section 4.4)</span>.</p>
 <div class="section level2">
 <h2 id="fourfold-displays">Fourfold displays<a class="anchor" aria-label="anchor" href="#fourfold-displays"></a>
 </h2>
+<p>The <em>fourfold display</em> is a special case of a radial diagram,
+or “polar area chart”, designed for <span class="math inline">\(2 \times
+2\)</span> (or <span class="math inline">\(2 \times 2 \times k\)</span>)
+tables <span class="citation">(Fienberg, 1975; Friendly, 1994a,
+1994b)</span>. The frequency <span class="math inline">\(n_{ij}\)</span>
+in each cell is shown by a quarter circle whose radius is proportional
+to <span class="math inline">\(\sqrt{n_{ij}}\)</span>, so that its
+<em>area</em> is proportional to the cell count. Like a pie chart, it
+uses segments of a circle to show frequencies; unlike a pie chart, it
+keeps the angles of the segments constant and varies the radius.</p>
+<p>The main purpose of the display is to show the sample odds ratio,</p>
+<p><span class="math display">\[
+\hat{\theta} = \frac{n_{11} / n_{12}}{n_{21} / n_{22}}
+             = \frac{n_{11} \, n_{22}}{n_{12} \, n_{21}} .
+\]</span></p>
+<p>An association between the two variables (<span class="math inline">\(\theta \neq 1\)</span>) appears as a tendency for
+one pair of diagonally opposite cells to be larger than the other
+pair.</p>
+<ul>
+<li><p><strong>Color and diagonal tick marks</strong> show the
+<strong>direction of association</strong>: the relatively larger
+diagonal pair is drawn in blue (more than expected under independence)
+with the tick marks along that diagonal, and the other pair in
+red.</p></li>
+<li><p><strong>Confidence rings</strong> around each quadrant give a
+<strong>visual test of independence</strong>, <span class="math inline">\(H_0: \theta = 1\)</span>: in a standardized
+display, the rings for adjacent quadrants overlap if and only if the
+observed counts are consistent with the null hypothesis.</p></li>
+</ul>
 </div>
-  </main>
+<div class="section level2">
+<h2 id="example-berkeley-admissions">Example: Berkeley admissions<a class="anchor" aria-label="anchor" href="#example-berkeley-admissions"></a>
+</h2>
+<p>The classic example, <code>UCBAdmissions</code> gives applicants to
+the six largest graduate departments at Berkeley in 1973, classified by
+admission and gender <span class="citation">(Bickel et al.,
+1975)</span>. <code><a href="../reference/geom_fourfold.html">geom_fourfold()</a></code> currently works on data in
+<em>long form</em>: map the two-level variables to <code>x</code> (drawn
+left to right) and <code>y</code> (drawn top to bottom), and the cell
+frequencies to <code>weight</code>. Without faceting, rows for the same
+cell are summed, so this pools over departments:</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">ucb</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="va">UCBAdmissions</span><span class="op">)</span></span>
+<span><span class="va">berkeley</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">ucb</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">Admit</span>, y <span class="op">=</span> <span class="va">Gender</span>, weight <span class="op">=</span> <span class="va">Freq</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="../reference/theme_fourfold.html">theme_fourfold</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<p>The <em>unstandardized</em> display (<code>std = "ind.max"</code>)
+shows the raw frequencies, with the largest cell drawn at full size. The
+sample odds ratio, Odds(Admit | Male) / Odds(Admit | Female), is <span class="math inline">\((1198 / 1493) / (557 / 1278) = 1.84\)</span>: male
+applicants were nearly twice as likely to be admitted.</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">berkeley</span> <span class="op">+</span> <span class="fu"><a href="../reference/geom_fourfold.html">geom_fourfold</a></span><span class="op">(</span>std <span class="op">=</span> <span class="st">"ind.max"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="ggfourfold_files/figure-html/berkeley-raw-1.png" class="r-plt" alt="" width="384"></p>
+<p>These comparisons are difficult because there are more male
+applicants than female, and because more applicants were rejected than
+admitted. In the unstandardized display the confidence rings have no
+interpretation as a test of <span class="math inline">\(H_0: \theta =
+1\)</span>.</p>
+<p>The data can be standardized to make the comparison easier while
+preserving the odds ratio. With <code>margin = 1</code> the rows (here,
+<code>Gender</code>) are equated, so each quadrant shows the proportion
+of men or women who were admitted or rejected: 44.5% of male applicants
+were admitted, compared with 30.4% of female applicants. Now the rings
+for each upper quadrant overlap those of the quadrant below it if the
+odds ratio does not differ from 1.</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">berkeley</span> <span class="op">+</span> <span class="fu"><a href="../reference/geom_fourfold.html">geom_fourfold</a></span><span class="op">(</span>margin <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></code></pre></div>
+<p><img src="ggfourfold_files/figure-html/berkeley-rows-1.png" class="r-plt" alt="" width="384"></p>
+<p>The default, <code>margin = c(1, 2)</code>, standardizes
+<em>both</em> margins. The four quadrants then align horizontally and
+vertically when the odds ratio is 1, regardless of the marginal
+frequencies, so the association between admission and gender can be seen
+without the influence of the overall admission rate or of the numbers of
+men and women who applied. This fully standardized display is usually
+the most useful form.</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">berkeley</span> <span class="op">+</span> <span class="fu"><a href="../reference/geom_fourfold.html">geom_fourfold</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<p><img src="ggfourfold_files/figure-html/berkeley-std-1.png" class="r-plt" alt="" width="384"></p>
+<p>The quadrants do not align, and the 95% confidence rings, computed
+from the interval <span class="math inline">\(1.62 \le \theta \le
+2.09\)</span>, do not overlap: the odds ratio differs significantly from
+1, apparent evidence of gender bias in favour of men.</p>
+</div>
+<div class="section level2">
+<h2 id="stratified-2-times-2-times-k-tables">Stratified <span class="math inline">\(2 \times 2 \times k\)</span>
+tables<a class="anchor" aria-label="anchor" href="#stratified-2-times-2-times-k-tables"></a>
+</h2>
+<p>In a <span class="math inline">\(2 \times 2 \times k\)</span> table
+the third variable often defines strata, and the question is whether the
+association between the first two is the same in each stratum. Make one
+fourfold display per stratum with <code><a href="https://ggplot2.tidyverse.org/reference/facet_wrap.html" class="external-link">facet_wrap()</a></code> or
+<code><a href="https://ggplot2.tidyverse.org/reference/facet_grid.html" class="external-link">facet_grid()</a></code>; standardizing the margins within each panel
+allows the pattern of association to be compared across strata even when
+their marginal frequencies differ.</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">berkeley</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="../reference/geom_fourfold.html">geom_fourfold</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/facet_wrap.html" class="external-link">facet_wrap</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/vars.html" class="external-link">vars</a></span><span class="op">(</span><span class="va">Dept</span><span class="op">)</span>, ncol <span class="op">=</span> <span class="fl">3</span>, labeller <span class="op">=</span> <span class="va">label_both</span><span class="op">)</span></span></code></pre></div>
+<p><img src="ggfourfold_files/figure-html/berkeley-dept-1.png" class="r-plt" alt="" width="672"></p>
+<p>Surprisingly, for five of the six departments the odds of admission
+are about the same for men and women. Only Department A differs, and in
+the opposite direction: there women were about 2.86 times as likely as
+men to be admitted (<span class="math inline">\(1 / 0.349\)</span>). The
+more intense colours mark the one panel whose odds ratio differs
+significantly from 1. With several strata, <code><a href="../reference/geom_fourfold.html">geom_fourfold()</a></code>
+adjusts the p-values that control this emphasis for multiple testing, by
+default using Holm’s method via <code><a href="https://rdrr.io/r/stats/p.adjust.html" class="external-link">stats::p.adjust()</a></code>; the
+confidence rings themselves are not adjusted.</p>
+<p>This reversal of the aggregate result is an example of Simpson’s
+paradox, and it shows why an analysis of a table collapsed over a third
+variable can mislead. Men and women applied to departments in different
+proportions, and women applied in greater numbers to departments with
+low admission rates.</p>
+<p>Because a fourfold display keeps the angle of each cell fixed,
+corresponding cells are always in the same position in every panel. An
+array of fourfold displays therefore supports <em>controlled
+comparison</em>, against a standard with other things held constant,
+much better than an array of pie charts. Standardizing the margins adds
+a further standard for comparison while preserving the odds ratio, the
+quantity the display is designed to show.</p>
+</div>
+<div class="section level2">
+<h2 id="confidence-rings">Confidence rings<a class="anchor" aria-label="anchor" href="#confidence-rings"></a>
+</h2>
+<p>Each quadrant of a fourfold display is drawn with a pair of thin
+rings, one just inside and one just outside its edge. Together they show
+the range of tables that are consistent with the data at the confidence
+level given by <code>conf_level</code> (0.95 by default). They are
+constructed in three steps.</p>
+<p><strong>1. An interval for the odds ratio.</strong> Inference is
+simplest on the log scale. The log odds ratio, <span class="math inline">\(\hat{\psi} = \log \hat{\theta}\)</span>, has an
+approximate standard error</p>
+<p><span class="math display">\[
+\hat{s}(\hat{\psi}) = \sqrt{\frac{1}{n_{11}} + \frac{1}{n_{12}} +
+                            \frac{1}{n_{21}} + \frac{1}{n_{22}}} ,
+\]</span></p>
+<p>so an approximate <span class="math inline">\(1 - \alpha\)</span>
+confidence interval for <span class="math inline">\(\psi\)</span> is
+<span class="math inline">\(\hat{\psi} \pm z_{1 - \alpha/2} \,
+\hat{s}(\hat{\psi})\)</span>. Exponentiating its end points, <span class="math inline">\(\hat{\psi}_l\)</span> and <span class="math inline">\(\hat{\psi}_u\)</span>, gives the interval <span class="math inline">\(\{\exp(\hat{\psi}_l),
+\exp(\hat{\psi}_u)\}\)</span> for <span class="math inline">\(\theta\)</span>. (If any cell is zero, 0.5 is
+first added to every cell, as in <code><a href="https://rdrr.io/pkg/vcd/man/fourfold.html" class="external-link">vcd::fourfold()</a></code>.) For the
+pooled Berkeley data, <span class="math inline">\(\hat{\psi} =
+0.610\)</span> and <span class="math inline">\(\hat{s} =
+0.0639\)</span>, so the 95% interval for the odds ratio runs from 1.624
+to 2.087.</p>
+<p><strong>2. A table for each end of the interval.</strong> Each limit
+is turned into the <span class="math inline">\(2 \times 2\)</span> table
+that has that odds ratio. When both margins are equated, such a table
+has the symmetric form</p>
+<p><span class="math display">\[
+\begin{bmatrix} p &amp; 1 - p \\ 1 - p &amp; p \end{bmatrix} ,
+\]</span></p>
+<p>whose odds ratio is <span class="math inline">\(\theta = p^2 / (1 -
+p)^2\)</span>. Solving for <span class="math inline">\(p\)</span> gives
+<span class="math inline">\(p = \sqrt{\theta} / (1 +
+\sqrt{\theta})\)</span>. More generally, the table can be found that
+keeps the observed row and column totals and has the required odds
+ratio; with the margins fixed, the whole table follows from a single
+cell, which is the root of a quadratic equation.</p>
+<p><strong>3. Draw the tables like the data.</strong> Each limiting
+table is standardized in the same way as the observed table
+(<code>std</code>, <code>margin</code>) and drawn as outlines over the
+quadrants. For the Berkeley data this gives:</p>
+<table class="table">
+<colgroup>
+<col width="16%">
+<col width="11%">
+<col width="6%">
+<col width="15%">
+<col width="15%">
+<col width="17%">
+<col width="17%">
+</colgroup>
+<thead><tr class="header">
+<th align="left"></th>
+<th align="right">Odds ratio</th>
+<th align="right"><span class="math inline">\(p\)</span></th>
+<th align="right">Male, admitted</th>
+<th align="right">Male, rejected</th>
+<th align="right">Female, admitted</th>
+<th align="right">Female, rejected</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td align="left">Lower 95% limit</td>
+<td align="right">1.624</td>
+<td align="right">0.560</td>
+<td align="right">1167.1</td>
+<td align="right">1523.9</td>
+<td align="right">587.9</td>
+<td align="right">1247.1</td>
+</tr>
+<tr class="even">
+<td align="left">Observed</td>
+<td align="right">1.841</td>
+<td align="right">0.576</td>
+<td align="right">1198</td>
+<td align="right">1493</td>
+<td align="right">557</td>
+<td align="right">1278</td>
+</tr>
+<tr class="odd">
+<td align="left">Upper 95% limit</td>
+<td align="right">2.087</td>
+<td align="right">0.591</td>
+<td align="right">1228.4</td>
+<td align="right">1462.6</td>
+<td align="right">526.6</td>
+<td align="right">1308.4</td>
+</tr>
+</tbody>
+</table>
+<p>Every row has the observed margins, 2691 male and 1835 female
+applicants, of whom 1755 were admitted. Only the balance among the cells
+changes.</p>
+<div class="section level3">
+<h3 id="reading-the-rings">Reading the rings<a class="anchor" aria-label="anchor" href="#reading-the-rings"></a>
+</h3>
+<p>The distance between the rings of a quadrant shows the precision of
+the estimate: large samples give narrow rings, like those for the pooled
+Berkeley data above, and small samples give wide ones.</p>
+<p>More usefully, the rings give a visual test of independence, <span class="math inline">\(H_0: \theta = 1\)</span>. When both margins are
+equated, independence corresponds to <span class="math inline">\(p =
+1/2\)</span>, so all four quadrants would have the same radius. If the
+confidence interval for <span class="math inline">\(\theta\)</span>
+includes 1, that table of equal quadrants lies between the rings, and
+the rings of each pair of adjacent quadrants overlap. If the interval
+excludes 1, the rings of adjacent quadrants are separated. For the
+pooled Berkeley data, they are clearly separated.</p>
+<p>How much of this reading holds depends on the standardization:</p>
+<ul>
+<li>With both margins equated (the default), the test applies in both
+directions, between horizontally and vertically adjacent quadrants.</li>
+<li>With <code>margin = 1</code>, only the rows are equated. The rings
+of each upper quadrant and the quadrant below it overlap if and only if
+the interval includes 1; nothing can be said about quadrants side by
+side, because the column totals have not been equated.</li>
+<li>In an unstandardized display (<code>std = "ind.max"</code> or
+<code>"all.max"</code>), the rings still show the precision of each
+cell, but their overlap is not a test of <span class="math inline">\(H_0\)</span>.</li>
+</ul>
+<p>With several strata, each panel’s rings show that stratum’s own
+interval at <code>conf_level</code>. They are not adjusted for multiple
+comparisons, as is also the case in <code><a href="https://rdrr.io/pkg/vcd/man/fourfold.html" class="external-link">vcd::fourfold()</a></code>. Only
+the p-values that decide which panels are drawn in the more intense
+colours are adjusted (Holm’s method, by default). A stratum whose rings
+only just separate can therefore still be drawn in the paler colours.
+Set <code>conf_level = 0</code> to omit the rings.</p>
+</div>
+</div>
+<div class="section level2 unnumbered">
+<h2 class="unnumbered" id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
+</h2>
+<div id="refs" class="references csl-bib-body hanging-indent" entry-spacing="0" line-spacing="2">
+<div id="ref-Bickel-etal:75" class="csl-entry">
+Bickel, P. J., Hammel, J. W., &amp; O’Connell, J. W. (1975). Sex bias in
+graduate admissions: Data from <span>B</span>erkeley. <em>Science</em>,
+<em>187</em>, 398–403.
+</div>
+<div id="ref-Fienberg:75" class="csl-entry">
+Fienberg, S. E. (1975). Perspective <span>Canada</span> as a social
+report. <em>Social Indicators Research</em>, <em>2</em>, 153–174.
+</div>
+<div id="ref-Friendly:94:TR217" class="csl-entry">
+Friendly, M. (1994a). <em>A fourfold display for 2 by 2 by <span><span class="math inline">\(k\)</span></span> tables</em> (No. 217). York
+University, Psychology Dept. <a href="http://datavis.ca/papers/4fold/4fold.pdf" class="external-link">http://datavis.ca/papers/4fold/4fold.pdf</a>
+</div>
+<div id="ref-Friendly:94c" class="csl-entry">
+Friendly, M. (1994b). <span>SAS/IML</span> graphics for fourfold
+displays. <em>Observations</em>, <em>3</em>(4), 47–56. <a href="http://www.sas.com/service/doc/periodicals/obs/ind_files/v3n12pp4.html" class="external-link">http://www.sas.com/service/doc/periodicals/obs/ind_files/v3n12pp4.html</a>
+</div>
+<div id="ref-FriendlyMeyer:2016:DDAR" class="csl-entry">
+Friendly, M., &amp; Meyer, D. (2016). <em>Discrete data analysis with
+<span>R</span>: Visualization and modeling techniques for categorical
+and count data</em>. Chapman &amp; Hall/CRC. <a href="http://ddar.datavis.ca" class="external-link">http://ddar.datavis.ca</a>
+</div>
+</div>
+</div>
+  </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
+    </nav></aside>
 </div>
 
 
