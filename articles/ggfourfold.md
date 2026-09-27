@@ -33,8 +33,8 @@ to the cell count.
 Like a pie chart, it uses segments of a circle to show frequencies;
 unlike a pie chart, it keeps the angles of the segments constant and
 varies the radius. This is the \\2 \times 2\\ cousin of the graphic form
-used by Florence Nightingale (Nightingale, 1858). (Friendly & Andrews,
-2021) describe the rich history of radial diagrams.
+used by Florence Nightingale (Nightingale, 1858). Friendly & Andrews
+(2021) describe the rich history of radial diagrams.
 
 The main purpose of the display is to show the **sample odds ratio**.
 This gives a number that compares the odds of an event (accepted!)
