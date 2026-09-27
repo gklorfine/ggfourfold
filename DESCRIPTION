@@ -36,4 +36,5 @@ Config/testthat/edition: 3
 Roxygen: list(markdown = TRUE)
 Config/roxygen2/version: 8.1.0
 VignetteBuilder: knitr
-URL: http://gavinklorfine.com/ggfourfold/
+URL: http://gavinklorfine.com/ggfourfold/, https://github.com/gklorfine/ggfourfold
+BugReports: https://github.com/gklorfine/ggfourfold/issues
