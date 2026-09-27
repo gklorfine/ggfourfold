@@ -3,3 +3,5 @@
 ^dev$
 README.*
 Rplots.pdf
+^\.positai$
+^\.claude$
