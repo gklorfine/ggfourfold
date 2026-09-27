@@ -1,0 +1,4 @@
+/* Keep ORCID icons matched to their link color, including hover states. */
+.orcid {
+  color: inherit;
+}
