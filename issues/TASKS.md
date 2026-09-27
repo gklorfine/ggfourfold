@@ -129,6 +129,54 @@ As these items are resolved, check them off as [X] and record the fix and verifi
   counts outside. Consider an alternative for squares (e.g. shorter ticks, or ticks drawn
   along the outer edges) so that typical `std = "margins"` displays can keep counts inside.
 
+- [ ] **Proposal: coloured direction ticks, and a way to style them** (MF, 2026-09-27) —
+  the diagonal ticks are currently thin black lines drawn with the frame's line width, and
+  they are easy to miss, especially against the navy fill of a significant panel. MF
+  suggested colouring them. A mock-up (recolouring the tick grobs of the UCB Dept A–C
+  display) compared four versions:
+  1. black (current);
+  2. blue matching the fill of the ticked cells: fails in non-significant panels, where a
+     pale `#A0A0FF` tick on white nearly disappears;
+  3. **dark blue (`#000080`) in every panel — recommended**: visible on both pale and
+     intense panels, and it reinforces the existing colour meaning, since blue already
+     marks the diagonal the association favours;
+  4. green (`#009E73`): the most distinct, but it adds a third hue to the two-colour scheme
+     without adding information. The tick's position already gives the direction, and it
+     is always on the blue diagonal, so "red vs blue" ticks would in practice always be
+     blue.
+
+  Also: coloured ticks need to be thicker than the outline (about 2.5 lwd in the mock-up) to
+  be seen, and at the default length (`ticks = 0.15`) every version is small. Consider a
+  thicker and possibly longer default.
+
+  *Recommendation:* default tick colour = `palette[6]` (the strong blue) rather than a new
+  seventh palette entry, so custom palettes carry it along. Keep black (the vcd look)
+  available through an argument.
+
+  *API for styling the ticks.* Options considered:
+  - **Flat dotted arguments, as ggplot2 4.0 does for sub-parts of a geom** (recommended).
+    `geom_boxplot()` has `whisker.colour`/`whisker.color`, `whisker.linetype`,
+    `whisker.linewidth`, and likewise `staple.*`, `median.*`, `box.*`; `geom_violin()`
+    has `quantile.*`; `geom_crossbar()` has `middle.*`/`box.*`. Here:
+    `ticks = 0.15` (length; `0` = none, unchanged for backward compatibility) plus
+    `tick.colour` (with `tick.color` alias; `NULL` = `palette[6]`), `tick.linewidth` and
+    `tick.linetype`. This is familiar to ggplot2 users, each argument can be documented and
+    validated separately, and the same pattern extends naturally to other parts later,
+    e.g. `ring.colour`/`ring.linewidth`/`ring.linetype` for the confidence rings, or
+    `frame.*`.
+  - A list argument, `ticks = list(length = 0.15, colour = , linewidth = , ...)` or
+    `tick.args = list(...)`: compact and vcd/base-graphics-like (cf. `gp = gpar()`), but
+    not how ggplot2 geoms are styled. It needs merging with defaults when only some
+    elements are given, and makes it harder to document and validate each setting. It
+    would also change the meaning of the existing numeric `ticks`.
+  - A helper constructor, e.g. `ticks = fourfold_ticks(length = 0.15, colour = ...)`, like
+    `arrow()` in `geom_segment()`: tidy and self-documenting, but one more exported
+    function, and less conventional than the dotted form for simple styling.
+
+  Related: the "Square tick direction" item above. Decision for GK.
+  Files: `R/geom-fourfold.R` (`draw_panel()` tick segments, `geom_fourfold()` arguments and
+  validation, docs), README/vignette figures.
+
 ## Inference
 
 - [ ] **Should the confidence rings be adjusted for multiple comparisons?** (raised
