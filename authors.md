@@ -10,6 +10,9 @@
 
 ## Citation
 
+Source:
+[`DESCRIPTION`](https://github.com/gklorfine/ggfourfold/blob/main/DESCRIPTION)
+
 Klorfine G, Friendly M (2026). *ggfourfold: Fourfold Displays for
 'ggplot2'*. R package version 0.1.0,
 <http://gavinklorfine.com/ggfourfold/>.
