@@ -23,20 +23,30 @@ library(ggplot2)
 
 `ggfourfold` provides `geom_fourfold()` and `theme_fourfold()` for drawing
 fourfold displays of $2 \times 2$ and $2 \times 2 \times k$ tables with
-`ggplot2`. This introduction follows the treatment in
+`ggplot2` to show the **direction** and **strength** of association between two binary
+variables, and its **pattern** of association across $k$ strata.
+
+For example, in the classic case we use here, one could ask if there is
+an association between gender and admission to graduate school, and whether
+this association varies across the departments applied to.
+This introduction follows the treatment in
 @FriendlyMeyer:2016:DDAR [Section 4.4].
 
 ## Fourfold displays
 
-The *fourfold display* is a special case of a radial diagram, or "polar area
+The *fourfold display* is a special case of a **radial diagram**, or "polar area
 chart", designed for $2 \times 2$ (or $2 \times 2 \times k$) tables
 [@Fienberg:75; @Friendly:94:TR217; @Friendly:94c]. The frequency $n_{ij}$ in
 each cell is shown by a quarter circle whose radius is proportional to
-$\sqrt{n_{ij}}$, so that its *area* is proportional to the cell count. Like a
-pie chart, it uses segments of a circle to show frequencies; unlike a pie
-chart, it keeps the angles of the segments constant and varies the radius.
+$\sqrt{n_{ij}}$, so that its *area* is proportional to the cell count. 
 
-The main purpose of the display is to show the sample odds ratio,
+Like a pie chart, it uses segments of a circle to show frequencies; unlike a pie
+chart, it keeps the angles of the segments constant and varies the radius.
+This is the $2 \times 2$ cousin of the graphic form used by Florence Nightingale [@Nightingale:1858].
+[@FriendlyAndrews:2021] describe the rich history of radial diagrams.
+
+The main purpose of the display is to show the **sample odds ratio**. This gives a number that
+compares the odds of an event (accepted!) happening in one group (men) to the odds of it happening in another group (women).
 
 $$
 \hat{\theta} = \frac{n_{11} / n_{12}}{n_{21} / n_{22}}
@@ -45,7 +55,7 @@ $$
 
 An association between the two variables ($\theta \neq 1$) appears as a
 tendency for one pair of diagonally opposite cells to be larger than the
-other pair.
+other pair.  The fourfold plot shows the association and the odds ratio visually as follows:
 
 * **Color and diagonal tick marks** show the **direction of association**: the relatively larger diagonal pair is drawn in blue
 (more than expected under independence) with the tick marks along that diagonal, and the other pair in red. 
