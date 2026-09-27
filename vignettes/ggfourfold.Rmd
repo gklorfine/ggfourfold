@@ -1,6 +1,8 @@
 ---
 title: "Fourfold Displays for 'ggplot2'"
 output: rmarkdown::html_vignette
+bibliography: refs.bib
+csl: apa.csl
 vignette: >
   %\VignetteIndexEntry{Fourfold Displays for 'ggplot2'}
   %\VignetteEngine{knitr::rmarkdown}
@@ -19,6 +21,130 @@ library(ggfourfold)
 library(ggplot2)
 ```
 
-`ggfourfold` provides both `geom_fourfold()` and `theme_fourfold()`, allowing for the construction of fourfold displays using `ggplot2`.
+`ggfourfold` provides `geom_fourfold()` and `theme_fourfold()` for drawing
+fourfold displays of $2 \times 2$ and $2 \times 2 \times k$ tables with
+`ggplot2`. This introduction follows the treatment in
+@FriendlyMeyer:2016:DDAR [Section 4.4].
 
 ## Fourfold displays
+
+The *fourfold display* is a special case of a radial diagram, or "polar area
+chart", designed for $2 \times 2$ (or $2 \times 2 \times k$) tables
+[@Fienberg:75; @Friendly:94:TR217; @Friendly:94c]. The frequency $n_{ij}$ in
+each cell is shown by a quarter circle whose radius is proportional to
+$\sqrt{n_{ij}}$, so that its *area* is proportional to the cell count. Like a
+pie chart, it uses segments of a circle to show frequencies; unlike a pie
+chart, it keeps the angles of the segments constant and varies the radius.
+
+The main purpose of the display is to show the sample odds ratio,
+
+$$
+\hat{\theta} = \frac{n_{11} / n_{12}}{n_{21} / n_{22}}
+             = \frac{n_{11} \, n_{22}}{n_{12} \, n_{21}} .
+$$
+
+An association between the two variables ($\theta \neq 1$) appears as a
+tendency for one pair of diagonally opposite cells to be larger than the
+other pair.
+
+* **Color and diagonal tick marks** show the **direction of association**: the relatively larger diagonal pair is drawn in blue
+(more than expected under independence) with the tick marks along that diagonal, and the other pair in red. 
+
+* **Confidence rings** around
+each quadrant give a **visual test of independence**, $H_0: \theta = 1$: in a
+standardized display, the rings for adjacent quadrants overlap if and only if
+the observed counts are consistent with the null hypothesis.
+
+## Example: Berkeley admissions
+
+The classic example, `UCBAdmissions` gives applicants to the six largest graduate departments at
+Berkeley in 1973, classified by admission and gender [@Bickel-etal:75].
+`geom_fourfold()` currently works on data in *long form*: map the two-level variables
+to `x` (drawn left to right) and `y` (drawn top to bottom), and the cell
+frequencies to `weight`. Without faceting, rows for the same cell are summed,
+so this pools over departments:
+
+```{r berkeley}
+ucb <- as.data.frame(UCBAdmissions)
+berkeley <- ggplot(ucb, aes(x = Admit, y = Gender, weight = Freq)) +
+  theme_fourfold()
+```
+
+The *unstandardized* display (`std = "ind.max"`) shows the raw frequencies,
+with the largest cell drawn at full size. The sample odds ratio,
+Odds(Admit | Male) / Odds(Admit | Female), is
+$(1198 / 1493) / (557 / 1278) = 1.84$: male applicants were nearly twice
+as likely to be admitted.
+
+```{r berkeley-raw, fig.width = 4, fig.height = 4}
+berkeley + geom_fourfold(std = "ind.max")
+```
+
+These comparisons are difficult because there are more male applicants than
+female, and because more applicants were rejected than admitted. In the
+unstandardized display the confidence rings have no interpretation as a test
+of $H_0: \theta = 1$.
+
+The data can be standardized to make the comparison easier while preserving
+the odds ratio. With `margin = 1` the rows (here, `Gender`) are equated, so
+each quadrant shows the proportion of men or women who were admitted or
+rejected: 44.5% of male applicants were admitted, compared with 30.4% of
+female applicants. Now the rings for each upper quadrant overlap those of
+the quadrant below it if the odds ratio does not differ from 1.
+
+```{r berkeley-rows, fig.width = 4, fig.height = 4}
+berkeley + geom_fourfold(margin = 1)
+```
+
+The default, `margin = c(1, 2)`, standardizes *both* margins. The four
+quadrants then align horizontally and vertically when the odds ratio is 1,
+regardless of the marginal frequencies, so the association between
+admission and gender can be seen without the influence of the overall
+admission rate or of the numbers of men and women who applied. This fully
+standardized display is usually the most useful form.
+
+```{r berkeley-std, fig.width = 4, fig.height = 4}
+berkeley + geom_fourfold()
+```
+
+The quadrants do not align, and the 95% confidence rings, computed from the
+interval $1.62 \le \theta \le 2.09$, do not overlap: the odds ratio differs
+significantly from 1, apparent evidence of gender bias in favour of men.
+
+## Stratified $2 \times 2 \times k$ tables
+
+In a $2 \times 2 \times k$ table the third variable often defines strata, and
+the question is whether the association between the first two is the same
+in each stratum. Make one fourfold display per stratum with
+`facet_wrap()` or `facet_grid()`; standardizing the margins within each
+panel allows the pattern of association to be compared across strata even
+when their marginal frequencies differ.
+
+```{r berkeley-dept, fig.width = 7, fig.height = 5}
+berkeley +
+  geom_fourfold() +
+  facet_wrap(vars(Dept), ncol = 3, labeller = label_both)
+```
+
+Surprisingly, for five of the six departments the odds of admission are
+about the same for men and women. Only Department A differs, and in the
+opposite direction: there women were about 2.86 times as likely as men to
+be admitted ($1 / 0.349$). The more intense colours mark the one panel whose
+odds ratio differs significantly from 1. With several strata,
+`geom_fourfold()` adjusts the p-values that control this emphasis for
+multiple testing, by default using Holm's method via `stats::p.adjust()`;
+the confidence rings themselves are not adjusted.
+
+This reversal of the aggregate result is an example of Simpson's paradox,
+and it shows why an analysis of a table collapsed over a third variable can
+mislead. Men and women applied to departments in different proportions, and
+women applied in greater numbers to departments with low admission rates.
+
+Because a fourfold display keeps the angle of each cell fixed, corresponding
+cells are always in the same position in every panel. An array of fourfold
+displays therefore supports *controlled comparison*, against a standard with
+other things held constant, much better than an array of pie charts.
+Standardizing the margins adds a further standard for comparison while
+preserving the odds ratio, the quantity the display is designed to show.
+
+## References

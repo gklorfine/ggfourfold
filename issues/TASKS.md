@@ -129,6 +129,60 @@ As these items are resolved, check them off as [X] and record the fix and verifi
   counts outside. Consider an alternative for squares (e.g. shorter ticks, or ticks drawn
   along the outer edges) so that typical `std = "margins"` displays can keep counts inside.
 
+## Data input
+
+- [ ] **Accept data in table form** (`table`, `xtabs`, `ftable`, `structable`) — at present
+  `geom_fourfold()` needs long (frequency) form, e.g. `as.data.frame(UCBAdmissions)`, and the
+  vignette says it "currently works on data in *long form*". `vcd::fourfold()` takes a
+  2 × 2 × k array directly. (MF thought ggmosaic2 might accept tables, but it doesn't: its
+  README and the "Three Forms of Frequency Tables" vignette pipe tables through
+  `as.data.frame()`, so it offers no mechanism to copy.)
+
+  *What happens now* (ggplot2 4.0.3, checked 2026-09-27): no table form is accepted.
+  `ggplot(UCBAdmissions)` fails inside `ggplot()` itself with "`data` must be a
+  <data.frame>, or an object coercible by `fortify()` …" because `dim(data)` is not of
+  length 2. A 2-D table also fails, because `as.data.frame()` changes its dimensions
+  (2 × 2 → 4 × 3). `geom_fourfold(data = UCBAdmissions)` fails the same way when the layer
+  is constructed. `ftable` and `structable` objects fail the same checks.
+
+  *Options*, which can be combined:
+  1. **Convert layer data inside `geom_fourfold()`** before calling `layer()`: if `data` is a
+     `table` (including `xtabs`), `ftable` or `structable`, convert with
+     `as.data.frame(as.table(data), stringsAsFactors = TRUE)`. Factor levels keep the
+     table's dimname order, so orientation is preserved. Small, self-contained, and uses
+     only ggplot2's public API. Limitation: only `geom_fourfold(data = tab)` works, not
+     `ggplot(tab)`, because `ggplot()` rejects the table before the geom sees it.
+  2. **A convenience constructor**, e.g. `ggfourfold(tab, ...)`, returning a `ggplot` with
+     the vcd array convention built in: dimension 1 → `y` (rows), dimension 2 → `x`
+     (columns), `weight = Freq`, with strata from the remaining dimensions added as
+     `facet_wrap()` (one) or `facet_grid()` (two), plus `theme_fourfold()`. This is closest
+     to `vcd::fourfold(UCB)` and is the `ggfourfold()` array wrapper that
+     `dev/fourfold-plan.md` deferred ("may later become a convenience wrapper if real
+     usage warrants it"). The result is an ordinary ggplot, so it can still be extended with
+     `+`.
+  3. **Register a `fortify.table()` S3 method** so that `ggplot(UCBAdmissions, ...)` works.
+     A quick trial confirmed this works with faceting. However, ggfourfold owns neither the
+     generic nor the class, so the method would change `ggplot()` for *every* table
+     whenever ggfourfold is loaded. This could clash with other packages or with a future
+     ggplot2 method, and is questionable for CRAN. Not recommended without discussion.
+
+  *Pitfall for 1 and 2*: `weight` must default to the frequency column. If a user supplies a
+  table but doesn't map `weight`, each cell would silently count as 1, giving a plausible
+  but wrong display. When the input was a table, add `weight = Freq` to the mapping unless
+  `weight` is already mapped. (Beware name clashes: `as.data.frame.table()` uses `Freq`,
+  which fails if a dimension is itself called `Freq`.)
+
+  *Also*: validate that dimensions 1 and 2 have two levels each (the existing per-panel
+  checks already give an error); decide how to treat `NA` dimnames and 1-D tables; add tests
+  comparing table input with the equivalent long-form data; update the vignette's "currently
+  works on data in long form" sentence and the README. `vcd` and `vcdExtra` are in the
+  same family of packages, and vcdExtra's helpers for converting between case, frequency and
+  table forms may be worth reusing or pointing to in the docs.
+
+  Suggested order: 1 (cheap, no API risk), then 2 if a vcd-like one-liner is wanted.
+  Decision for GK.
+  Files: `R/geom-fourfold.R`, new `R/ggfourfold.R` (for 2), tests, vignette, README.
+
 ## Verification recorded (2026-09-25)
 
 The package built successfully, including its vignette. `R CMD check --no-manual

@@ -154,6 +154,10 @@ ggplot2::ggplot(
 Friendly, M. (1994). \emph{A fourfold display for 2 by 2 by k tables}
 (Technical Report No. 217). York University, Psychology Department.
 \url{http://datavis.ca/papers/4fold/4fold.pdf}
+
+Friendly, M., & Meyer, D. (2016). \emph{Discrete Data Analysis with R:
+Visualization and Modeling Techniques for Categorical and Count Data}
+(Section 4.4). Chapman & Hall/CRC. \url{http://ddar.datavis.ca}
 }
 \seealso{
 \code{\link[=theme_fourfold]{theme_fourfold()}}, \code{\link[=fourfold_palette]{fourfold_palette()}},

@@ -763,6 +763,10 @@ GeomFourfold <- ggplot2::ggproto(
 #' (Technical Report No. 217). York University, Psychology Department.
 #' <http://datavis.ca/papers/4fold/4fold.pdf>
 #'
+#' Friendly, M., & Meyer, D. (2016). *Discrete Data Analysis with R:
+#' Visualization and Modeling Techniques for Categorical and Count Data*
+#' (Section 4.4). Chapman & Hall/CRC. <http://ddar.datavis.ca>
+#'
 #' @seealso [theme_fourfold()], [fourfold_palette()],
 #'   [ggplot2::facet_grid()], and [ggplot2::facet_wrap()]
 #'
