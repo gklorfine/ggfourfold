@@ -5,10 +5,10 @@
       fontURL: "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2"
     }
   };
-</script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"><link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet"><script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet"><script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><link href="../extra.css" rel="stylesheet"><meta property="og:title" content="Fourfold displays for 2-by-2 tables — geom_fourfold"><meta name="description" content="`geom_fourfold()` draws a fourfold display in each ggplot2 panel. Sector
+</script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"><link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet"><script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet"><script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><link href="../extra.css" rel="stylesheet"><meta property="og:title" content="Fourfold displays for 2-by-2 tables — geom_fourfold"><meta name="description" content="geom_fourfold() draws a fourfold display in each ggplot2 panel. Sector
 radii represent cell frequencies after the selected standardization, while
 sector colours, confidence rings, and direction ticks show the direction
-and strength of association."><meta property="og:description" content="`geom_fourfold()` draws a fourfold display in each ggplot2 panel. Sector
+and strength of association."><meta property="og:description" content="geom_fourfold() draws a fourfold display in each ggplot2 panel. Sector
 radii represent cell frequencies after the selected standardization, while
 sector colours, confidence rings, and direction ticks show the direction
 and strength of association."><meta property="og:image" content="http://gavinklorfine.com/ggfourfold/logo.png"></head><body>
@@ -44,7 +44,7 @@ and strength of association."><meta property="og:image" content="http://gavinklo
     </div>
 
     <div class="ref-description section level2">
-    <p>`geom_fourfold()` draws a fourfold display in each ggplot2 panel. Sector
+    <p><code>geom_fourfold()</code> draws a fourfold display in each ggplot2 panel. Sector
 radii represent cell frequencies after the selected standardization, while
 sector colours, confidence rings, and direction ticks show the direction
 and strength of association.</p>
@@ -64,6 +64,7 @@ and strength of association.</p>
 <span>  extended <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  ticks <span class="op">=</span> <span class="fl">0.15</span>,</span>
 <span>  p_adjust_method <span class="op">=</span> <span class="fu">stats</span><span class="fu">::</span><span class="va"><a href="https://rdrr.io/r/stats/p.adjust.html" class="external-link">p.adjust.methods</a></span>,</span>
+<span>  shape <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"circle"</span>, <span class="st">"square"</span><span class="op">)</span>,</span>
 <span>  palette <span class="op">=</span> <span class="fu"><a href="fourfold_palette.html">fourfold_palette</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  na.rm <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  show.legend <span class="op">=</span> <span class="cn">FALSE</span>,</span>
@@ -73,47 +74,47 @@ and strength of association.</p>
 
     <div class="section level2">
     <h2 id="format">Format<a class="anchor" aria-label="anchor" href="#format"></a></h2>
-    <p>A `GeomFourfold` ggproto object.</p>
+    <p>A <code>GeomFourfold</code> ggproto object.</p>
     </div>
     <div class="section level2">
     <h2 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a></h2>
 
 
 <dl><dt id="arg-mapping">mapping<a class="anchor" aria-label="anchor" href="#arg-mapping"></a></dt>
-<dd><p>Set of aesthetic mappings created by [ggplot2::aes()]. If
-supplied and `inherit.aes = TRUE`, these are combined with the plot's
+<dd><p>Set of aesthetic mappings created by <code><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">ggplot2::aes()</a></code>. If
+supplied and <code>inherit.aes = TRUE</code>, these are combined with the plot's
 default mappings.</p></dd>
 
 
 <dt id="arg-data">data<a class="anchor" aria-label="anchor" href="#arg-data"></a></dt>
-<dd><p>The data to display in this layer. If `NULL`, the default, the
+<dd><p>The data to display in this layer. If <code>NULL</code>, the default, the
 data are inherited from the plot.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
-<dd><p>Other arguments passed to [ggplot2::layer()], typically fixed
-aesthetics such as `colour` or `linewidth`.</p></dd>
+<dd><p>Other arguments passed to <code><a href="https://ggplot2.tidyverse.org/reference/layer.html" class="external-link">ggplot2::layer()</a></code>, typically fixed
+aesthetics such as <code>colour</code> or <code>linewidth</code>.</p></dd>
 
 
 <dt id="arg-std">std<a class="anchor" aria-label="anchor" href="#arg-std"></a></dt>
-<dd><p>Standardization method. `"margins"` fixes the selected margins,
-`"ind.max"` divides each panel by its largest cell, and `"all.max"`
+<dd><p>Standardization method. <code>"margins"</code> fixes the selected margins,
+<code>"ind.max"</code> divides each panel by its largest cell, and <code>"all.max"</code>
 divides every panel by the largest cell in the complete layer.</p></dd>
 
 
 <dt id="arg-margin">margin<a class="anchor" aria-label="anchor" href="#arg-margin"></a></dt>
 <dd><p>Integer vector selecting the table margins when
-`std = "margins"`. Use `c(1, 2)` for both margins, `1` for the `y` margin,
-or `2` for the `x` margin.</p></dd>
+<code>std = "margins"</code>. Use <code>c(1, 2)</code> for both margins, <code>1</code> for the <code>y</code> margin,
+or <code>2</code> for the <code>x</code> margin.</p></dd>
 
 
 <dt id="arg-conf-level">conf_level<a class="anchor" aria-label="anchor" href="#arg-conf-level"></a></dt>
-<dd><p>Confidence level in `[0, 1)`. Set to `0` to suppress
+<dd><p>Confidence level in <code>[0, 1)</code>. Set to <code>0</code> to suppress
 confidence rings.</p></dd>
 
 
 <dt id="arg-extended">extended<a class="anchor" aria-label="anchor" href="#arg-extended"></a></dt>
-<dd><p>If `TRUE`, use adjusted p-values to emphasize association
+<dd><p>If <code>TRUE</code>, use adjusted p-values to emphasize association
 and draw direction ticks.</p></dd>
 
 
@@ -123,71 +124,90 @@ geom's normalized panel coordinates.</p></dd>
 
 
 <dt id="arg-p-adjust-method">p_adjust_method<a class="anchor" aria-label="anchor" href="#arg-p-adjust-method"></a></dt>
-<dd><p>Method passed to [stats::p.adjust()] for adjustment
-across panels. Defaults to `"holm"`, the first value in
-[stats::p.adjust.methods].</p></dd>
+<dd><p>Method passed to <code><a href="https://rdrr.io/r/stats/p.adjust.html" class="external-link">stats::p.adjust()</a></code> for adjustment
+across panels. Defaults to <code>"holm"</code>, the first value in
+<a href="https://rdrr.io/r/stats/p.adjust.html" class="external-link">stats::p.adjust.methods</a>.</p></dd>
+
+
+<dt id="arg-shape">shape<a class="anchor" aria-label="anchor" href="#arg-shape"></a></dt>
+<dd><p>Shape of the cell sectors: <code>"circle"</code> (the default, as in
+<code><a href="https://rdrr.io/pkg/vcd/man/fourfold.html" class="external-link">vcd::fourfold()</a></code>) draws quarter-circles; <code>"square"</code> draws
+quarter-squares of equal area.</p></dd>
 
 
 <dt id="arg-palette">palette<a class="anchor" aria-label="anchor" href="#arg-palette"></a></dt>
 <dd><p>Character vector of at least six valid colours in the
-semantic order used by `fourfold_palette()`.</p></dd>
+semantic order used by <code><a href="fourfold_palette.html">fourfold_palette()</a></code>.</p></dd>
 
 
 <dt id="arg-na-rm">na.rm<a class="anchor" aria-label="anchor" href="#arg-na-rm"></a></dt>
-<dd><p>If `FALSE`, the default, missing observations are removed with
-a warning. If `TRUE`, they are removed silently.</p></dd>
+<dd><p>If <code>FALSE</code>, the default, missing observations are removed with
+a warning. If <code>TRUE</code>, they are removed silently.</p></dd>
 
 
 <dt id="arg-show-legend">show.legend<a class="anchor" aria-label="anchor" href="#arg-show-legend"></a></dt>
 <dd><p>Logical indicating whether this layer should be included
-in legends. The default is `FALSE` because the semantic fills are not a
+in legends. The default is <code>FALSE</code> because the semantic fills are not a
 mapped aesthetic.</p></dd>
 
 
 <dt id="arg-inherit-aes">inherit.aes<a class="anchor" aria-label="anchor" href="#arg-inherit-aes"></a></dt>
-<dd><p>If `FALSE`, override rather than combine with the plot's
+<dd><p>If <code>FALSE</code>, override rather than combine with the plot's
 default aesthetic mappings.</p></dd>
 
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A ggplot2 layer that can be added to a [ggplot2::ggplot()] object.</p>
+    <p>A ggplot2 layer that can be added to a <code><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot2::ggplot()</a></code> object.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>Map the two-level horizontal variable to `x`, the two-level vertical
-variable to `y`, and cell frequencies to `weight`. When `weight` is omitted,
-each row counts as one observation. The first `x` level is drawn on the left
-and the second on the right; the first `y` level is drawn at the top and the
+    <p>Map the two-level horizontal variable to <code>x</code>, the two-level vertical
+variable to <code>y</code>, and cell frequencies to <code>weight</code>. When <code>weight</code> is omitted,
+each row counts as one observation. The first <code>x</code> level is drawn on the left
+and the second on the right; the first <code>y</code> level is drawn at the top and the
 second at the bottom. Set factor levels explicitly when their order matters.</p>
 <p>One panel must contain exactly one 2-by-2 table. Use
-[ggplot2::facet_grid()] or [ggplot2::facet_wrap()] to display stratified
-tables. Duplicate `x`/`y` combinations within a panel are summed and missing
+<code><a href="https://ggplot2.tidyverse.org/reference/facet_grid.html" class="external-link">ggplot2::facet_grid()</a></code> or <code><a href="https://ggplot2.tidyverse.org/reference/facet_wrap.html" class="external-link">ggplot2::facet_wrap()</a></code> to display stratified
+tables. Duplicate <code>x</code>/<code>y</code> combinations within a panel are summed and missing
 cells are completed with zero counts.</p>
 <p>Odds ratios, Wald confidence intervals, and extended-display p-values match
-the calculations in `vcd::fourfold()`. If any observed cell is zero, 0.5 is
+the calculations in <code><a href="https://rdrr.io/pkg/vcd/man/fourfold.html" class="external-link">vcd::fourfold()</a></code>. If any observed cell is zero, 0.5 is
 added to all four cells for inference. P-values are adjusted across all
 panels in the layer. Confidence intervals themselves are not adjusted.</p>
-<p>The six semantic fill colours are supplied by `palette`; they are not mapped
+<p>With <code>shape = "square"</code>, each cell is drawn as a quarter-square with the
+same area as the corresponding quarter-circle (side
+\(r\sqrt{\pi}/2\) for radius \(r\)), so the two
+shapes display a table with identical areas. Confidence rings
+become nested square outlines. Cell counts stay inside the frame corners
+unless a square, confidence outline, or direction tick in any panel of the
+layer would reach them, as is always the case with <code>std = "ind.max"</code>; the
+counts in every panel are then placed just outside the frame corners.</p>
+<p>The six semantic fill colours are supplied by <code>palette</code>; they are not mapped
 through a ggplot2 fill scale. Typography and layout defaults are controlled
-by [theme_fourfold()].</p>
+by <code><a href="theme_fourfold.html">theme_fourfold()</a></code>.</p>
     </div>
     <div class="section level2">
     <h2 id="aesthetics">Aesthetics<a class="anchor" aria-label="anchor" href="#aesthetics"></a></h2>
 
 
-<p>`geom_fourfold()` understands the following aesthetics:</p>
-<p>- `x` (required): a variable with exactly two levels.
-- `y` (required): a variable with exactly two levels.
-- `weight`: non-negative cell frequencies; defaults to `1`.
-- `colour`, `linewidth`, `alpha`, `size`, and `family`: fixed or mapped
-  drawing properties. `size` and `family` default to values inherited from
-  the plot theme.</p>
+<p><code>geom_fourfold()</code> understands the following aesthetics:</p><ul><li><p><code>x</code> (required): a variable with exactly two levels.</p></li>
+<li><p><code>y</code> (required): a variable with exactly two levels.</p></li>
+<li><p><code>weight</code>: non-negative cell frequencies; defaults to <code>1</code>.</p></li>
+<li><p><code>colour</code>, <code>linewidth</code>, <code>alpha</code>, <code>size</code>, and <code>family</code>: fixed or mapped
+drawing properties. <code>size</code> and <code>family</code> default to values inherited from
+the plot theme.</p></li>
+</ul></div>
+    <div class="section level2">
+    <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
+    <p>Friendly, M. (1994). <em>A fourfold display for 2 by 2 by k tables</em>
+(Technical Report No. 217). York University, Psychology Department.
+<a href="http://datavis.ca/papers/4fold/4fold.pdf" class="external-link">http://datavis.ca/papers/4fold/4fold.pdf</a></p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p>[theme_fourfold()], [fourfold_palette()],
-  [ggplot2::facet_grid()], and [ggplot2::facet_wrap()]</p></div>
+    <div class="dont-index"><p><code><a href="theme_fourfold.html">theme_fourfold()</a></code>, <code><a href="fourfold_palette.html">fourfold_palette()</a></code>,
+<code><a href="https://ggplot2.tidyverse.org/reference/facet_grid.html" class="external-link">ggplot2::facet_grid()</a></code>, and <code><a href="https://ggplot2.tidyverse.org/reference/facet_wrap.html" class="external-link">ggplot2::facet_wrap()</a></code></p></div>
     </div>
 
     <div class="section level2">
@@ -203,6 +223,16 @@ by [theme_fourfold()].</p>
 <span class="r-in"><span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>title <span class="op">=</span> <span class="st">"Berkeley admissions"</span><span class="op">)</span> <span class="op">+</span></span></span>
 <span class="r-in"><span>  <span class="fu"><a href="theme_fourfold.html">theme_fourfold</a></span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="geom_fourfold-1.png" alt="" width="700" height="433"></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Quarter-squares of equal area instead of quarter-circles</span></span></span>
+<span class="r-in"><span><span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="va">ucb</span>,</span></span>
+<span class="r-in"><span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">Gender</span>, y <span class="op">=</span> <span class="va">Admit</span>, weight <span class="op">=</span> <span class="va">Freq</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">)</span> <span class="op">+</span></span></span>
+<span class="r-in"><span>  <span class="fu">geom_fourfold</span><span class="op">(</span>shape <span class="op">=</span> <span class="st">"square"</span><span class="op">)</span> <span class="op">+</span></span></span>
+<span class="r-in"><span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/facet_wrap.html" class="external-link">facet_wrap</a></span><span class="op">(</span><span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/vars.html" class="external-link">vars</a></span><span class="op">(</span><span class="va">Dept</span><span class="op">)</span>, ncol <span class="op">=</span> <span class="fl">3</span><span class="op">)</span> <span class="op">+</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="theme_fourfold.html">theme_fourfold</a></span><span class="op">(</span><span class="op">)</span></span></span>
+<span class="r-plt img"><img src="geom_fourfold-2.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
