@@ -11,28 +11,43 @@ library(ggplot2)
 and
 [`theme_fourfold()`](http://gavinklorfine.com/ggfourfold/reference/theme_fourfold.md)
 for drawing fourfold displays of \\2 \times 2\\ and \\2 \times 2 \times
-k\\ tables with `ggplot2`. This introduction follows the treatment in
-Friendly & Meyer (2016, Section 4.4).
+k\\ tables with `ggplot2` to show the **direction** and **strength** of
+association between two binary variables, and its **pattern** of
+association across \\k\\ strata.
+
+For example, in the classic case we use here, one could ask if there is
+an association between gender and admission to graduate school, and
+whether this association varies across the departments applied to. This
+introduction follows the treatment in Friendly & Meyer (2016, Section
+4.4).
 
 ## Fourfold displays
 
-The *fourfold display* is a special case of a radial diagram, or “polar
-area chart”, designed for \\2 \times 2\\ (or \\2 \times 2 \times k\\)
-tables (Fienberg, 1975; Friendly, 1994a, 1994b). The frequency
+The *fourfold display* is a special case of a **radial diagram**, or
+“polar area chart”, designed for \\2 \times 2\\ (or \\2 \times 2 \times
+k\\) tables (Fienberg, 1975; Friendly, 1994a, 1994b). The frequency
 \\n\_{ij}\\ in each cell is shown by a quarter circle whose radius is
 proportional to \\\sqrt{n\_{ij}}\\, so that its *area* is proportional
-to the cell count. Like a pie chart, it uses segments of a circle to
-show frequencies; unlike a pie chart, it keeps the angles of the
-segments constant and varies the radius.
+to the cell count.
 
-The main purpose of the display is to show the sample odds ratio,
+Like a pie chart, it uses segments of a circle to show frequencies;
+unlike a pie chart, it keeps the angles of the segments constant and
+varies the radius. This is the \\2 \times 2\\ cousin of the graphic form
+used by Florence Nightingale (Nightingale, 1858). (Friendly & Andrews,
+2021) describe the rich history of radial diagrams.
+
+The main purpose of the display is to show the **sample odds ratio**.
+This gives a number that compares the odds of an event (accepted!)
+happening in one group (men) to the odds of it happening in another
+group (women).
 
 \\ \hat{\theta} = \frac{n\_{11} / n\_{12}}{n\_{21} / n\_{22}} =
 \frac{n\_{11} \\ n\_{22}}{n\_{12} \\ n\_{21}} . \\
 
 An association between the two variables (\\\theta \neq 1\\) appears as
 a tendency for one pair of diagonally opposite cells to be larger than
-the other pair.
+the other pair. The fourfold plot shows the association and the odds
+ratio visually as follows:
 
 - **Color and diagonal tick marks** show the **direction of
   association**: the relatively larger diagonal pair is drawn in blue
@@ -265,6 +280,13 @@ Friendly, M. (1994b). SAS/IML graphics for fourfold displays.
 *Observations*, *3*(4), 47–56.
 [http://www.sas.com/service/doc/periodicals/obs/ind_files/v3n12pp4.html](http://www.sas.com/service/doc/periodicals/obs/ind_files/v3n12pp4.md)
 
+Friendly, M., & Andrews, R. (2021). The radiant diagrams of Florence
+Nightingale. *SORT*, *45*(1). <https://doi.org/10.2436/20.8080.02.106>
+
 Friendly, M., & Meyer, D. (2016). *Discrete data analysis with R:
 Visualization and modeling techniques for categorical and count data*.
 Chapman & Hall/CRC. <http://ddar.datavis.ca>
+
+Nightingale, F. (1858). *Notes on matters affecting the health,
+efficiency, and hospital administration of the British army*. Harrison;
+Sons. <https://archive.org/details/b20387118>
