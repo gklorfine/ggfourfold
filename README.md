@@ -192,7 +192,7 @@ Friendly, M. (1994). *A fourfold display for 2 by 2 by $k$ tables* (No.
 <div id="ref-vcd:Friendly:2000" class="csl-entry">
 
 Friendly, M. (2000). *Visualizing categorical data*.
-<span class="sans-serif">SAS</span> Insitute.
+<span class="sans-serif">SAS</span> Institute.
 <http://www.math.yorku.ca/SCS/vcd/>
 
 </div>
