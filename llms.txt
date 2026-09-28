@@ -89,7 +89,7 @@ to convert them into frequency form using
 [`as.data.frame()`](https://rdrr.io/r/base/as.data.frame.html). Without
 faceting,
 [`geom_fourfold()`](https://gavinklorfine.com/ggfourfold/reference/geom_fourfold.md)
-sums the counts over the excluded variable, in this case, `Dept`.
+sums the counts over the excluded variables, in this case, only `Dept`.
 
 ``` r
 
