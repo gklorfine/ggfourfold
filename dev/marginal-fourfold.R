@@ -68,13 +68,40 @@ pooling$difference <- pooling$marginal_log_or - pooling$mh_log_or
 rownames(pooling) <- NULL
 print(pooling, digits = 3)
 
+# Background for the margin panels ---------------------------------------------
+# A theme can't do this (panel.background applies to every panel), and an
+# ordinary layer can't either: margins = TRUE copies every layer's rows into
+# the "(all)" panels, and data that already contain "(all)" make
+# reshape_add_margins() fail with a duplicated factor level. Instead, this stat
+# looks up each panel's facet values in the layout and returns a full-panel
+# rectangle only for panels where any facet variable is "(all)".
+StatMarginPanels <- ggproto("StatMarginPanels", Stat,
+  compute_layer = function(self, data, params, layout) {
+    lay <- layout$layout
+    vars <- setdiff(names(lay), c("PANEL", "ROW", "COL", "SCALE_X", "SCALE_Y"))
+    is_margin <- Reduce(`|`, lapply(lay[vars], function(v) {
+      as.character(v) == "(all)"
+    }))
+    data.frame(PANEL = lay$PANEL[is_margin],
+               xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf)
+  }
+)
+
+# Add before geom_fourfold() so that the display is drawn on top.
+margin_background <- function(fill = "#F5EEDC") {
+  layer(stat = StatMarginPanels, geom = "rect", position = "identity",
+        mapping = NULL, data = NULL, inherit.aes = FALSE, show.legend = FALSE,
+        params = list(fill = fill, colour = NA))
+}
+
 # Marginal fourfold display ----------------------------------------------------
 marginal_plot <- ggplot(det, aes(x = M_User, y = Preference, weight = Freq)) +
+  margin_background() +
   geom_fourfold() +
   facet_grid(Temperature ~ Water_softness, margins = TRUE) +
   labs(
     title = "Detergent: brand preference by previous use of Brand M",
-    subtitle = "Rows: Temperature   Columns: Water softness   (all): pooled"
+    subtitle = "Rows: Temperature   Columns: Water softness   (all), shaded: pooled"
   ) +
   theme_fourfold(base_size = 11)
 
@@ -84,7 +111,7 @@ marginal_plot <- ggplot(det, aes(x = M_User, y = Preference, weight = Freq)) +
 panel_stats <- merge(
   ggplot_build(marginal_plot)$layout$layout[,
     c("PANEL", "Temperature", "Water_softness")],
-  unique(layer_data(marginal_plot)[,
+  unique(layer_data(marginal_plot, 2)[,
     c("PANEL", "odds_ratio", "p_value", "p_adjusted")])
 )
 print(panel_stats[order(panel_stats$PANEL), ], digits = 3)
