@@ -9,3 +9,8 @@ Rplots.pdf
 ^docs$
 ^pkgdown$
 ^\.github$
+^LICENSE$
+^AGENTS\.md$
+^CLAUDE\.md$
+^issues$
+^cran-comments\.md$
