@@ -39,8 +39,13 @@ As these items are resolved, check them off as [X] and record the fix and verifi
     facet_grid(Age ~ Class) +
     theme_fourfold()
   ```
-  Counts and odds ratios are correct (they match `vcd::loddsratio()`), but in both panels
-  the lower ring is `NaN` in all four cells and is not drawn. In the table rebuilt for the
+  Counts and odds ratios are correct (they match `vcd::loddsratio()` run on each panel's
+  2 × 2 table), but in both panels the lower ring is `NaN` in all four cells and is not
+  drawn. (Run on the whole 2 × 2 × 2 × 3 table, `loddsratio()` adds 0.5 to every cell
+  because some cells are zero, so it matches only the two panels that contain zeros. For
+  the strata without zeros it differs, e.g. Adult × 1st 64.35 vs the geom's 72.46. The geom
+  follows `vcd::fourfold()`, which adds 0.5 per stratum; see `issues/marginal-plots.md`,
+  section 5.) In the table rebuilt for the
   lower bound (OR 0.0036), the cells that should be 0 come out as ±2.7e-15 from rounding
   in the quadratic solution; the negative one gives an odds ratio of −0.2, whose square
   root is `NaN`. The upper bound (OR 20.4) reproduces the observed table exactly, so the

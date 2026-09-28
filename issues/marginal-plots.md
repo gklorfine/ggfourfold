@@ -250,10 +250,12 @@ first. There are two rules for which cells get it:
 | Rule | What gets +0.5 | Used by |
 |---|---|---|
 | Per stratum | the 4 cells of a stratum that itself has a zero | `vcd::fourfold()`, ggfourfold |
-| Whole table | every cell of every stratum, if any cell anywhere is zero | `vcd::woolf_test()`, `vcdExtra::woolf_test()` |
+| Whole table | every cell of every stratum, if any cell anywhere is zero | `vcd::woolf_test()`, `vcd::loddsratio()` (default), `vcdExtra::woolf_test()` |
 
-The inconsistency comes from vcd itself (`fourfold`: `f <- x[, , i]; if (any(f == 0)) f <-
-f + 0.5`; `woolf_test`: `if (any(x == 0)) x <- x + 1/2`).
+The inconsistency comes from vcd itself (vcd 1.4.13; `fourfold`: `f <- x[, , i]; if
+(any(f == 0)) f <- f + 0.5`; `woolf_test`: `if (any(x == 0)) x <- x + 1/2`; `loddsratio`:
+`correct = any(x == 0)` over the whole array, though `correct` also accepts a numeric array
+of per-cell additions).
 
 Effect on Titanic: Adult × 1st has no zeros, so its panel shows 72.46, but `woolf_test()`
 uses 64.34 because Child strata contain zeros. The margins can match the stratum panels
@@ -274,7 +276,15 @@ Adult margin 9.46 vs 9.49.
   Running `woolf_test()` on the Adult slice alone skips the correction (no zeros there) and
   gives 52.26, not 51.54.
 - The rule matters for `"woolf"`; it does not arise for `"mh"`.
-- **Outstanding (GK wants to discuss further).**
+
+**Decision (GK, 2026-09-28): per stratum**, matching `vcd::fourfold()`, which the geom
+reproduces, and the geom's current behaviour for the stratum panels. Margin estimates use
+the same per-stratum y and w as the panels. Consequence to document: for tables with a zero
+anywhere, the margins will not equal `woolf_test()$expected` or `loddsratio()` on the whole
+table (Titanic Adult margin 9.46 vs 9.49; Adult × 1st 72.46 vs 64.34). Tests against
+`vcdExtra::woolf_test()` must use tables without zeros, or apply the per-stratum rule
+before calling it. Whether vcdExtra's `woolf_test()` should switch is a separate question
+([section 13](#13-notes-for-vcdextra)).
 
 ### Uninformative strata
 
@@ -320,18 +330,70 @@ A margin panel has only a pooled odds ratio, not a table of counts. A fully stan
 display needs nothing else (radii √p on the diagonal and √(1 − p) off it,
 p = √θ / (1 + √θ)); the other three settings need counts.
 
-Options for the other settings:
+**Decision (GK, 2026-09-28): error.** When margin panels are present, `geom_fourfold()`
+gives an informative error unless the display is fully standardized (`std = "margins"`,
+`margin = c(1, 2)`). This covers `margin = 1` or `2`, `"ind.max"` and `"all.max"`. The
+message should say that margin panels show a pooled odds ratio, which has no counts to
+draw, and suggest the fully standardized default or dropping `margins = TRUE`. Both shapes
+(`"circle"`, `"square"`) are allowed: fully standardized squares also depend only on the
+odds ratio.
 
-- **Error** (recommended for a first version): margin panels require the fully
-  standardized display.
-- **Stand-in table:** the collapsed table's totals with the odds ratio set to the pooled
-  value, built with `.fourfold_table_with_or_and_margins()` as for the confidence rings.
-  Only then does `all.max` matter: the corner holds the largest cell and would shrink every
-  stratum panel, so margin panels would have to be left out of the maximum (MF's
-  suggestion).
+Option not taken (possible later): a **stand-in table**, the collapsed table's totals with
+the odds ratio set to the pooled value, built with `.fourfold_table_with_or_and_margins()`
+as for the confidence rings. Only then would `all.max` matter: the corner holds the largest
+cell and would shrink every stratum panel, so margin panels would have to be left out of
+the maximum (MF's suggestion).
 
-**Count labels.** Printing collapsed counts in a margin panel would contradict the odds
-ratio drawn. Options: no counts, or n and the pooled odds ratio. Outstanding.
+### Margin-panel label (GK, 2026-09-28)
+
+GK is fairly unsure about where the label should go (see below), but thinks printing counts
+in margin panels would mislead, for two reasons:
+
+- **No counts in margin panels.**
+  - *Non-collapsibility.* Summed counts describe the collapsed table, and odds ratios are
+    non-collapsible: the collapsed odds ratio can differ from every stratum's even when
+    the strata agree and nothing is confounded
+    ([section 2](#2-what-a-margin-panel-shows)). Printing summed counts presents the
+    collapsed table as the summary of the strata.
+  - *The drawn odds ratio is not the one the counts give.* The panel draws the pooled
+    estimate, not the odds ratio of the summed counts. Titanic Adult margin: the summed
+    counts 659, 106, 146 and 296 give 12.60, while the drawing shows the Woolf 9.46. In
+    every other panel the printed counts and the shape agree, so a reader would expect
+    the same here.
+- **Label text:** `Pooled OR = 9.46`. The estimator is named in the documentation, not the
+  panel. Wordings considered:
+
+  | Label | Verdict |
+  |---|---|
+  | `Pooled OR = 9.46` | chosen: plain, the same for either estimator |
+  | `Woolf OR` / `MH OR` | names the estimator, but "Woolf OR" is not a familiar term |
+  | `Common OR` | rejected: says the strata share one odds ratio (false for Adult, p ≈ 5e-12) |
+  | `OR pooled over Class` | says what was pooled, but long; the corner needs "Age and Class" |
+  | `θ̂ pooled` | compact, but harder to read; needs plotmath |
+
+  Optional second line, not decided: `n = 1207` (the size that full standardization
+  hides), or the homogeneity result, e.g. `Woolf p < 0.001`.
+- **Placement (GK fairly unsure):** tentatively along the top, inside the frame. Possibly
+  split either side of the vertical axis line: `Pooled` to the left, `OR = 9.46` to the
+  right.
+- **Note for MF:** the placement can be changed if you prefer something else.
+- **Caveat from a mock-up** (Titanic grid, today's collapsed shapes, labels at y = 0.86,
+  8 pt): the frame spans −1 to 1, and a fully standardized quadrant has radius √p
+  (diagonal) or √(1 − p) (off-diagonal), p = √θ / (1 + √θ). A label along the top centre is
+  overlapped when an upper quadrant's radius exceeds about 0.82, i.e. roughly θ > 4 or
+  θ < 0.25 at that font size, before counting its confidence ring. In the mock-up the text
+  sat on the navy upper-left sector, and was unreadable, in the Adult, 1st-class, 2nd-class
+  and corner margins (collapsed 12.6, 67.1, 44.1, 10.4; the Woolf values 9.46, 72.46 and
+  67.69 are similar or larger), and partly in the 3rd-class margin (4.07). Splitting the
+  label around the vertical line avoids the line but not the sector. Alternatives:
+  - **Top corners:** `Pooled` at the top-left count position, `OR = …` at the top-right.
+    Clear in most panels; tight with very strong associations (the text touched the arc
+    or the vertical line in the 1st- and 2nd-class margins).
+  - **Stacked in the free top corner:** `Pooled` over `OR = …` in the top corner that holds
+    the smaller, off-diagonal quadrant (top-right when θ > 1, top-left when θ < 1). Always
+    clear of the circles, but the label changes side between panels.
+  - **Outside the frame:** needs extra panel padding; the top already holds the axis label.
+  - With `shape = "square"`, whichever is chosen needs the same reach check as the counts.
 
 ## 7. Identifying margin panels
 
@@ -348,8 +410,8 @@ ratio drawn. Options: no counts, or n and the pooled odds ratio. Outstanding.
 - Support partial margins (`margins = "Temperature"`) and the single-variable case
   (`facet_grid(rows = vars(z), margins = TRUE)`, e.g. UCB by Dept).
 - ggplot2's "(all)" label is not formally documented; a test should catch any change.
-- Compute y and w once for the whole layer, with one zero rule. Margin values come from the
-  strata only, never from the "(all)" panels' own data.
+- Compute y and w once for the whole layer, with the per-stratum zero rule (section 5).
+  Margin values come from the strata only, never from the "(all)" panels' own data.
 - Compute the Woolf and MH quantities inside ggfourfold; don't import vcdExtra. Test
   against `vcdExtra::woolf_test()` and `mantelhaen.test()` (vcdExtra in Suggests), allowing
   for the zero-rule difference.
@@ -387,8 +449,9 @@ a stat that looks up `"(all)"` in `layout$layout`. A theme can't do it, and an o
    quoted Rows and Cols p-values (.096, .069) should not go in the docs; the per-margin Woolf
    tests replace them.
 3. **Holm and `all.max`** — Holm: agreed, exclude margin panels. `all.max`: MF suggests
-   leaving margin panels out of the maximum; this plan instead restricts margin panels to
-   fully standardized displays (one of the two needs choosing).
+   leaving margin panels out of the maximum; GK decided instead that margin panels require
+   the fully standardized display (an error otherwise), so the `all.max` question does not
+   arise (section 6).
 4. **`margin_background()`** — adopt; shading as a geom argument is an option; ship with
    the margin changes rather than before (see [section 8](#8-margin-shading)).
 5. **Reference ring (deferred)** — when revived, use the same estimator as the margin panels
@@ -402,16 +465,18 @@ a stat that looks up `"(all)"` in `layout$layout`. A theme can't do it, and an o
 1. **Margin detection** — helper using `layout$layout` and `layout$facet$params$margins`;
    map each margin panel to its strata. Tests for full, partial and single-variable margins,
    `facet_wrap()`, no margins, and a real level named "(all)" with margins off.
-2. **Layer-level stratum quantities** — y, w per stratum with one zero rule; flag
-   uninformative strata.
+2. **Layer-level stratum quantities** — y, w per stratum with the per-stratum zero rule
+   (as `vcd::fourfold()`); flag uninformative strata.
 3. **Margin estimates** — `pooled = c("woolf", "mh")`: pooled log odds ratio, SE, interval,
    test of odds ratio = 1; Woolf Q, df, p for the strata pooled. Margin panels are drawn
    from the pooled odds ratio (fully standardized radii) and its interval.
 4. **Holm** — adjust across stratum panels only; margin emphasis per the decision in
    section 11.
-5. **Standardization** — informative error for margins with `std` other than fully
-   standardized (or the stand-in table, if chosen).
-6. **Count labels** — per the decision in section 11.
+5. **Standardization** — informative error when margin panels are present and the display
+   is not fully standardized (`margin = 1` or `2`, `"ind.max"`, `"all.max"`); tests for each
+   combination, with both shapes.
+6. **Margin-panel label** — no counts; `Pooled OR = …` placed as in section 6 (placement
+   to confirm with MF, allowing for the overlap caveat).
 7. **Computed variables** — e.g. `pooled_method`, `n_strata`, `woolf_q`, `woolf_df`,
    `woolf_p`, `margin` (logical); names to be decided.
 8. **Shading** — `margin_background()` or a geom argument.
@@ -439,13 +504,21 @@ Files: `R/geom-fourfold.R` (`.fourfold_compute_layer()`, draw code, docs), tests
   tables, and that dropping `"collapsed"` (and with it the non-collapsibility / Simpson's
   paradox view) is acceptable. In vcd usage "marginal 2 × 2 tables" means summed tables,
   so he may have meant collapsed. Decision for GK/MF.
-- [ ] **Zero-cell rule** — per stratum (recommended) or whole table; and whether vcdExtra's
-  `woolf_test()` should switch to per stratum so the packages agree. GK to discuss.
+- [X] **Zero-cell rule** — per stratum, matching `vcd::fourfold()` (GK, 2026-09-28; see
+  section 5). Whether vcdExtra's `woolf_test()` should also switch is a vcdExtra question
+  (section 13).
 - [ ] **Uninformative strata** — exclude and flag (proposed); sequencing against the
   existing empty row/column task. GK to discuss.
-- [ ] **Standardization** — error for non-fully-standardized displays (recommended) or a
-  stand-in table (then MF's `all.max` exclusion applies). Decision for GK/MF.
-- [ ] **Count labels in margin panels** — none, or n and the pooled odds ratio.
+- [X] **Standardization** — margin panels require the fully standardized display; error
+  otherwise (GK, 2026-09-28; see section 6). A stand-in table remains possible later, and
+  only then would MF's `all.max` exclusion apply.
+- [ ] **Margin-panel label placement** — text decided (`Pooled OR = …`, no counts, because
+  counts would mislead: non-collapsibility, and the drawn odds ratio is not the one the
+  counts give). GK is fairly unsure about placement; tentatively along the top inside the
+  frame, possibly split around the vertical line.
+  MF may change it. The top-centre position collides with large upper quadrants (see
+  section 6); top corners or a stacked label in the free corner are the alternatives.
+  Optional second line (n, or the homogeneity p) not decided. Decision for GK/MF.
 - [ ] **Margin colour emphasis** — which test (Woolf z / CMH), and whether margin panels
   are adjusted among themselves.
 - [ ] **Computed variable names**, and whether anything about the Woolf test is drawn.
@@ -505,7 +578,10 @@ For GK/MF's work on `woolf_test()` (not ggfourfold changes):
 - `decompose = TRUE` computes Rows and Cols from collapsed counts; see vcdExtra's
   `issues/woolf.md`.
 - The whole-table 0.5 rule changes strata that have no zeros (Titanic Adult × 1st:
-  72.46 → 64.34). Consider the per-stratum rule.
+  72.46 → 64.34). ggfourfold uses the per-stratum rule (as `vcd::fourfold()`), so the two
+  packages will disagree on tables with zeros unless `woolf_test()` switches. The
+  whole-table rule is inherited from `vcd::woolf_test()`, and `vcd::loddsratio()` uses it
+  too, so switching would depart from vcd there.
 - Uninformative strata count toward the df (Titanic: 5 df, 3 informative; with the crew,
   an all-zero stratum enters with y = 0, w = 1/8).
 - p-values use `1 - pchisq(...)`, which rounds small p-values to 0;
