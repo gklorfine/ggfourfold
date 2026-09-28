@@ -311,7 +311,38 @@ or run `Rscript dev/marginal-fourfold.R [output-dir]` to write PNGs.
     alongside the plot.
   Files: `R/geom-fourfold.R` (`.fourfold_compute_layer()`), vignette.
 
-- [ ] **Reference ring for a common odds ratio (departures from homogeneity)** — draw a
+- [ ] **Shade the margin panels: `margin_background()`** (MF, 2026-09-28) — give the "(all)"
+  row and column of `facet_grid(margins = TRUE)` a light background (default very light
+  tan, `#F5EEDC`) so the pooled tables stand apart from the strata. See
+  `dev/marginal-fourfold.png`.
+  - **Q: include in the initial CRAN release?** MF: "quite nice to include, but don't want
+    to hold this up." It is small, self-contained, and does not touch `geom_fourfold()`,
+    so it could go in now or wait. Decision for GK.
+  - *Why a stat*:
+    - A theme can't do it, because `panel.background` applies to every panel.
+    - An ordinary `geom_rect()` layer can't either. `margins = TRUE` copies every layer's
+      rows into the "(all)" panels, and layer data that already contain "(all)" make
+      ggplot2's `reshape_add_margins()` fail with a duplicated factor level.
+  - *Prototype* (in `dev/marginal-fourfold.R`): `StatMarginPanels$compute_layer()` looks
+    up each panel's facet values in `layout$layout` and returns one full-panel rectangle
+    (`-Inf`/`Inf`) for each panel where any facet variable is `"(all)"`.
+    `margin_background(fill = "#F5EEDC")` wraps it as a `layer(stat = StatMarginPanels,
+    geom = "rect", inherit.aes = FALSE, ...)` to add *before* `geom_fourfold()`. Checked:
+    exactly the 6 margin panels are shaded, including inside the frame, and the fourfold
+    statistics are unchanged.
+  - *If exported*:
+    - Name: e.g. `margin_background()` or `fourfold_margins()`.
+    - Arguments: `fill`, and maybe `alpha`.
+    - Documentation: say it must come before `geom_fourfold()`, and has no effect without
+      `margins = TRUE`. It relies on ggplot2's `"(all)"` label for margin panels, which
+      is not formally documented, so a test should catch any change.
+    - Tests: which panels are shaded for `margins = TRUE` and for `margins = "<var>"`.
+    - Docs example: `vcdExtra::Detergent`, which would need vcdExtra in `Suggests`.
+  Files: new `R/margin-background.R` (or in `R/geom-fourfold.R`), tests, vignette/README
+  example.
+
+- [ ] **Reference ring for a common odds ratio (departures from homogeneity)** — *deferred to
+  a later release (MF, 2026-09-28).* Draw a
   reference ring in each panel at a common odds ratio θ₀. The default would be the
   Mantel–Haenszel estimate over the strata; a user-supplied number should also be
   accepted.
