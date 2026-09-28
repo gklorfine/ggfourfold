@@ -27,6 +27,26 @@ As these items are resolved, check them off as [X] and record the fix and verifi
   by a zero column total. Choose and document a consistent treatment, or reject zero-margin
   tables with an informative error. Verify empty rows and columns separately from isolated
   zero cells, including default, single-margin, and maximum-based standardization.
+
+  *Real-data example* (found 2026-09-28): `Titanic` without the crew, faceted by age and
+  class, warns "NaNs produced" twice (from `sqrt(.fourfold_odds(tab)$or)` in
+  `.fourfold_standardize()`). Every child in 1st and 2nd class survived, so the `No` row of
+  those two panels is empty (1st: Male 0/5, Female 0/1; 2nd: 0/11, 0/13):
+  ```r
+  titanic_dat <- as.data.frame(Titanic[c("1st", "2nd", "3rd"), , , ])
+  ggplot(titanic_dat, aes(x = Sex, y = Survived, weight = Freq)) +
+    geom_fourfold() +
+    facet_grid(Age ~ Class) +
+    theme_fourfold()
+  ```
+  Counts and odds ratios are correct (they match `vcd::loddsratio()`), but in both panels
+  the lower ring is `NaN` in all four cells and is not drawn. In the table rebuilt for the
+  lower bound (OR 0.0036), the cells that should be 0 come out as ±2.7e-15 from rounding
+  in the quadratic solution; the negative one gives an odds ratio of −0.2, whose square
+  root is `NaN`. The upper bound (OR 20.4) reproduces the observed table exactly, so the
+  upper ring traces the sectors, which is the "identical radii" symptom above. With
+  `margin = 1` the sector radii of the empty row are also `NaN` (division by a zero row
+  total), mirroring the `margin = 2` case for an empty column.
   File: `R/geom-fourfold.R` (`.fourfold_compute_layer()`,
   `.fourfold_table_with_or_and_margins()`, `.fourfold_standardize()`).
 
