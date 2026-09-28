@@ -67,7 +67,7 @@ library(ggplot2)
 
 To construct a fourfold display with `ggfourfold`, you add `geom_fourfold()` and `theme_fourfold()` to a `ggplot2::ggplot()` call. Then use `ggplot2::aes()` to map the two binary variables to `x` and `y`. If the data are in frequency form, also supply a mapping for `weight`. For a review of the different forms of categorical data in R, and how to convert among them, see the `vcdExtra` [@vcdExtra:package] vignettes [*1. Creating and manipulating frequency tables*](https://friendly.github.io/vcdExtra/articles/a1-creating.html) and [*1a. Steps Toward Tidy Categorical Data Analysis*](https://friendly.github.io/vcdExtra/articles/a1a-convert-collapse.html).
 
-The below code constructs an unstandardized fourfold display from the `UCBAdmissions` data. These data are in table form, so the first step is to convert them into frequency form using `as.data.frame()`. Without faceting, `geom_fourfold()` sums the counts over the excluded variable, in this case, `Dept`.
+The below code constructs an unstandardized fourfold display from the `UCBAdmissions` data. These data are in table form, so the first step is to convert them into frequency form using `as.data.frame()`. Without faceting, `geom_fourfold()` sums the counts over the excluded variables, in this case, only `Dept`.
 
 ```{r ucb_unstd_noFacet}
 ucb <- as.data.frame(UCBAdmissions) # Table form -> frequency form

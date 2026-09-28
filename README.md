@@ -92,8 +92,8 @@ Analysis*](https://friendly.github.io/vcdExtra/articles/a1a-convert-collapse.htm
 The below code constructs an unstandardized fourfold display from the
 `UCBAdmissions` data. These data are in table form, so the first step is
 to convert them into frequency form using `as.data.frame()`. Without
-faceting, `geom_fourfold()` sums the counts over the excluded variable,
-in this case, `Dept`.
+faceting, `geom_fourfold()` sums the counts over the excluded variables,
+in this case, only `Dept`.
 
 ``` r
 ucb <- as.data.frame(UCBAdmissions) # Table form -> frequency form
