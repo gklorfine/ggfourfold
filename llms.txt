@@ -67,9 +67,9 @@ library(ggplot2)
 ```
 
 To construct a fourfold display with `ggfourfold`, you add
-[`geom_fourfold()`](http://gavinklorfine.com/ggfourfold/reference/geom_fourfold.md)
+[`geom_fourfold()`](https://gavinklorfine.com/ggfourfold/reference/geom_fourfold.md)
 and
-[`theme_fourfold()`](http://gavinklorfine.com/ggfourfold/reference/theme_fourfold.md)
+[`theme_fourfold()`](https://gavinklorfine.com/ggfourfold/reference/theme_fourfold.md)
 to a
 [`ggplot2::ggplot()`](https://ggplot2.tidyverse.org/reference/ggplot.html)
 call. Then use
@@ -88,7 +88,7 @@ The below code constructs an unstandardized fourfold display from the
 to convert them into frequency form using
 [`as.data.frame()`](https://rdrr.io/r/base/as.data.frame.html). Without
 faceting,
-[`geom_fourfold()`](http://gavinklorfine.com/ggfourfold/reference/geom_fourfold.md)
+[`geom_fourfold()`](https://gavinklorfine.com/ggfourfold/reference/geom_fourfold.md)
 sums the counts over the excluded variable, in this case, `Dept`.
 
 ``` r
@@ -104,7 +104,7 @@ ggplot(ucb, aes(x = Gender, y = Admit, weight = Freq)) +
 
 Depicting raw counts, unstandardized displays are constructed by
 specifying `std = "ind.max"` in
-[`geom_fourfold()`](http://gavinklorfine.com/ggfourfold/reference/geom_fourfold.md).
+[`geom_fourfold()`](https://gavinklorfine.com/ggfourfold/reference/geom_fourfold.md).
 Quadrant sizes mostly reflect that more men applied than women, and that
 most applicants were rejected, so the association is difficult to
 discern. The default, fully standardized display adjusts for these
@@ -181,7 +181,7 @@ Friendly, M. (1994). *A fourfold display for 2 by 2 by \\k\\ tables*
 (No. 217). York University, Psychology Dept.
 <http://datavis.ca/papers/4fold/4fold.pdf>
 
-Friendly, M. (2000). *Visualizing categorical data*. SAS Insitute.
+Friendly, M. (2000). *Visualizing categorical data*. SAS Institute.
 <http://www.math.yorku.ca/SCS/vcd/>
 
 Friendly, M., & Klorfine, G. (2026). *vcdExtra: ’vcd’ extensions and
@@ -199,12 +199,12 @@ Visualizing categorical data*.
 
 ## All functions
 
-- [`fourfold_palette()`](http://gavinklorfine.com/ggfourfold/reference/fourfold_palette.md)
+- [`fourfold_palette()`](https://gavinklorfine.com/ggfourfold/reference/fourfold_palette.md)
   : Default palette for fourfold displays
-- [`GeomFourfold`](http://gavinklorfine.com/ggfourfold/reference/geom_fourfold.md)
-  [`geom_fourfold()`](http://gavinklorfine.com/ggfourfold/reference/geom_fourfold.md)
+- [`GeomFourfold`](https://gavinklorfine.com/ggfourfold/reference/geom_fourfold.md)
+  [`geom_fourfold()`](https://gavinklorfine.com/ggfourfold/reference/geom_fourfold.md)
   : Fourfold displays for 2-by-2 tables
-- [`theme_fourfold()`](http://gavinklorfine.com/ggfourfold/reference/theme_fourfold.md)
+- [`theme_fourfold()`](https://gavinklorfine.com/ggfourfold/reference/theme_fourfold.md)
   : Theme for fourfold displays
 
 # Articles
@@ -212,4 +212,4 @@ Visualizing categorical data*.
 ### All vignettes
 
 - [Fourfold Displays for
-  'ggplot2'](http://gavinklorfine.com/ggfourfold/articles/ggfourfold.md):
+  'ggplot2'](https://gavinklorfine.com/ggfourfold/articles/ggfourfold.md):

@@ -2,7 +2,7 @@
 
 `theme_fourfold()` supplies a square, uncluttered panel and responsive
 typography for
-[`geom_fourfold()`](http://gavinklorfine.com/ggfourfold/reference/geom_fourfold.md).
+[`geom_fourfold()`](https://gavinklorfine.com/ggfourfold/reference/geom_fourfold.md).
 It also styles facet strips like fourfold stratum headings and provides
 compact spacing that remains readable in both the RStudio plot pane and
 exported graphics.
@@ -38,7 +38,7 @@ A complete ggplot2 theme.
 
 `base_size` and `base_family` control all text, including the category
 and count labels drawn inside
-[`geom_fourfold()`](http://gavinklorfine.com/ggfourfold/reference/geom_fourfold.md).
+[`geom_fourfold()`](https://gavinklorfine.com/ggfourfold/reference/geom_fourfold.md).
 Those labels respond to the physical panel size while retaining a
 readable lower bound. Additional theme elements passed through `...` are
 applied last and therefore override the defaults.
@@ -48,7 +48,7 @@ ggplot2 4.0.0 or later.
 
 ## See also
 
-[`geom_fourfold()`](http://gavinklorfine.com/ggfourfold/reference/geom_fourfold.md)
+[`geom_fourfold()`](https://gavinklorfine.com/ggfourfold/reference/geom_fourfold.md)
 and
 [`ggplot2::theme()`](https://ggplot2.tidyverse.org/reference/theme.html)
 

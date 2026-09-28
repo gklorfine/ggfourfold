@@ -3,4 +3,4 @@
 ### All vignettes
 
 - [Fourfold Displays for
-  'ggplot2'](http://gavinklorfine.com/ggfourfold/articles/ggfourfold.md):
+  'ggplot2'](https://gavinklorfine.com/ggfourfold/articles/ggfourfold.md):

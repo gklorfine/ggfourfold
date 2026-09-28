@@ -7,9 +7,9 @@ library(ggplot2)
 ```
 
 `ggfourfold` provides
-[`geom_fourfold()`](http://gavinklorfine.com/ggfourfold/reference/geom_fourfold.md)
+[`geom_fourfold()`](https://gavinklorfine.com/ggfourfold/reference/geom_fourfold.md)
 and
-[`theme_fourfold()`](http://gavinklorfine.com/ggfourfold/reference/theme_fourfold.md)
+[`theme_fourfold()`](https://gavinklorfine.com/ggfourfold/reference/theme_fourfold.md)
 for drawing fourfold displays of \\2 \times 2\\ and \\2 \times 2 \times
 k\\ tables with `ggplot2` to show the **direction** and **strength** of
 association between two binary variables, and its **pattern** of
@@ -64,7 +64,7 @@ ratio visually as follows:
 The classic example, `UCBAdmissions` gives applicants to the six largest
 graduate departments at Berkeley in 1973, classified by admission and
 gender (Bickel et al., 1975).
-[`geom_fourfold()`](http://gavinklorfine.com/ggfourfold/reference/geom_fourfold.md)
+[`geom_fourfold()`](https://gavinklorfine.com/ggfourfold/reference/geom_fourfold.md)
 currently works on data in *long form*: map the two-level variables to
 `x` (drawn left to right) and `y` (drawn top to bottom), and the cell
 frequencies to `weight`. Without faceting, rows for the same cell are
@@ -157,7 +157,7 @@ opposite direction: there women were about 2.86 times as likely as men
 to be admitted (\\1 / 0.349\\). The more intense colours mark the one
 panel whose odds ratio differs significantly from 1. With several
 strata,
-[`geom_fourfold()`](http://gavinklorfine.com/ggfourfold/reference/geom_fourfold.md)
+[`geom_fourfold()`](https://gavinklorfine.com/ggfourfold/reference/geom_fourfold.md)
 adjusts the p-values that control this emphasis for multiple testing, by
 default using Holm’s method via
 [`stats::p.adjust()`](https://rdrr.io/r/stats/p.adjust.html); the

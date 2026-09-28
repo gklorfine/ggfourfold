@@ -95,7 +95,7 @@ A `GeomFourfold` ggproto object.
 
   Character vector of at least six valid colours in the semantic order
   used by
-  [`fourfold_palette()`](http://gavinklorfine.com/ggfourfold/reference/fourfold_palette.md).
+  [`fourfold_palette()`](https://gavinklorfine.com/ggfourfold/reference/fourfold_palette.md).
 
 - na.rm:
 
@@ -154,7 +154,7 @@ placed just outside the frame corners.
 The six semantic fill colours are supplied by `palette`; they are not
 mapped through a ggplot2 fill scale. Typography and layout defaults are
 controlled by
-[`theme_fourfold()`](http://gavinklorfine.com/ggfourfold/reference/theme_fourfold.md).
+[`theme_fourfold()`](https://gavinklorfine.com/ggfourfold/reference/theme_fourfold.md).
 
 ## Aesthetics
 
@@ -182,8 +182,8 @@ Visualization and Modeling Techniques for Categorical and Count Data*
 
 ## See also
 
-[`theme_fourfold()`](http://gavinklorfine.com/ggfourfold/reference/theme_fourfold.md),
-[`fourfold_palette()`](http://gavinklorfine.com/ggfourfold/reference/fourfold_palette.md),
+[`theme_fourfold()`](https://gavinklorfine.com/ggfourfold/reference/theme_fourfold.md),
+[`fourfold_palette()`](https://gavinklorfine.com/ggfourfold/reference/fourfold_palette.md),
 [`ggplot2::facet_grid()`](https://ggplot2.tidyverse.org/reference/facet_grid.html),
 and
 [`ggplot2::facet_wrap()`](https://ggplot2.tidyverse.org/reference/facet_wrap.html)

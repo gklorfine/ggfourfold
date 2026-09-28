@@ -23,9 +23,9 @@
 <link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><link href="extra.css" rel="stylesheet">
 <meta property="og:title" content="Fourfold Displays for ggplot2">
-<meta name="description" content="Allows for the creation of fourfold displays for the visualization of odds ratios using ggplot2. Includes a fourfold geom and theme.">
-<meta property="og:description" content="Allows for the creation of fourfold displays for the visualization of odds ratios using ggplot2. Includes a fourfold geom and theme.">
-<meta property="og:image" content="http://gavinklorfine.com/ggfourfold/logo.png">
+<meta name="description" content="Draws fourfold displays of 2 x 2 (x k) contingency tables as a ggplot2 layer, following Friendly (1994) &lt;https://datavis.ca/papers/4fold/4fold.pdf&gt; and Friendly and Meyer (2016) &lt;doi:10.1201/9781315374413&gt;. Cell frequencies are shown as quarter-circles or squares of proportional area, with confidence rings for the odds ratio and shading for the direction and strength of association. Stratified tables are shown with ggplot2 faceting and a corresponding ggplot2 theme is provided.">
+<meta property="og:description" content="Draws fourfold displays of 2 x 2 (x k) contingency tables as a ggplot2 layer, following Friendly (1994) &lt;https://datavis.ca/papers/4fold/4fold.pdf&gt; and Friendly and Meyer (2016) &lt;doi:10.1201/9781315374413&gt;. Cell frequencies are shown as quarter-circles or squares of proportional area, with confidence rings for the odds ratio and shading for the direction and strength of association. Stratified tables are shown with ggplot2 faceting and a corresponding ggplot2 theme is provided.">
+<meta property="og:image" content="https://gavinklorfine.com/ggfourfold/logo.png">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -46,6 +46,7 @@
       <ul class="navbar-nav me-auto">
 <li class="nav-item"><a class="nav-link" href="articles/ggfourfold.html">Get started</a></li>
 <li class="nav-item"><a class="nav-link" href="reference/index.html">Reference</a></li>
+<li class="nav-item"><a class="nav-link" href="news/index.html">Changelog</a></li>
       </ul>
 <ul class="navbar-nav">
 <li class="nav-item"><form class="form-inline" role="search">
@@ -85,14 +86,14 @@
              = \frac{n_{11} \, n_{22}}{n_{12} \, n_{21}} .
 \]</span></p>
 <p>In a fully standardized display, the quadrants form a circle if <span class="math inline">\(\hat{\theta} = 1\)</span>. Otherwise, one diagonal pair of quadrants is larger than the other, with this discrepancy reflecting the strength of association between variables. The diagonal with more cases than expected under independence is drawn in blue, with the other pair being drawn in red. Intense shading is applied when <span class="math inline">\(\hat{\theta}\)</span> differs significantly from 1, after adjusting for multiple testing across panels. Confidence rings are also drawn, with the rings of adjacent quadrants overlapping <em>iff</em> the 95% confidence interval for <span class="math inline">\(\theta\)</span> includes 1.</p>
-<p>For more detail on fourfold displays and their use in this package, see the <a href="https://gavinklorfine.com/ggfourfold/articles/ggfourfold.html" class="external-link">introductory vignette</a>.</p>
+<p>For more detail on fourfold displays and their use in this package, see the <a href="https://gavinklorfine.com/ggfourfold/articles/ggfourfold.html">introductory vignette</a>.</p>
 </div>
 <div class="section level2">
 <h2 id="examples">Examples<a class="anchor" aria-label="anchor" href="#examples"></a>
 </h2>
 <p>The below examples use the <code>UCBAdmissions</code> data (Bickel et al., 1975), which contains applicants to the six largest graduate departments at UC Berkeley in 1973, classified by admission and gender. They examine the association between gender (<code>Gender</code>) and admission (<code>Admit</code>), both overall and within each department (<code>Dept</code>).</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="http://gavinklorfine.com/ggfourfold/">ggfourfold</a></span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://gavinklorfine.com/ggfourfold/">ggfourfold</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span></code></pre></div>
 <p>To construct a fourfold display with <code>ggfourfold</code>, you add <code><a href="reference/geom_fourfold.html">geom_fourfold()</a></code> and <code><a href="reference/theme_fourfold.html">theme_fourfold()</a></code> to a <code><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot2::ggplot()</a></code> call. Then use <code><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">ggplot2::aes()</a></code> to map the two binary variables to <code>x</code> and <code>y</code>. If the data are in frequency form, also supply a mapping for <code>weight</code>. For a review of the different forms of categorical data in R, and how to convert among them, see the <code>vcdExtra</code> (Friendly &amp; Klorfine, 2026) vignettes <a href="https://friendly.github.io/vcdExtra/articles/a1-creating.html" class="external-link"><em>1. Creating and manipulating frequency tables</em></a> and <a href="https://friendly.github.io/vcdExtra/articles/a1a-convert-collapse.html" class="external-link"><em>1a. Steps Toward Tidy Categorical Data Analysis</em></a>.</p>
 <p>The below code constructs an unstandardized fourfold display from the <code>UCBAdmissions</code> data. These data are in table form, so the first step is to convert them into frequency form using <code><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame()</a></code>. Without faceting, <code><a href="reference/geom_fourfold.html">geom_fourfold()</a></code> sums the counts over the excluded variable, in this case, <code>Dept</code>.</p>
@@ -141,7 +142,7 @@ Bickel, P. J., Hammel, J. W., &amp; O’Connell, J. W. (1975). Sex bias in gradu
 Friendly, M. (1994). <em>A fourfold display for 2 by 2 by <span class="math inline">\(k\)</span> tables</em> (No. 217). York University, Psychology Dept. <a href="http://datavis.ca/papers/4fold/4fold.pdf" class="external-link uri">http://datavis.ca/papers/4fold/4fold.pdf</a>
 </div>
 <div id="ref-vcd:Friendly:2000" class="csl-entry">
-Friendly, M. (2000). <em>Visualizing categorical data</em>. <span class="sans-serif">SAS</span> Insitute. <a href="http://www.math.yorku.ca/SCS/vcd/" class="external-link uri">http://www.math.yorku.ca/SCS/vcd/</a>
+Friendly, M. (2000). <em>Visualizing categorical data</em>. <span class="sans-serif">SAS</span> Institute. <a href="http://www.math.yorku.ca/SCS/vcd/" class="external-link uri">http://www.math.yorku.ca/SCS/vcd/</a>
 </div>
 <div id="ref-vcdExtra:package" class="csl-entry">
 Friendly, M., &amp; Klorfine, G. (2026). <em><span class="nocase">vcdExtra</span>: ’<span class="nocase">vcd</span>’ extensions and additions</em>. <a href="https://doi.org/10.32614/CRAN.package.vcdExtra" class="external-link uri">https://doi.org/10.32614/CRAN.package.vcdExtra</a>
@@ -182,7 +183,7 @@ Meyer, D., Zeileis, A., Hornik, K., &amp; Friendly, M. (2026). <em>Vcd: Visualiz
 <div class="developers">
 <h2 data-toc-skip>Developers</h2>
 <ul class="list-unstyled">
-<li>Gavin Klorfine <br><small class="roles"> Author, maintainer </small> <a href="https://orcid.org/0009-0003-0395-4512" target="orcid.widget" aria-label="ORCID" class="external-link"><span class="fab fa-orcid orcid" aria-hidden="true"></span></a>  </li>
+<li>Gavin Klorfine <br><small class="roles"> Author, maintainer, copyright holder </small> <a href="https://orcid.org/0009-0003-0395-4512" target="orcid.widget" aria-label="ORCID" class="external-link"><span class="fab fa-orcid orcid" aria-hidden="true"></span></a>  </li>
 <li>Michael Friendly <br><small class="roles"> Author </small> <a href="https://orcid.org/0000-0002-3237-0941" target="orcid.widget" aria-label="ORCID" class="external-link"><span class="fab fa-orcid orcid" aria-hidden="true"></span></a>  </li>
 </ul>
 </div>
@@ -192,7 +193,7 @@ Meyer, D., Zeileis, A., Hornik, K., &amp; Friendly, M. (2026). <em>Vcd: Visualiz
 <ul class="list-unstyled">
 <li><a href="https://lifecycle.r-lib.org/articles/stages.html#experimental" class="external-link"><img src="https://img.shields.io/badge/lifecycle-experimental-orange.svg" alt="Lifecycle: experimental"></a></li>
 <li><a href="https://github.com/gklorfine/ggfourfold" class="external-link"><img src="https://img.shields.io/github/last-commit/gklorfine/ggfourfold" alt="Last Commit"></a></li>
-<li><a href="https://gavinklorfine.com/ggfourfold/" class="external-link"><img src="https://img.shields.io/badge/pkgdown%20site-blue" alt="Docs"></a></li>
+<li><a href="https://gavinklorfine.com/ggfourfold/"><img src="https://img.shields.io/badge/pkgdown%20site-blue" alt="Docs"></a></li>
 </ul>
 </div>
 
