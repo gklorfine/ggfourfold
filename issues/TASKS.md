@@ -278,6 +278,73 @@ As these items are resolved, check them off as [X] and record the fix and verifi
   Decision for GK.
   Files: `R/geom-fourfold.R`, new `R/ggfourfold.R` (for 2), tests, vignette, README.
 
+## Multi-way tables: pooling and homogeneity
+
+Both ideas come from "Marginal plots" and "departures from homogeneity" in
+`dev/fourfold-ideas.md`. A prototype is in `dev/marginal-fourfold.R`, using
+`vcdExtra::Detergent` permuted to Preference × M_User × Temperature (R = 2) ×
+Water_softness (C = 3). vcdExtra's `woolf_test(decompose = TRUE)` splits the homogeneity
+test into Rows, Cols and Residual components for this table. Source the script in RStudio,
+or run `Rscript dev/marginal-fourfold.R [output-dir]` to write PNGs.
+
+- [ ] **Marginal fourfold displays for 2 × 2 × R × C tables** — show the marginal 2 × 2
+  tables pooled over R, over C, and over both, next to the strata, to show the effect of
+  pooling.
+  - *Works already*: `facet_grid(R ~ C, margins = TRUE)` adds an "(all)" column (pooled
+    over C, one table per level of R), an "(all)" row (pooled over R), and the corner
+    (pooled over both). No package changes are needed to draw it.
+  - *Detergent*: the pooled log odds ratios match the Woolf decomposition. Pooled over
+    water softness: High −0.85 vs Low −0.41 (Rows component, p = .096). Pooled over
+    temperature: Soft −0.17, Medium −0.68, Hard −0.87 (Cols component, p = .069).
+    Collapsing barely changes the odds ratios: each marginal log odds ratio is within 0.02
+    of the Mantel–Haenszel estimate for the strata it pools. So here pooling hides
+    heterogeneity rather than introducing collapsibility bias.
+  - *Problems to fix if supported*:
+    - With `margins = TRUE`, the "(all)" panels are part of the layer, so the Holm
+      adjustment runs over all 12 panels: 6 strata plus 6 pooled tables that are not
+      independent of them.
+    - `std = "all.max"` would scale every panel by the pooled corner table.
+    - Consider identifying the margin panels (ggplot2 labels them `"(all)"`) and excluding
+      them from the p-value adjustment and the `all.max` maximum, or documenting the
+      behaviour.
+  - Also possible: a vignette section, or an example using `woolf_test(decompose = TRUE)`
+    alongside the plot.
+  Files: `R/geom-fourfold.R` (`.fourfold_compute_layer()`), vignette.
+
+- [ ] **Reference ring for a common odds ratio (departures from homogeneity)** — draw a
+  reference ring in each panel at a common odds ratio θ₀. The default would be the
+  Mantel–Haenszel estimate over the strata; a user-supplied number should also be
+  accepted.
+  - In stratum panels, sectors inside or outside the ring show departures from
+    homogeneity.
+  - In "(all)" panels, a departure shows that collapsing changes the odds ratio.
+  - *Prototype*: `add_reference_ring()` in `dev/marginal-fourfold.R` adds dashed arcs to
+    the drawn plot by editing its grobs, without changing the geom. A dashed grey ring was
+    lost among the black confidence rings; dashed green (`#009E73`, lwd 2) is clearly
+    visible.
+  - *Detergent, θ_MH = 0.57*: Soft/Low (θ = 0.98) and Soft/High are clearly weaker than the
+    ring, and Medium/High and Hard/Low stronger. This is the pattern behind the Cols
+    component.
+  - *Geometry*: with both margins equated (the default), the reference table depends only
+    on θ₀, with radii √p (diagonal) and √(1 − p) (off-diagonal), p = √θ₀ / (1 + √θ₀). For
+    `margin = 1` or `2`, or unstandardized displays, the ring must be built from each
+    panel's own margins with `.fourfold_table_with_or_and_margins(θ₀, tab)`, as the
+    confidence rings are.
+  - *Open questions*:
+    - One common θ₀ for every panel (the homogeneity view, as prototyped), or, in each
+      "(all)" panel, the Mantel–Haenszel estimate over the strata it pools (the pooling
+      view)?
+    - The Mantel–Haenszel estimate must be computed from the strata only, excluding any
+      "(all)" panels.
+    - Styling should follow the tick-styling proposal, e.g. `reference.colour`,
+      `reference.linetype`, `reference.linewidth`.
+  - *Possible API*: `geom_fourfold(reference = NULL)`, where `NULL` means no ring,
+    `"mh"` means the Mantel–Haenszel common odds ratio across the layer's strata, and a
+    positive number means that odds ratio.
+  Decision for GK/MF.
+  Files: `R/geom-fourfold.R` (stat: compute θ₀ and ring radii per panel; geom: draw),
+  `dev/marginal-fourfold.R`.
+
 ## Verification recorded (2026-09-25)
 
 The package built successfully, including its vignette. `R CMD check --no-manual
