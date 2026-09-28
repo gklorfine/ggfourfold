@@ -34,7 +34,8 @@ the quadrants when one group is much larger than another. A fully
 standardized display (the default) equates both the row *and* column
 totals, and gives a visual interpretation of the sample odds ratio:
 
-\\\hat{\theta} = \frac{n\_{11} / n\_{12}}{n\_{21} / n\_{22}}\\
+\\ \hat{\theta} = \frac{n\_{11} / n\_{12}}{n\_{21} / n\_{22}} =
+\frac{n\_{11} \\ n\_{22}}{n\_{12} \\ n\_{21}} . \\
 
 In a fully standardized display, the quadrants form a circle if
 \\\hat{\theta} = 1\\. Otherwise, one diagonal pair of quadrants is
@@ -56,8 +57,8 @@ vignette](https://gavinklorfine.com/ggfourfold/articles/ggfourfold.html).
 The below examples use the `UCBAdmissions` data (Bickel et al., 1975),
 which contains applicants to the six largest graduate departments at UC
 Berkeley in 1973, classified by admission and gender. They examine the
-association between gender and admission, both overall and within each
-department.
+association between gender (`Gender`) and admission (`Admit`), both
+overall and within each department (`Dept`).
 
 ``` r
 
@@ -65,9 +66,34 @@ library(ggfourfold)
 library(ggplot2)
 ```
 
+To construct a fourfold display with `ggfourfold`, you add
+[`geom_fourfold()`](http://gavinklorfine.com/ggfourfold/reference/geom_fourfold.md)
+and
+[`theme_fourfold()`](http://gavinklorfine.com/ggfourfold/reference/theme_fourfold.md)
+to a
+[`ggplot2::ggplot()`](https://ggplot2.tidyverse.org/reference/ggplot.html)
+call. Then use
+[`ggplot2::aes()`](https://ggplot2.tidyverse.org/reference/aes.html) to
+map the two binary variables to `x` and `y`. If the data are in
+frequency form, also supply a mapping for `weight`. For a review of the
+different forms of categorical data in R, and how to convert among them,
+see the `vcdExtra` (Friendly & Klorfine, 2026) vignettes [*1. Creating
+and manipulating frequency
+tables*](https://friendly.github.io/vcdExtra/articles/a1-creating.html)
+and [*1a. Steps Toward Tidy Categorical Data
+Analysis*](https://friendly.github.io/vcdExtra/articles/a1a-convert-collapse.html).
+
+The below code constructs an unstandardized fourfold display from the
+`UCBAdmissions` data. These data are in table form, so the first step is
+to convert them into frequency form using
+[`as.data.frame()`](https://rdrr.io/r/base/as.data.frame.html). Without
+faceting,
+[`geom_fourfold()`](http://gavinklorfine.com/ggfourfold/reference/geom_fourfold.md)
+sums the counts over the excluded variable, in this case, `Dept`.
+
 ``` r
 
-ucb <- as.data.frame(UCBAdmissions)
+ucb <- as.data.frame(UCBAdmissions) # Table form -> frequency form
 
 ggplot(ucb, aes(x = Gender, y = Admit, weight = Freq)) +
   geom_fourfold(std = "ind.max") +  # For unstandardized display
@@ -76,9 +102,15 @@ ggplot(ucb, aes(x = Gender, y = Admit, weight = Freq)) +
 
 ![](reference/figures/README-ucb_unstd_noFacet-1.png)
 
-``` r
+Depicting raw counts, unstandardized displays are constructed by
+specifying `std = "ind.max"` in
+[`geom_fourfold()`](http://gavinklorfine.com/ggfourfold/reference/geom_fourfold.md).
+Quadrant sizes mostly reflect that more men applied than women, and that
+most applicants were rejected, so the association is difficult to
+discern. The default, fully standardized display adjusts for these
+differences, making the association easier to see.
 
-ucb <- as.data.frame(UCBAdmissions)
+``` r
 
 ggplot(ucb, aes(x = Gender, y = Admit, weight = Freq)) +
   geom_fourfold() +
@@ -86,6 +118,20 @@ ggplot(ucb, aes(x = Gender, y = Admit, weight = Freq)) +
 ```
 
 ![](reference/figures/README-ucb_std_noFacet-1.png)
+
+This display depicts an association between `Admit` and `Gender` and
+appears to show a gender bias; that is, men are significantly more
+likely to be admitted than women, pooling over department. This is
+illustrated through the much larger area and intense blue shading of the
+male-admitted and female-rejected quadrants, along with the
+non-overlapping confidence rings of adjacent quadrants.
+
+To see the relationship between `Admit` and `Gender` across `Dept`, add
+[`ggplot2::facet_wrap()`](https://ggplot2.tidyverse.org/reference/facet_wrap.html)
+or
+[`ggplot2::facet_grid()`](https://ggplot2.tidyverse.org/reference/facet_grid.html)
+to draw one display per `Dept`. Panels are fully standardized
+individually, facilitating direct comparison.
 
 ``` r
 
@@ -96,6 +142,18 @@ ggplot(ucb, aes(x = Gender, y = Admit, weight = Freq)) +
 ```
 
 ![](reference/figures/README-ucb_facet-1.png)
+
+A different picture emerges after faceting by `Dept`; namely, there is
+no significant association between `Admit` and `Gender` in departments
+`B` through `F`, shown through pale shading. Further, there exists a
+significant association in department `A`, though it is in the reverse
+direction of the effect observed when `Dept` was pooled. This is a
+well-known example of [Simpson’s
+paradox](https://en.wikipedia.org/wiki/Simpson%27s_paradox), arising
+because most women applied to departments with lower admission rates,
+lowering the overall female rate of admission.
+
+### Square displays
 
 Quarter-squares can be drawn instead of quarter-circles with
 `shape = "square"`. Each square has the same area as the quarter-circle
@@ -125,6 +183,9 @@ Friendly, M. (1994). *A fourfold display for 2 by 2 by \\k\\ tables*
 
 Friendly, M. (2000). *Visualizing categorical data*. SAS Insitute.
 <http://www.math.yorku.ca/SCS/vcd/>
+
+Friendly, M., & Klorfine, G. (2026). *vcdExtra: ’vcd’ extensions and
+additions*. <https://doi.org/10.32614/CRAN.package.vcdExtra>
 
 Friendly, M., & Meyer, D. (2016). *Discrete data analysis with R:
 Visualization and modeling techniques for categorical and count data*.
