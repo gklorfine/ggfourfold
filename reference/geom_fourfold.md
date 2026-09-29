@@ -132,7 +132,7 @@ with the `limits` argument of
 or
 [`ggplot2::scale_y_discrete()`](https://ggplot2.tidyverse.org/reference/scale_discrete.html),
 and rename them with `labels`. Scale `breaks` that reorder or omit
-categories are an error, since each category is drawn with its label.
+categories, and a scale `palette` that moves them, are errors.
 
 One panel must contain exactly one 2-by-2 table. Use
 [`ggplot2::facet_grid()`](https://ggplot2.tidyverse.org/reference/facet_grid.html)
@@ -166,9 +166,11 @@ controlled by
 
 `geom_fourfold()` understands the following aesthetics:
 
-- `x` (required): a variable with exactly two levels.
+- `x` (required): a categorical variable (factor, character, or logical)
+  with exactly two levels. Convert numeric codes, such as 0/1, with
+  [`factor()`](https://rdrr.io/r/base/factor.html).
 
-- `y` (required): a variable with exactly two levels.
+- `y` (required): a categorical variable with exactly two levels.
 
 - `weight`: non-negative cell frequencies; defaults to `1`.
 

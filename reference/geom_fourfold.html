@@ -171,8 +171,8 @@ and the second on the right; the first <code>y</code> level is drawn at the top 
 second at the bottom. Set factor levels explicitly when their order matters.
 Alternatively, reorder categories with the <code>limits</code> argument of
 <code><a href="https://ggplot2.tidyverse.org/reference/scale_discrete.html" class="external-link">ggplot2::scale_x_discrete()</a></code> or <code><a href="https://ggplot2.tidyverse.org/reference/scale_discrete.html" class="external-link">ggplot2::scale_y_discrete()</a></code>, and rename
-them with <code>labels</code>. Scale <code>breaks</code> that reorder or omit categories are an
-error, since each category is drawn with its label.</p>
+them with <code>labels</code>. Scale <code>breaks</code> that reorder or omit categories, and a
+scale <code>palette</code> that moves them, are errors.</p>
 <p>One panel must contain exactly one 2-by-2 table. Use
 <code><a href="https://ggplot2.tidyverse.org/reference/facet_grid.html" class="external-link">ggplot2::facet_grid()</a></code> or <code><a href="https://ggplot2.tidyverse.org/reference/facet_wrap.html" class="external-link">ggplot2::facet_wrap()</a></code> to display stratified
 tables. Duplicate <code>x</code>/<code>y</code> combinations within a panel are summed and missing
@@ -197,8 +197,10 @@ by <code><a href="theme_fourfold.html">theme_fourfold()</a></code>.</p>
     <h2 id="aesthetics">Aesthetics<a class="anchor" aria-label="anchor" href="#aesthetics"></a></h2>
 
 
-<p><code>geom_fourfold()</code> understands the following aesthetics:</p><ul><li><p><code>x</code> (required): a variable with exactly two levels.</p></li>
-<li><p><code>y</code> (required): a variable with exactly two levels.</p></li>
+<p><code>geom_fourfold()</code> understands the following aesthetics:</p><ul><li><p><code>x</code> (required): a categorical variable (factor, character, or logical)
+with exactly two levels. Convert numeric codes, such as 0/1, with
+<code><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor()</a></code>.</p></li>
+<li><p><code>y</code> (required): a categorical variable with exactly two levels.</p></li>
 <li><p><code>weight</code>: non-negative cell frequencies; defaults to <code>1</code>.</p></li>
 <li><p><code>colour</code>, <code>linewidth</code>, <code>alpha</code>, <code>size</code>, and <code>family</code>: fixed or mapped
 drawing properties. <code>size</code> and <code>family</code> default to values inherited from
