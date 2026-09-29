@@ -168,7 +168,11 @@ default aesthetic mappings.</p></dd>
 variable to <code>y</code>, and cell frequencies to <code>weight</code>. When <code>weight</code> is omitted,
 each row counts as one observation. The first <code>x</code> level is drawn on the left
 and the second on the right; the first <code>y</code> level is drawn at the top and the
-second at the bottom. Set factor levels explicitly when their order matters.</p>
+second at the bottom. Set factor levels explicitly when their order matters.
+Alternatively, reorder categories with the <code>limits</code> argument of
+<code><a href="https://ggplot2.tidyverse.org/reference/scale_discrete.html" class="external-link">ggplot2::scale_x_discrete()</a></code> or <code><a href="https://ggplot2.tidyverse.org/reference/scale_discrete.html" class="external-link">ggplot2::scale_y_discrete()</a></code>, and rename
+them with <code>labels</code>. Scale <code>breaks</code> that reorder or omit categories are an
+error, since each category is drawn with its label.</p>
 <p>One panel must contain exactly one 2-by-2 table. Use
 <code><a href="https://ggplot2.tidyverse.org/reference/facet_grid.html" class="external-link">ggplot2::facet_grid()</a></code> or <code><a href="https://ggplot2.tidyverse.org/reference/facet_wrap.html" class="external-link">ggplot2::facet_wrap()</a></code> to display stratified
 tables. Duplicate <code>x</code>/<code>y</code> combinations within a panel are summed and missing

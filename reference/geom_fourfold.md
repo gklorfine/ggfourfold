@@ -126,7 +126,13 @@ variable to `y`, and cell frequencies to `weight`. When `weight` is
 omitted, each row counts as one observation. The first `x` level is
 drawn on the left and the second on the right; the first `y` level is
 drawn at the top and the second at the bottom. Set factor levels
-explicitly when their order matters.
+explicitly when their order matters. Alternatively, reorder categories
+with the `limits` argument of
+[`ggplot2::scale_x_discrete()`](https://ggplot2.tidyverse.org/reference/scale_discrete.html)
+or
+[`ggplot2::scale_y_discrete()`](https://ggplot2.tidyverse.org/reference/scale_discrete.html),
+and rename them with `labels`. Scale `breaks` that reorder or omit
+categories are an error, since each category is drawn with its label.
 
 One panel must contain exactly one 2-by-2 table. Use
 [`ggplot2::facet_grid()`](https://ggplot2.tidyverse.org/reference/facet_grid.html)
