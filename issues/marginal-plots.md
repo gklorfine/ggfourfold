@@ -629,70 +629,117 @@ For GK/MF's work on `woolf_test()` (not ggfourfold changes):
 
 ## 14. Summary for MF
 
-A short summary of where things stand. The sections referenced give the details.
+### The proposal in a nutshell
+
+`facet_grid(R ~ C, margins = TRUE)` already draws the (R + 1) × (C + 1) grid from
+`dev/fourfold-ideas.md`, with collapsed tables (summed counts) in the "(all)" panels, as in
+`dev/marginal-fourfold.R`. The main proposal is that each "(all)" panel would instead show a
+**pooled odds ratio** for the strata it covers: by default Woolf's estimate, the
+inverse-variance weighted mean of the stratum log odds ratios.
+
+The reason is that odds ratios are non-collapsible. A collapsed table can differ from every
+stratum even when the strata agree and nothing is confounded: two strata that each have
+odds ratio 4 can collapse to 2.03. Woolf's pooled estimate, by contrast, is exactly the
+reference that Woolf's test measures departures from. The corner shows the overall pooled
+value, and each row or column margin shows the pooled value for its own row or column. So
+comparing the strata with their margins shows what Woolf's test is asking: can these
+strata be pooled?
+
+For example, in Titanic (without the crew), the adult strata have odds ratios of 72.5,
+67.7 and 4.4 across the three classes. The collapsed table gives 12.6 and the Woolf pooled
+value is 9.5, but Woolf's test for those three strata gives Q = 52.3 on 2 df, so pooling
+them isn't justified.
 
 ### Decisions so far (GK, 2026-09-28)
 
-- Margin panels would show a pooled odds ratio for the strata they cover, rather than the
-  collapsed table, with `pooled = c("woolf", "mh")` and `"woolf"` as the default; both
-  would be in the first version (section 2). This depends on MF being comfortable with the change (question 1 below).
-- Rings would keep their usual meaning in every panel; in a margin panel they would be the
-  95% interval of the pooled odds ratio. Margin panels would be left out of the Holm
-  adjustment (section 3).
-- Zero cells: 0.5 added per stratum, following `vcd::fourfold()` (section 5).
-- Margin panels would need the fully standardized display, with an informative error
-  otherwise. This means the `all.max` exclusion suggested in `issues/TASKS.md` wouldn't be
-  needed (section 6).
-- Margin panels would print `Pooled OR = …` rather than counts, since summed counts could
-  mislead: odds ratios are non-collapsible, and the odds ratio drawn isn't the one the
-  counts would give (section 6).
-- Computed variable names: `margin`, `pooled_method`, `n_strata`, `woolf_q`, `woolf_df`,
-  `woolf_p` (section 10).
-- An outline of the pooled odds ratio inside each stratum panel was considered and set
-  aside as too busy. The reference ring remains deferred, as MF suggested.
+**What the margin panels show**
 
-### Open questions where MF's view would be welcome
+- A pooled odds ratio, with `pooled = c("woolf", "mh")`: Woolf by default, Mantel–Haenszel
+  as an alternative that is more robust with sparse strata. Both would be in the first
+  version. There would be no option for collapsed tables.
+- Each margin panel would also carry the Woolf homogeneity test of the strata it pools
+  (C − 1 df for a row margin, R − 1 for a column margin, RC − 1 for the corner). These
+  would be computed variables rather than drawn: `woolf_q`, `woolf_df`, `woolf_p`, along
+  with `margin`, `pooled_method` and `n_strata`.
 
-1. **Pooled estimate or collapsed tables.** The TASKS entries and the ring prototype use
-   collapsed tables, partly to show non-collapsibility. The plan moves away from that,
-   since a collapsed panel isn't the reference Woolf's test measures departures from
-   (section 2). Does that seem reasonable? A related observation: the agreement with
-   `woolf_test(decompose = TRUE)` noted in the TASKS entry comes about because that
-   decomposition also works from collapsed counts (section 9).
-2. **Uninformative strata** (a stratum with an empty row or column, such as Titanic
-   Child × 1st). The suggestion is to leave them out of the margin estimates and the
-   test's df, and to flag them. Would that work, or would another treatment be better? And
-   would it make sense to handle this within the margin feature, ahead of the existing
-   empty row/column drawing task, or after it (section 5)?
-3. **Label placement.** GK isn't sure about this one. The current idea is along the top
-   inside the frame, possibly with `Pooled` and `OR = …` either side of the vertical line,
-   but other placements are very welcome. A mock-up suggests the top-centre position can
-   be covered by large upper quadrants; the top corners, or a stacked label in the free
-   corner, might work better (section 6). Whether to add a second line (`n = …`, or the
-   homogeneity p-value) is also open.
-4. **Shading.** `margin_background()` looks like a good way to set the margin panels
-   apart. Since the geom will identify margin panels anyway, one option would be to make it
-   a `geom_fourfold()` argument rather than a separate function. On timing, it might be
-   simplest to release it together with the margin changes (section 8).
-5. **Colour emphasis in margin panels.** Still to settle: which test sets it (a Woolf
-   z-test, or CMH when `pooled = "mh"`), and whether the margin panels' p-values should be
-   Holm-adjusted as a group of their own (R + C + 1 tests) or left unadjusted, so that each
-   margin panel answers its own question. On Detergent the choice changes no colours
-   (section 3).
-6. **Computed variables.** A few details remain: `margin` shares its name with the
-   `margin = c(1, 2)` argument, so `is_margin` might be clearer; whether to document these
-   and the existing columns as public; and whether exporting a stat would be worthwhile,
-   so they can be used in other layers (section 11).
+**How they are drawn**
+
+- Only in the fully standardized display (the default). A pooled odds ratio has no counts
+  behind it, so the other settings would give an informative error. This also means the
+  `all.max` exclusion suggested in `issues/TASKS.md` wouldn't be needed.
+- `Pooled OR = …` would be printed instead of counts. Summed counts could mislead: they
+  describe the collapsed table, and their odds ratio isn't the one drawn (12.6 vs 9.5 in the
+  Titanic example).
+- Rings would keep their usual meaning: in a margin panel, the 95% interval of the pooled
+  odds ratio. When the strata disagree, these rings are narrow around an average that means
+  little, which the documentation would point out.
+
+**Calculations**
+
+- Margin panels would be left out of the Holm adjustment across strata. At present they
+  are included: in the Detergent figure, High × Hard is drawn pale only because of this
+  (adjusted p 0.034 without the margins, 0.051 with them).
+- Zero cells: 0.5 added per stratum, as in `vcd::fourfold()` and the current geom.
+
+**Set aside**
+
+- An outline of the pooled odds ratio inside each stratum panel was tried as an idea and
+  set aside as too busy. The reference ring remains deferred, as MF suggested.
+
+### Questions where MF's view would be welcome
+
+**The main question**
+
+1. **Pooled estimate rather than collapsed tables.** The TASKS entries and the ring
+   prototype use collapsed tables, partly to show non-collapsibility. This proposal would
+   give up that view in favour of showing what Woolf's test is about. Does that seem
+   reasonable? A related observation: the agreement with `woolf_test(decompose = TRUE)`
+   noted in the TASKS entry comes about because that decomposition also builds its Rows
+   and Cols terms from collapsed counts (see vcdExtra's `issues/woolf.md`).
+
+**Statistical details**
+
+2. **Strata with an empty row or column.** In Titanic, every 1st- and 2nd-class child
+   survived, so those strata say nothing about the odds ratio. The 0.5 correction turns
+   Child × 1st into 0.27 anyway, which pulls the 1st-class margin from 72.5 down to 53.2.
+   The suggestion is to leave such strata out of the margins and the test's df, and to
+   flag them. Would that work, or would another treatment be better? And could this be
+   done as part of the margin feature, before the existing empty row/column drawing task in
+   `issues/TASKS.md`, or would it be better after?
+3. **Colour in the margin panels.** Each margin panel has its own test of pooled odds
+   ratio = 1 (Woolf z-test, or CMH when `pooled = "mh"`). Should those p-values be left
+   unadjusted, so each margin answers its own question, or Holm-adjusted as a group of
+   their own (R + C + 1 tests)? On Detergent the choice changes no colours.
+
+**Display**
+
+4. **Where the label goes.** GK isn't sure about this one. The current idea is along the
+   top inside the frame, possibly with `Pooled` and `OR = …` either side of the vertical
+   line, but other placements are very welcome. A mock-up suggests the top centre can be
+   covered by large upper quadrants, so the top corners, or a stacked label in whichever
+   top corner is free, might work better. A second line (`n = …`, or the homogeneity
+   p-value) is also a possibility.
+5. **Shading.** `margin_background()` looks like a good way to set the margin panels apart.
+   Since the geom will identify margin panels anyway, one option would be to make it a
+   `geom_fourfold()` argument rather than a separate function. On timing, it might be
+   simplest to release it together with the margin changes rather than before them.
+
+**Interface and documentation**
+
+6. **Computed variables.** `margin` shares its name with the `margin = c(1, 2)` argument,
+   so `is_margin` might be clearer. Should these (and the existing columns such as
+   `odds_ratio`) be documented as public? And would exporting a stat be worthwhile, so
+   they can be used in other layers?
 7. **Argument name.** Does `pooled` seem a good name for the choice of estimator?
-8. **Example data for the docs.** Possible choices: Detergent (the estimators agree there,
-   so it wouldn't show the difference), Titanic without the crew (depends on question 2),
-   or UCB by Dept (single-variable margins).
-9. **For later.** If the reference ring is revived, it would probably make sense for it to
-   use the same estimator as `pooled`. In margin panels, only a ring at the corner value
-   would add information (section 9).
+8. **Example data.** Detergent is a natural choice, though the estimators agree there, so it
+   wouldn't show the difference. Titanic without the crew shows it clearly but depends on
+   question 2. UCB by Dept would show single-variable margins.
 
-### For vcdExtra
+**For later**
 
-Some notes on `woolf_test()` are collected in section 13, including that
-`decompose = TRUE` builds its Rows and Cols terms from collapsed counts (as discussed in
-vcdExtra's `issues/woolf.md`).
+9. **Reference ring.** If it is revived, it would probably make sense for it to use the
+   same estimator as `pooled`. In margin panels, only a ring at the corner value would add
+   information, since each margin panel already draws its own pooled value.
+
+Sections 2–8 give the details and evidence behind each point. Some notes for vcdExtra's
+`woolf_test()` are collected in section 13.
