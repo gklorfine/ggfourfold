@@ -305,6 +305,13 @@ As these items are resolved, check them off as [X] and record the fix and verifi
 
 ## Multi-way tables: pooling and homogeneity
 
+**Deferred to a later release (MF, 2026-09-29).** Marginal plots need more thought and are
+not planned for the first CRAN release. This covers the items in this section: marginal
+displays, `margin_background()` and the reference ring. The design discussion is in
+`issues/marginal-plots.md` (GK), which supersedes the collapsed-table premise of the
+entries below. Exploration data: `dev/marginal-fourfold.R` (Detergent) and
+`dev/synthetic-2x2x2x4.{R,md}`.
+
 Both ideas come from "Marginal plots" and "departures from homogeneity" in
 `dev/fourfold-ideas.md`. A prototype is in `dev/marginal-fourfold.R`, using
 `vcdExtra::Detergent` permuted to Preference × M_User × Temperature (R = 2) ×
@@ -343,6 +350,9 @@ or run `Rscript dev/marginal-fourfold.R [output-dir]` to write PNGs.
   - **Q: include in the initial CRAN release?** MF: "quite nice to include, but don't want
     to hold this up." It is small, self-contained, and does not touch `geom_fourfold()`,
     so it could go in now or wait. Decision for GK.
+    **Answered (MF, 2026-09-29): defer**, together with the marginal plots it serves. This
+    agrees with GK's recommendation in `issues/marginal-plots.md` (section 8) to ship the
+    shading with the margin changes, not before.
   - *Why a stat*:
     - A theme can't do it, because `panel.background` applies to every panel.
     - An ordinary `geom_rect()` layer can't either. `margins = TRUE` copies every layer's

@@ -17,6 +17,9 @@ x <- xtabs(Freq ~ Sex + Survived + Age + Class, d)
 The full table cannot be plotted at present: the Child × Crew stratum is empty and
 `geom_fourfold()` aborts with "fourfold panel 4 must have a positive total".
 
+**MF**: This is a bad example for exploring this topic, due to the zeros in several tables.
+Better would be the `Detergent` data or the synthetic tables described in `dev/synthetic-2x2x2x4.{md,R}`
+
 ## Contents
 
 1. [The idea and its interpretation](#1-the-idea-and-its-interpretation)
@@ -527,6 +530,10 @@ Files: `R/geom-fourfold.R` (`.fourfold_compute_layer()`, draw code, docs), tests
 `NEWS.md`, possibly `R/margin-background.R`.
 
 ## 11. Outstanding decisions
+
+**MF** (2026-09-29): the idea of marginal plots needs more thought, so defer the whole
+feature, including shading and the reference ring, to a later release, not the first
+CRAN release. The decisions below remain open for that later work.
 
 - [ ] **Confirm with MF** that margin panels show a pooled estimate rather than collapsed
   tables, and that dropping `"collapsed"` (and with it the non-collapsibility / Simpson's
