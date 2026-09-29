@@ -93,8 +93,8 @@ and the second on the right; the first \code{y} level is drawn at the top and th
 second at the bottom. Set factor levels explicitly when their order matters.
 Alternatively, reorder categories with the \code{limits} argument of
 \code{\link[ggplot2:scale_x_discrete]{ggplot2::scale_x_discrete()}} or \code{\link[ggplot2:scale_y_discrete]{ggplot2::scale_y_discrete()}}, and rename
-them with \code{labels}. Scale \code{breaks} that reorder or omit categories are an
-error, since each category is drawn with its label.
+them with \code{labels}. Scale \code{breaks} that reorder or omit categories, and a
+scale \code{palette} that moves them, are errors.
 
 One panel must contain exactly one 2-by-2 table. Use
 \code{\link[ggplot2:facet_grid]{ggplot2::facet_grid()}} or \code{\link[ggplot2:facet_wrap]{ggplot2::facet_wrap()}} to display stratified
@@ -123,8 +123,10 @@ by \code{\link[=theme_fourfold]{theme_fourfold()}}.
 
 \code{geom_fourfold()} understands the following aesthetics:
 \itemize{
-\item \code{x} (required): a variable with exactly two levels.
-\item \code{y} (required): a variable with exactly two levels.
+\item \code{x} (required): a categorical variable (factor, character, or logical)
+with exactly two levels. Convert numeric codes, such as 0/1, with
+\code{factor()}.
+\item \code{y} (required): a categorical variable with exactly two levels.
 \item \code{weight}: non-negative cell frequencies; defaults to \code{1}.
 \item \code{colour}, \code{linewidth}, \code{alpha}, \code{size}, and \code{family}: fixed or mapped
 drawing properties. \code{size} and \code{family} default to values inherited from

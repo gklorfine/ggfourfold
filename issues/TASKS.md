@@ -27,7 +27,8 @@ As these items are resolved, check them off as [X] and record the fix and verifi
     ``fourfold x breaks in panel 1 are ("b", "a") but must be the x categories in order,
     ("a", "b"); use `limits` to reorder categories and `labels` to rename them``. Values
     are quoted with `encodeString()`, so levels containing commas stay unambiguous.
-    Continuous scales are skipped (see the new continuous-scale item below). Breaks
+    Continuous scales are skipped here; they are now rejected earlier by
+    `.fourfold_check_positions()` (see the continuous-scale item below). Breaks
     outside the categories are already dropped by the scale, so
     `breaks = c("a", "b", "z")` passes.
   - *Docs*: one sentence in `geom_fourfold()` `@details` on reordering with `limits`,
@@ -68,28 +69,103 @@ As these items are resolved, check them off as [X] and record the fix and verifi
     level-count error. Both messages are accurate, and nothing is drawn wrongly.
   File: `R/geom-fourfold.R` (`.fourfold_check_breaks()`, `.fourfold_panel_table()`).
 
-- [ ] **Check that the scale maps the two categories to positions 1 and 2** (found
-  2026-09-29 by the independent verification of the breaks item) — counts are placed with
-  `as.integer(data$x)`, which assumes category *i* sits at position *i*. ggplot2 4.0's
-  discrete-scale `palette` breaks this silently (also at HEAD): with levels `c("a", "b")`,
-  `scale_x_discrete(palette = function(n) rev(seq_len(n)))` draws `a` over `b`'s counts,
-  and `palette = function(n) c(1, 1.5)` truncates 1.5 to 1 and piles every count into
-  column `a`. A contrived variant: `limits = c("a", NA, "b")` with `breaks = c("a", "b")`
-  and data in `a` and `NA` labels the `NA` column "b" (the breaks check ignores `NA`).
-  Possible fix: require `scale$map(categories)` to be exactly `c(1, 2)`, or place counts
-  by matching `data$x` to the mapped category positions. Could be done together with the
-  continuous-scale and `na.rm` items.
-  File: `R/geom-fourfold.R` (`.fourfold_panel_table()`).
+- [X] **Check that the scale maps the two categories to positions 1 and 2** (found
+  2026-09-29 by the independent verification of the breaks item; fixed 2026-09-29) —
+  counts are placed with `as.integer(data$x)`, which assumes category *i* sits at position
+  *i*. ggplot2 4.0's discrete-scale `palette` broke this silently: with levels
+  `c("a", "b")`, `scale_x_discrete(palette = function(n) rev(seq_len(n)))` drew `a` over
+  `b`'s counts (UCB by Dept drew the female counts under "Male"), and
+  `palette = function(n) c(1, 1.5)` truncated 1.5 to 1 and piled every count into column
+  `a`. A contrived variant: `limits = c("a", NA, "b")` with `breaks = c("a", "b")` and
+  data in `a` and `NA` labelled the `NA` column "b".
+  - *Fix*: new `.fourfold_check_positions()`, called for the x and y panel scales before
+    the breaks and level-count checks. It also handles the continuous-scale item below.
+    For a discrete scale, the non-`NA` limits must map (`scale$map()`, the same mapping
+    that produced `data$x`) to exactly 1, 2, … in order. They are mapped as character,
+    because ggplot2 matches data to limits as text: numeric `limits = c(8, 4)` (which
+    ggplot2 warns about but draws correctly) would otherwise be mapped to positions 8 and
+    4 and wrongly rejected. Otherwise it stops with e.g.
+    ``fourfold x categories in panel 1, ("a", "b"), are at positions (2, 1) but must be
+    at (1, 2); use `limits`, not a scale `palette`, to reorder categories``. The contrived
+    `NA` variant now fails the same way ("positions (1, 3)"). A trailing `NA` category
+    (the `na.rm` item below) and scales with more than two categories at positions 1..n
+    pass, so they reach the same errors as before. A palette that keeps the positions
+    (e.g. `seq_len`) is accepted.
+  - *Docs*: the `geom_fourfold()` `@details` sentence on `breaks` now also covers a
+    `palette` that moves categories; `man/geom_fourfold.Rd` regenerated.
+  - *Tests* (appended to `tests/testthat/test-geom-fourfold.R`, 44 expectations in all):
+    reversed palettes on x and y, an uneven palette, a faceted UCB display, `NA` inside
+    the limits, an unchanged display with `palette = seq_len`, and numeric `limits`
+    giving the same display as character `limits`.
+  - *Verification* (covers both items): the 48-plot battery from the breaks item plus 19
+    new cases (palettes, continuous `y`, integer, Date, binned, 0/1 codes with `factor()`,
+    numeric data with `scale_x_discrete()` with and without `limits`, numeric `limits` on
+    x and y, an `annotate()` layer, `coord_flip`), run against HEAD (76152e7) and the
+    change. 52 cases were identical in layer data, errors, warnings, and rendered pixels
+    (36 PNGs); the 15 that differ are all intended: 7 that previously drew silently wrong
+    displays (reversed and uneven palettes on x, y, and UCB; continuous with reversed
+    breaks or 1.5 values; numeric data with `scale_x_discrete(limits = c("2", "1"))`) and
+    7 that gave a misleading error (continuous x, continuous y, integer, Date, binned,
+    numeric data with `scale_x_discrete()`: "has 5 and 2" levels and similar; `NA` inside
+    the limits) now give the new errors. One previously correct display now errors:
+    numeric 1/2 with `scale_x_continuous(breaks = c(1, 2))`, as the continuous item
+    intended; `factor(x)` is the fix the message gives. No new spelling flags.
+    `R CMD check --as-cran` (remote incoming checks off, `env -u DISPLAY`): Status OK,
+    including tests, examples, vignettes, and the PDF manual.
+  - *Independent verification* (subagent, own plot sets, HEAD vs change, two rounds). The
+    first round found that numeric `limits` were wrongly rejected (fixed by the character
+    mapping above) and that numeric data on an explicit discrete scale were still drawn
+    wrongly (now rejected; see the continuous item). The second round, on the revised code,
+    covered 180 plots. 116 were identical in layer data, warnings, pixels, or error. The 64
+    that differ are 0 regressions; 29 silently wrong at HEAD, now errors; 6 correct at HEAD
+    by coincidence (numeric 1/2 with `breaks = 1:2`), now the deliberate categorical
+    error; and 29 errors before with clearer errors now. A recount from the raw data found
+    every plot that builds correct. A further 41 plots hunted for false positives:
+    `annotate()`, `geom_vline()`/`geom_hline()`, numeric `geom_text()`/`geom_rect()` with
+    ±Inf, jitter/nudge/count layers, 2–3 fourfold layers, free scales, `facet_grid`,
+    `margins = TRUE`, and `coord_flip`. All that build match HEAD, with no false positives.
+    The `length()` refinement, suggested and tested on all 221 plots by the subagent,
+    also rejects the free-scale variant. The new tests fail against HEAD and against the
+    first revision. `R CMD check --as-cran` with remote checks gave 1 NOTE, identical to
+    HEAD's (new submission; the SAS URL in `vignettes/refs.bib`).
+  - *Limitation*: the positions error always suggests `limits` rather than a `palette`,
+    which doesn't fit the contrived cases where the cause is an `NA` first or in the
+    middle of the limits or factor levels.
+  File: `R/geom-fourfold.R` (`.fourfold_check_positions()`, `.fourfold_panel_table()`).
 
-- [ ] **Continuous `x`/`y` scales mislabel or mis-tabulate silently** (found 2026-09-29
-  while fixing the breaks item above) — the breaks check applies only to discrete scales.
-  A numeric `x` coded 1/2 on a continuous scale errors with the default breaks ("panel 1
-  has 5 and 2" levels), but with `scale_x_continuous(breaks = c(2, 1))` it draws the
-  counts for `x = 1` under the label "2". Values are placed with `as.integer()`, so
-  `x = c(1, 1.5)` with `breaks = c(1, 2)` silently puts every count in the first column.
-  The docs require "a variable with exactly two levels", so the simplest treatment is to
-  reject non-discrete `x`/`y` scales with an informative error (e.g. suggest `factor()`).
-  File: `R/geom-fourfold.R` (`.fourfold_panel_table()`).
+- [X] **Continuous `x`/`y` scales mislabel or mis-tabulate silently** (found 2026-09-29
+  while fixing the breaks item above; fixed 2026-09-29 together with the item above) — a
+  numeric `x` coded 1/2 on a continuous scale errored with the default breaks ("panel 1
+  has 5 and 2" levels), but with `scale_x_continuous(breaks = c(2, 1))` it drew the
+  counts for `x = 1` under the label "2". Values were placed with `as.integer()`, so
+  `x = c(1, 1.5)` with `breaks = c(1, 2)` silently put every count in the first column.
+  - *Fix*: `.fourfold_check_positions()` rejects any non-discrete `x`/`y` scale
+    (continuous, integer, Date, binned) with "fourfold x in panel 1 must be categorical
+    (a factor, character, or logical variable), not continuous; convert numeric codes
+    with `factor()`". The same error covers numeric data on an explicit
+    `scale_x_discrete()`: ggplot2 leaves such values unmapped, so the raw values became
+    positions, and `scale_x_discrete(limits = c("2", "1"))` silently drew `x = 1`'s
+    counts under "2" (found by the independent verification; also at HEAD). This is
+    detected as a discrete scale with a continuous range (`scale$range_c$range`) but an
+    empty discrete range (`scale$range$range`, tested with `length()` because with free
+    scales an empty range can be `character(0)` rather than `NULL`). Both are required,
+    because `annotate()` with a numeric `x` on a categorical axis also sets the continuous
+    range. These are internal ggplot2 fields. If `range_c` were renamed the check would
+    simply stop firing; if only `range` were renamed, plots with numeric annotations would
+    start to error, which the `annotate()` test would catch.
+  - *Limitation*: if another layer trains categorical values on the same axis (e.g. a
+    `geom_blank()`, `geom_text()`, or second `geom_fourfold()` with factor `x`), the
+    discrete range is not empty, so numeric fourfold data slip past the check and can be
+    drawn under the wrong labels, as at HEAD. This is contrived; converting with
+    `factor()` avoids it.
+  - *Docs*: the Aesthetics section now says `x` and `y` must be categorical and suggests
+    `factor()` for numeric codes such as 0/1.
+  - *Tests*: numeric x with default, reversed, and binned breaks; values 1 and 1.5;
+    continuous `y`; a Date; numeric data with `scale_x_discrete()` with and without
+    `limits`; an `annotate()` layer with a numeric `x` leaving the display unchanged; and
+    0/1 codes converted with `factor()` giving the right table.
+  - *Verification*: see the item above.
+  File: `R/geom-fourfold.R` (`.fourfold_check_positions()`).
 
 - [ ] **Handle tables with an entirely empty row or column explicitly** — for
   `matrix(c(0, 0, 10, 20), nrow = 2)`, the default display gives identical lower and upper
@@ -145,8 +221,9 @@ As these items are resolved, check them off as [X] and record the fix and verifi
   positions from the missing-value category when building the table. Verify missing `x`,
   `y`, and `weight` values: `na.rm = TRUE` should remove incomplete observations silently;
   `FALSE` should remove them with the documented warning. Retain useful errors for panels
-  with no complete observations or no positive total. (`.fourfold_check_breaks()` already
-  ignores the `NA` category. Note that missing `x` rows currently reach the table as
+  with no complete observations or no positive total. (`.fourfold_check_positions()` and
+  `.fourfold_check_breaks()` already ignore the `NA` category; a trailing `NA` category
+  passes both. Note that missing `x` rows currently reach the table as
   position 3 rather than `NA`, so the `is.na()` filter does not remove them.)
   File: `R/geom-fourfold.R` (`.fourfold_panel_table()`).
 

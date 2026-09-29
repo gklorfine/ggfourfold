@@ -246,3 +246,179 @@ test_that("logical and character variables pass the breaks check", {
     ggplot2::layer_data(fourfold_plot())
   )
 })
+
+test_that("continuous x and y are an error", {
+  numeric_data <- data.frame(
+    x = c(1, 1, 2, 2),
+    y = c(1, 2, 1, 2),
+    w = c(1, 2, 30, 40)
+  )
+  continuous_error <- paste0(
+    "x in panel 1 must be categorical (a factor, character, or logical ",
+    "variable), not continuous; convert numeric codes with `factor()`"
+  )
+  plot <- ggplot2::ggplot(numeric_data, ggplot2::aes(x, factor(y), weight = w)) +
+    geom_fourfold()
+  expect_error(ggplot2::layer_data(plot), continuous_error, fixed = TRUE)
+  # Previously drawn with the counts for x = 1 under the label "2".
+  expect_error(
+    ggplot2::layer_data(plot + ggplot2::scale_x_continuous(breaks = c(2, 1))),
+    continuous_error,
+    fixed = TRUE
+  )
+  expect_error(
+    ggplot2::layer_data(plot + ggplot2::scale_x_binned()),
+    continuous_error,
+    fixed = TRUE
+  )
+  # Previously 1.5 was truncated to 1, putting every count in one column.
+  uneven_data <- numeric_data
+  uneven_data$x <- c(1, 1, 1.5, 1.5)
+  expect_error(
+    ggplot2::layer_data(
+      ggplot2::ggplot(uneven_data, ggplot2::aes(x, factor(y), weight = w)) +
+        geom_fourfold() +
+        ggplot2::scale_x_continuous(breaks = c(1, 2))
+    ),
+    continuous_error,
+    fixed = TRUE
+  )
+  expect_error(
+    ggplot2::layer_data(
+      ggplot2::ggplot(numeric_data, ggplot2::aes(factor(x), y, weight = w)) +
+        geom_fourfold()
+    ),
+    "y in panel 1 must be categorical",
+    fixed = TRUE
+  )
+  date_data <- numeric_data
+  date_data$x <- as.Date("2020-01-01") + c(0, 0, 366, 366)
+  expect_error(
+    ggplot2::layer_data(
+      ggplot2::ggplot(date_data, ggplot2::aes(x, factor(y), weight = w)) +
+        geom_fourfold()
+    ),
+    continuous_error,
+    fixed = TRUE
+  )
+})
+
+test_that("numeric codes converted with factor() work", {
+  coded_data <- data.frame(
+    x = c(0, 0, 1, 1),
+    y = factor(c("u", "v", "u", "v")),
+    w = c(1, 2, 30, 40)
+  )
+  expect_identical(
+    cells(ggplot2::ggplot(coded_data, ggplot2::aes(factor(x), y, weight = w)) +
+            geom_fourfold()),
+    data.frame(
+      x_label = c("0", "0", "1", "1"),
+      y_label = c("u", "v", "u", "v"),
+      count = c(1, 2, 30, 40)
+    )
+  )
+})
+
+test_that("a scale palette that moves categories is an error", {
+  expect_error(
+    ggplot2::layer_data(fourfold_plot(
+      ggplot2::scale_x_discrete(palette = function(n) rev(seq_len(n)))
+    )),
+    paste0(
+      'x categories in panel 1, ("a", "b"), are at positions (2, 1) but must ',
+      "be at (1, 2); use `limits`, not a scale `palette`, to reorder categories"
+    ),
+    fixed = TRUE
+  )
+  expect_error(
+    ggplot2::layer_data(fourfold_plot(
+      ggplot2::scale_y_discrete(palette = function(n) rev(seq_len(n)))
+    )),
+    'y categories in panel 1, ("u", "v"), are at positions (2, 1)',
+    fixed = TRUE
+  )
+  expect_error(
+    ggplot2::layer_data(fourfold_plot(
+      ggplot2::scale_x_discrete(palette = function(n) c(1, 1.5))
+    )),
+    "are at positions (1, 1.5) but must be at (1, 2)",
+    fixed = TRUE
+  )
+  expect_error(
+    ggplot2::layer_data(ucb_plot(
+      ggplot2::facet_wrap(ggplot2::vars(Dept)),
+      ggplot2::scale_x_discrete(palette = function(n) rev(seq_len(n)))
+    )),
+    'x categories in panel 1, ("Male", "Female"), are at positions (2, 1)',
+    fixed = TRUE
+  )
+})
+
+test_that("a missing-value category inside the limits is an error", {
+  # Counts for "b" would otherwise be placed at position 3.
+  expect_error(
+    ggplot2::layer_data(fourfold_plot(
+      ggplot2::scale_x_discrete(limits = c("a", NA, "b"))
+    )),
+    'x categories in panel 1, ("a", "b"), are at positions (1, 3)',
+    fixed = TRUE
+  )
+})
+
+test_that("a palette that keeps categories in place leaves the display unchanged", {
+  expect_identical(
+    ggplot2::layer_data(
+      fourfold_plot(ggplot2::scale_x_discrete(palette = seq_len))
+    ),
+    ggplot2::layer_data(fourfold_plot())
+  )
+})
+
+test_that("numeric limits on a discrete scale work", {
+  # ggplot2 warns about numeric limits but matches them to the data as text.
+  numeric_limits <- suppressWarnings(ggplot2::scale_x_discrete(limits = c(2, 1)))
+  coded_data <- data.frame(
+    x = factor(c(1, 1, 2, 2)),
+    y = factor(c("u", "v", "u", "v")),
+    w = c(1, 2, 30, 40)
+  )
+  plot <- ggplot2::ggplot(coded_data, ggplot2::aes(x, y, weight = w)) +
+    geom_fourfold()
+  expect_identical(
+    ggplot2::layer_data(plot + numeric_limits),
+    ggplot2::layer_data(plot + ggplot2::scale_x_discrete(limits = c("2", "1")))
+  )
+  expect_identical(
+    cells(plot + numeric_limits)$count,
+    c(30, 40, 1, 2)
+  )
+})
+
+test_that("numeric data on a discrete scale are an error", {
+  numeric_data <- data.frame(
+    x = c(1, 1, 2, 2),
+    y = factor(c("u", "v", "u", "v")),
+    w = c(1, 2, 30, 40)
+  )
+  plot <- ggplot2::ggplot(numeric_data, ggplot2::aes(x, y, weight = w)) +
+    geom_fourfold()
+  # Previously drawn with the counts for x = 1 under the label "2".
+  expect_error(
+    ggplot2::layer_data(plot + ggplot2::scale_x_discrete(limits = c("2", "1"))),
+    "x in panel 1 must be categorical",
+    fixed = TRUE
+  )
+  expect_error(
+    ggplot2::layer_data(plot + ggplot2::scale_x_discrete()),
+    "x in panel 1 must be categorical",
+    fixed = TRUE
+  )
+  # Continuous values from other layers do not affect categorical data.
+  expect_identical(
+    ggplot2::layer_data(
+      fourfold_plot(ggplot2::annotate("text", x = 1.5, y = 1.5, label = "note"))
+    ),
+    ggplot2::layer_data(fourfold_plot())
+  )
+})

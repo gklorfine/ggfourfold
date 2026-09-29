@@ -175,6 +175,51 @@ fourfold_palette <- function() {
   )
 }
 
+# Counts are placed by mapped scale position, so each category must sit at its
+# own position 1, 2, ... in limits order. Continuous scales use the raw values
+# as positions, and a discrete scale's `palette` can move categories.
+.fourfold_check_positions <- function(scale, aesthetic, panel) {
+  # Numeric data on a discrete scale also keep their raw values as positions;
+  # the scale then has a continuous range but no discrete one. (With free
+  # scales, an empty discrete range can be character(0) rather than NULL.)
+  if (!scale$is_discrete() ||
+      (!length(scale$range$range) && !is.null(scale$range_c$range))) {
+    stop(
+      sprintf(
+        paste0(
+          "fourfold %s in panel %s must be categorical (a factor, character, ",
+          "or logical variable), not continuous; convert numeric codes with ",
+          "`factor()`"
+        ),
+        aesthetic, panel
+      ),
+      call. = FALSE
+    )
+  }
+  categories <- scale$get_limits()
+  categories <- categories[!is.na(categories)]
+  # Data are matched to the limits as character, so numeric limits work.
+  positions <- as.numeric(scale$map(as.character(categories)))
+  if (!identical(positions, as.numeric(seq_along(categories)))) {
+    stop(
+      sprintf(
+        paste0(
+          "fourfold %s categories in panel %s, (%s), are at positions (%s) ",
+          "but must be at (%s); use `limits`, not a scale `palette`, to ",
+          "reorder categories"
+        ),
+        aesthetic, panel,
+        paste(encodeString(as.character(categories), quote = "\""),
+              collapse = ", "),
+        paste(positions, collapse = ", "),
+        paste(seq_along(categories), collapse = ", ")
+      ),
+      call. = FALSE
+    )
+  }
+  invisible()
+}
+
 # Counts are placed by scale position (limits order), but labels come in
 # breaks order, so breaks that reorder or omit categories would detach the
 # labels from their counts.
@@ -234,6 +279,8 @@ fourfold_palette <- function() {
   }
 
   panel_scales <- layout$get_scales(as.integer(panel))
+  .fourfold_check_positions(panel_scales$x, "x", panel)
+  .fourfold_check_positions(panel_scales$y, "y", panel)
   .fourfold_check_breaks(panel_scales$x, "x", panel)
   .fourfold_check_breaks(panel_scales$y, "y", panel)
   x_labels <- panel_scales$x$get_labels()
@@ -726,8 +773,8 @@ GeomFourfold <- ggplot2::ggproto(
 #' second at the bottom. Set factor levels explicitly when their order matters.
 #' Alternatively, reorder categories with the `limits` argument of
 #' [ggplot2::scale_x_discrete()] or [ggplot2::scale_y_discrete()], and rename
-#' them with `labels`. Scale `breaks` that reorder or omit categories are an
-#' error, since each category is drawn with its label.
+#' them with `labels`. Scale `breaks` that reorder or omit categories, and a
+#' scale `palette` that moves them, are errors.
 #'
 #' One panel must contain exactly one 2-by-2 table. Use
 #' [ggplot2::facet_grid()] or [ggplot2::facet_wrap()] to display stratified
@@ -755,8 +802,10 @@ GeomFourfold <- ggplot2::ggproto(
 #' @section Aesthetics:
 #' `geom_fourfold()` understands the following aesthetics:
 #'
-#' - `x` (required): a variable with exactly two levels.
-#' - `y` (required): a variable with exactly two levels.
+#' - `x` (required): a categorical variable (factor, character, or logical)
+#'   with exactly two levels. Convert numeric codes, such as 0/1, with
+#'   `factor()`.
+#' - `y` (required): a categorical variable with exactly two levels.
 #' - `weight`: non-negative cell frequencies; defaults to `1`.
 #' - `colour`, `linewidth`, `alpha`, `size`, and `family`: fixed or mapped
 #'   drawing properties. `size` and `family` default to values inherited from
