@@ -32,6 +32,7 @@ The full table cannot be plotted at present: the Child × Crew stratum is empty 
 11. [Outstanding decisions](#11-outstanding-decisions)
 12. [Evidence](#12-evidence)
 13. [Notes for vcdExtra](#13-notes-for-vcdextra)
+14. [Summary for MF](#14-summary-for-mf)
 
 ## 1. The idea and its interpretation
 
@@ -167,7 +168,8 @@ within 0.02 on the log scale, so it cannot show the difference between them.
 
 ### Decision (GK, 2026-09-28)
 
-- `pooled = c("woolf", "mh")`, default `"woolf"`. No `"collapsed"` option.
+- `pooled = c("woolf", "mh")`, default `"woolf"`, both in the first version. No
+  `"collapsed"` option.
 - Consequence: `facet_grid(margins = TRUE)` will no longer draw collapsed tables, so the
   display no longer shows non-collapsibility or Simpson's paradox. MF's entry and his ring
   prototype rely on that view, so **MF needs to agree** (see
@@ -207,8 +209,11 @@ within 0.02 on the log scale, so it cannot show the difference between them.
   - Detergent (MF's figure): High × Hard is 0.034 with strata only (drawn intense) and
     0.051 with margins (drawn pale). High × Medium 0.023 → 0.031, Low × Hard 0.024 → 0.033.
 - The margin panels' own emphasis would come from a test of pooled odds ratio = 1 (a Woolf
-  z-test for `"woolf"`, the CMH test for `"mh"`). Whether and how those are adjusted is
-  outstanding.
+  z-test for `"woolf"`, the CMH test for `"mh"`). Outstanding: whether those p-values are
+  left unadjusted, so each margin panel answers its own question, or Holm-adjusted as a
+  separate group of the R + C + 1 margin panels. (Holm stays valid although the margins
+  overlap, since it doesn't assume independence.) On Detergent the choice changes no colour
+  at 0.05: e.g. Low 0.011 unadjusted vs 0.022 adjusted, Soft 0.45 either way.
 
 ## 4. Showing whether pooling is justified
 
@@ -230,8 +235,12 @@ Titanic examples (per-stratum zero rule):
 The 3rd-class margin is a fair summary; the Adult margin is an average no class has,
 pulled toward 3rd class because it has the most weight.
 
-- **Current plan:** expose Q, df and p for each margin panel as computed variables that
-  users can print (e.g. with `after_stat()` in a label layer). Nothing is drawn by default.
+- **Current plan:** add Q, df and p for each margin panel as extra columns of the layer's
+  computed data. Nothing is drawn by default. Today such columns can only be read with
+  `ggplot2::layer_data()`: `StatFourfold` is not exported and the existing columns
+  (`odds_ratio`, `p_value`, `p_adjusted`, …) are undocumented, so another layer cannot use
+  them through `after_stat()`. How users should reach them is part of the computed-variables
+  decision (section 11).
 - Showing one test per margin panel is several tests at once (multiple comparisons).
 - **Dropped:** a faint outline of the pooled odds ratio inside each stratum panel (GK: too
   busy). MF's reference ring is deferred to a later release; see
@@ -305,6 +314,12 @@ turns them into 0.27 and 1.17 with positive weight.
 the test's df, and flag them. Edge cases: a margin with one informative stratum has 0 df
 (no test); a margin with none has nothing to pool (drawn empty).
 
+- *Leaving them out*: the 1st-class margin becomes Adult × 1st alone (72.46, 0 df, no
+  homogeneity test); the corner's test becomes Q = 60.2 on 3 df instead of 63.4 on 5.
+- *Flagging them*: e.g. a message naming the strata left out of the pooled estimates
+  ("Child × 1st and Child × 2nd have an empty row …"), and/or a computed variable marking
+  each stratum as informative or not. The stratum panels are still drawn as usual.
+
 **Relation to the existing task.** This is the same kind of table as the `issues/TASKS.md`
 item "Handle tables with an entirely empty row or column explicitly", which already lists
 these Titanic panels as its real-data example (NaN lower rings, `margin = 1` NaN radii). The
@@ -314,8 +329,12 @@ two questions are separable:
 - how such a stratum *enters a margin* (this feature).
 
 They only interact if the existing task decides to reject such tables with an error; the
-panels would then never reach the margins. **Sequencing is outstanding (GK wants to discuss
-further).**
+panels would then never reach the margins.
+
+**Question for MF** (GK, 2026-09-28): should uninformative strata be left out of the margin
+estimates and the test's df, and flagged, as proposed? And should this be done as part of
+the margin feature, before the existing empty row/column drawing task (suggested, since the
+two are independent), or after it?
 
 ## 6. Standardization and count labels
 
@@ -477,8 +496,17 @@ a stat that looks up `"(all)"` in `layout$layout`. A theme can't do it, and an o
    combination, with both shapes.
 6. **Margin-panel label** — no counts; `Pooled OR = …` placed as in section 6 (placement
    to confirm with MF, allowing for the overlap caveat).
-7. **Computed variables** — e.g. `pooled_method`, `n_strata`, `woolf_q`, `woolf_df`,
-   `woolf_p`, `margin` (logical); names to be decided.
+7. **Computed variables** — new columns (names agreed by GK, 2026-09-28):
+   - `margin`: logical, whether the panel is a margin panel (name may change, see
+     section 11);
+   - `pooled_method`: `"woolf"` or `"mh"` (`NA` in stratum panels);
+   - `n_strata`: number of strata pooled (informative strata only, if MF agrees to leave
+     the others out; section 5);
+   - `woolf_q`, `woolf_df`, `woolf_p`: the Woolf homogeneity test of the strata pooled
+     (`NA` in stratum panels, and `woolf_q`/`woolf_p` when `woolf_df` is 0).
+
+   In margin panels the existing columns `odds_ratio`, `standard_error`, `conf_low`,
+   `conf_high` and `p_value` hold the pooled values.
 8. **Shading** — `margin_background()` or a geom argument.
 9. **Docs** — roxygen (`pooled`, margins behaviour, ring caveat under heterogeneity,
    non-collapsibility), a vignette section, NEWS. Example data: see section 11.
@@ -507,8 +535,10 @@ Files: `R/geom-fourfold.R` (`.fourfold_compute_layer()`, draw code, docs), tests
 - [X] **Zero-cell rule** — per stratum, matching `vcd::fourfold()` (GK, 2026-09-28; see
   section 5). Whether vcdExtra's `woolf_test()` should also switch is a vcdExtra question
   (section 13).
-- [ ] **Uninformative strata** — exclude and flag (proposed); sequencing against the
-  existing empty row/column task. GK to discuss.
+- [ ] **Uninformative strata — question for MF** — leave strata with an empty row or column
+  out of the margin estimates and the test's df, and flag them (proposed)? Do it within the
+  margin feature, before the existing empty row/column drawing task (suggested), or after?
+  See section 5.
 - [X] **Standardization** — margin panels require the fully standardized display; error
   otherwise (GK, 2026-09-28; see section 6). A stand-in table remains possible later, and
   only then would MF's `all.max` exclusion apply.
@@ -519,10 +549,18 @@ Files: `R/geom-fourfold.R` (`.fourfold_compute_layer()`, draw code, docs), tests
   MF may change it. The top-centre position collides with large upper quadrants (see
   section 6); top corners or a stacked label in the free corner are the alternatives.
   Optional second line (n, or the homogeneity p) not decided. Decision for GK/MF.
-- [ ] **Margin colour emphasis** — which test (Woolf z / CMH), and whether margin panels
-  are adjusted among themselves.
-- [ ] **Computed variable names**, and whether anything about the Woolf test is drawn.
-- [ ] **Argument name** `pooled`, and whether `"mh"` ships in the first version.
+- [ ] **Margin colour emphasis** — which test (Woolf z for `"woolf"`, CMH for `"mh"`), and
+  whether the margin panels' p-values are left unadjusted or Holm-adjusted as their own
+  group of R + C + 1 tests (section 3).
+- [ ] **Computed variables** — names agreed (GK, 2026-09-28): `margin`, `pooled_method`,
+  `n_strata`, `woolf_q`, `woolf_df`, `woolf_p` (section 10, step 7). Still open:
+  - `margin` clashes with the existing `geom_fourfold(margin = c(1, 2))` argument (which
+    totals to equalise); `is_margin` would avoid the ambiguity;
+  - whether to document these, and the existing columns, as public (a naming commitment
+    once on CRAN);
+  - how users reach them (`layer_data()` only, as today, or an exported stat);
+  - whether anything about the Woolf test is drawn.
+- [ ] **Argument name** `pooled`. (`"mh"` ships in the first version: GK, 2026-09-28.)
 - [ ] **Shading** — separate `margin_background()` or a geom argument; CRAN timing
   (recommended: with the margin changes). Decision for GK.
 - [ ] **Example data for docs** — Detergent (MF's; estimators agree), Titanic without the
@@ -588,3 +626,73 @@ For GK/MF's work on `woolf_test()` (not ggfourfold changes):
   `pchisq(..., lower.tail = FALSE)` avoids that.
 - `breslow_day_test()` fails on the Titanic table ("No unique valid root in stratum 1").
   Noted only; Breslow–Day is out of scope for now.
+
+## 14. Summary for MF
+
+A short summary of where things stand. The sections referenced give the details.
+
+### Decisions so far (GK, 2026-09-28)
+
+- Margin panels would show a pooled odds ratio for the strata they cover, rather than the
+  collapsed table, with `pooled = c("woolf", "mh")` and `"woolf"` as the default; both
+  would be in the first version (section 2). This depends on MF being comfortable with the change (question 1 below).
+- Rings would keep their usual meaning in every panel; in a margin panel they would be the
+  95% interval of the pooled odds ratio. Margin panels would be left out of the Holm
+  adjustment (section 3).
+- Zero cells: 0.5 added per stratum, following `vcd::fourfold()` (section 5).
+- Margin panels would need the fully standardized display, with an informative error
+  otherwise. This means the `all.max` exclusion suggested in `issues/TASKS.md` wouldn't be
+  needed (section 6).
+- Margin panels would print `Pooled OR = …` rather than counts, since summed counts could
+  mislead: odds ratios are non-collapsible, and the odds ratio drawn isn't the one the
+  counts would give (section 6).
+- Computed variable names: `margin`, `pooled_method`, `n_strata`, `woolf_q`, `woolf_df`,
+  `woolf_p` (section 10).
+- An outline of the pooled odds ratio inside each stratum panel was considered and set
+  aside as too busy. The reference ring remains deferred, as MF suggested.
+
+### Open questions where MF's view would be welcome
+
+1. **Pooled estimate or collapsed tables.** The TASKS entries and the ring prototype use
+   collapsed tables, partly to show non-collapsibility. The plan moves away from that,
+   since a collapsed panel isn't the reference Woolf's test measures departures from
+   (section 2). Does that seem reasonable? A related observation: the agreement with
+   `woolf_test(decompose = TRUE)` noted in the TASKS entry comes about because that
+   decomposition also works from collapsed counts (section 9).
+2. **Uninformative strata** (a stratum with an empty row or column, such as Titanic
+   Child × 1st). The suggestion is to leave them out of the margin estimates and the
+   test's df, and to flag them. Would that work, or would another treatment be better? And
+   would it make sense to handle this within the margin feature, ahead of the existing
+   empty row/column drawing task, or after it (section 5)?
+3. **Label placement.** GK isn't sure about this one. The current idea is along the top
+   inside the frame, possibly with `Pooled` and `OR = …` either side of the vertical line,
+   but other placements are very welcome. A mock-up suggests the top-centre position can
+   be covered by large upper quadrants; the top corners, or a stacked label in the free
+   corner, might work better (section 6). Whether to add a second line (`n = …`, or the
+   homogeneity p-value) is also open.
+4. **Shading.** `margin_background()` looks like a good way to set the margin panels
+   apart. Since the geom will identify margin panels anyway, one option would be to make it
+   a `geom_fourfold()` argument rather than a separate function. On timing, it might be
+   simplest to release it together with the margin changes (section 8).
+5. **Colour emphasis in margin panels.** Still to settle: which test sets it (a Woolf
+   z-test, or CMH when `pooled = "mh"`), and whether the margin panels' p-values should be
+   Holm-adjusted as a group of their own (R + C + 1 tests) or left unadjusted, so that each
+   margin panel answers its own question. On Detergent the choice changes no colours
+   (section 3).
+6. **Computed variables.** A few details remain: `margin` shares its name with the
+   `margin = c(1, 2)` argument, so `is_margin` might be clearer; whether to document these
+   and the existing columns as public; and whether exporting a stat would be worthwhile,
+   so they can be used in other layers (section 11).
+7. **Argument name.** Does `pooled` seem a good name for the choice of estimator?
+8. **Example data for the docs.** Possible choices: Detergent (the estimators agree there,
+   so it wouldn't show the difference), Titanic without the crew (depends on question 2),
+   or UCB by Dept (single-variable margins).
+9. **For later.** If the reference ring is revived, it would probably make sense for it to
+   use the same estimator as `pooled`. In margin panels, only a ring at the corner value
+   would add information (section 9).
+
+### For vcdExtra
+
+Some notes on `woolf_test()` are collected in section 13, including that
+`decompose = TRUE` builds its Rows and Cols terms from collapsed counts (as discussed in
+vcdExtra's `issues/woolf.md`).
