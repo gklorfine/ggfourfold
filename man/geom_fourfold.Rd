@@ -91,6 +91,10 @@ variable to \code{y}, and cell frequencies to \code{weight}. When \code{weight} 
 each row counts as one observation. The first \code{x} level is drawn on the left
 and the second on the right; the first \code{y} level is drawn at the top and the
 second at the bottom. Set factor levels explicitly when their order matters.
+Alternatively, reorder categories with the \code{limits} argument of
+\code{\link[ggplot2:scale_x_discrete]{ggplot2::scale_x_discrete()}} or \code{\link[ggplot2:scale_y_discrete]{ggplot2::scale_y_discrete()}}, and rename
+them with \code{labels}. Scale \code{breaks} that reorder or omit categories are an
+error, since each category is drawn with its label.
 
 One panel must contain exactly one 2-by-2 table. Use
 \code{\link[ggplot2:facet_grid]{ggplot2::facet_grid()}} or \code{\link[ggplot2:facet_wrap]{ggplot2::facet_wrap()}} to display stratified

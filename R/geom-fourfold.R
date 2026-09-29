@@ -175,6 +175,41 @@ fourfold_palette <- function() {
   )
 }
 
+# Counts are placed by scale position (limits order), but labels come in
+# breaks order, so breaks that reorder or omit categories would detach the
+# labels from their counts.
+.fourfold_check_breaks <- function(scale, aesthetic, panel) {
+  if (!scale$is_discrete()) {
+    return(invisible())
+  }
+  # The missing-value category is not one of the table's categories.
+  categories <- as.character(scale$get_limits())
+  categories <- categories[!is.na(categories)]
+  breaks <- as.character(scale$get_breaks())
+  breaks <- breaks[!is.na(breaks)]
+  if (!identical(breaks, categories)) {
+    describe <- function(values) {
+      if (!length(values)) {
+        return("empty")
+      }
+      values <- encodeString(values, quote = "\"")
+      paste0("(", paste(values, collapse = ", "), ")")
+    }
+    stop(
+      sprintf(
+        paste0(
+          "fourfold %s breaks in panel %s are %s but must be the %s ",
+          "categories in order, %s; use `limits` to reorder categories and ",
+          "`labels` to rename them"
+        ),
+        aesthetic, panel, describe(breaks), aesthetic, describe(categories)
+      ),
+      call. = FALSE
+    )
+  }
+  invisible()
+}
+
 .fourfold_panel_table <- function(data, panel, layout, na.rm) {
   incomplete <- is.na(data$x) | is.na(data$y) | is.na(data$weight)
   if (any(incomplete)) {
@@ -199,6 +234,8 @@ fourfold_palette <- function() {
   }
 
   panel_scales <- layout$get_scales(as.integer(panel))
+  .fourfold_check_breaks(panel_scales$x, "x", panel)
+  .fourfold_check_breaks(panel_scales$y, "y", panel)
   x_labels <- panel_scales$x$get_labels()
   y_labels <- panel_scales$y$get_labels()
   if (length(x_labels) != 2L || length(y_labels) != 2L) {
@@ -687,6 +724,10 @@ GeomFourfold <- ggplot2::ggproto(
 #' each row counts as one observation. The first `x` level is drawn on the left
 #' and the second on the right; the first `y` level is drawn at the top and the
 #' second at the bottom. Set factor levels explicitly when their order matters.
+#' Alternatively, reorder categories with the `limits` argument of
+#' [ggplot2::scale_x_discrete()] or [ggplot2::scale_y_discrete()], and rename
+#' them with `labels`. Scale `breaks` that reorder or omit categories are an
+#' error, since each category is drawn with its label.
 #'
 #' One panel must contain exactly one 2-by-2 table. Use
 #' [ggplot2::facet_grid()] or [ggplot2::facet_wrap()] to display stratified

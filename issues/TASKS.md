@@ -8,14 +8,87 @@ As these items are resolved, check them off as [X] and record the fix and verifi
 
 ## Accuracy / API fixes
 
-- [ ] **Keep category labels attached to the correct counts when scale breaks change** —
-  `.fourfold_panel_table()` takes labels from `get_labels()` in break order, but assigns
-  counts using the mapped scale positions. With factor levels `c("a", "b")`, adding
-  `scale_x_discrete(breaks = c("b", "a"))` swaps the displayed labels without swapping
-  their counts. This silently reverses the apparent category interpretation. Resolve labels
-  by their corresponding scale positions rather than assuming break order matches data
-  order. Verify both axes with reordered breaks and custom labels, and cover omitted
-  breaks so display settings do not change the underlying table.
+- [X] **Keep category labels attached to the correct counts when scale breaks change**
+  (2026-09-29) — `.fourfold_panel_table()` took labels from `get_labels()` in break order,
+  but assigned counts using the mapped scale positions (limits order). With factor levels
+  `c("a", "b")`, adding `scale_x_discrete(breaks = c("b", "a"))` swapped the displayed
+  labels without swapping their counts, silently reversing the apparent category
+  interpretation. Omitting a break (`breaks = "a"`) gave a misleading "exactly two x
+  levels" error.
+  - *Decision*: reject such breaks rather than resolve labels by position. `breaks` has no
+    role in a fourfold display: `limits` reorders categories (which already worked) and
+    `labels` renames them (named and unnamed both already worked). Reordered breaks
+    reorder nothing even in an ordinary ggplot, so a user writing them probably meant
+    `limits`, and omitted breaks would leave a category unlabelled.
+  - *Fix*: new `.fourfold_check_breaks()`, called for the x and y panel scales before the
+    labels are read. For discrete scales, breaks must equal the limits in order (compared
+    as character, so logical variables work; the `NA` category is ignored on both sides so
+    that the separate `na.rm` item below is unaffected). Otherwise it stops with e.g.
+    ``fourfold x breaks in panel 1 are ("b", "a") but must be the x categories in order,
+    ("a", "b"); use `limits` to reorder categories and `labels` to rename them``. Values
+    are quoted with `encodeString()`, so levels containing commas stay unambiguous.
+    Continuous scales are skipped (see the new continuous-scale item below). Breaks
+    outside the categories are already dropped by the scale, so
+    `breaks = c("a", "b", "z")` passes.
+  - *Docs*: one sentence in `geom_fourfold()` `@details` on reordering with `limits`,
+    renaming with `labels`, and the breaks error; `man/geom_fourfold.Rd` regenerated.
+  - *Tests*: added the testthat setup (`tests/testthat.R`; there were no tests before) and
+    `tests/testthat/test-geom-fourfold.R` (26 expectations): the error for reordered,
+    function (`rev`), omitted, and `NULL` breaks on both axes, inconsistent
+    `limits`/`breaks`, quoting of a level containing a comma, `facet_wrap` (x) and
+    `facet_grid` (y), and a free-scale mismatch in panel 3 only; no change for matching or
+    extra breaks; `limits` moving labels with their counts; `labels` renaming without
+    moving counts; logical and character variables.
+  - *Verification*: a battery of 48 plots (UCB and Titanic facets, all `std`/`margin`
+    options, `conf_level = 0`, `extended = FALSE`, square shape, Bonferroni, custom palette,
+    fixed aesthetics, free scales, `margins = TRUE`, labels/limits/breaks variants, and
+    existing error cases) run against HEAD and the change. 38 cases were identical in layer
+    data, errors, warnings, and rendered pixels (31 PNGs); the 10 that differ are all
+    breaks settings that are now rejected: 6 that previously drew silently mislabelled
+    displays, 3 that gave the misleading level-count error, plus
+    `scale_x_discrete(drop = FALSE, breaks = c("a", "b"))` with an unused third level `c`.
+    That last one previously drew correctly only by accident: with
+    `limits = c("b", "a", "c")` and the same breaks, HEAD silently draws `a` over `b`'s
+    counts. It now errors, consistent with the rule. `R CMD check --as-cran` (remote
+    incoming checks off): Status OK, including tests, Rd cross-references, vignettes, and
+    the PDF manual. On macOS with XQuartz, run the check with `env -u DISPLAY`, otherwise
+    it hangs at "checking use of S3 registration" (tcltk).
+  - *Independent verification* (subagent, own 143-plot set, HEAD vs change): 95 successful
+    cases identical in layer data, warnings, and pixels; 12 identical errors (including
+    the `NA` bug); 42 differ, all rejected breaks settings: 27 reversed/function breaks
+    that previously drew wrong labels, 8 omitted/`NULL`/empty breaks that gave the
+    misleading error, 5 that errored before for other reasons and now hit the breaks error
+    first, and 2 with a third, unused category (the `drop = FALSE` case above and
+    `limits = c("a", "b", "c")`). The new tests fail against HEAD's code. Full
+    `R CMD check --as-cran` with remote checks: 1 NOTE, identical for HEAD (new submission;
+    the SAS URL in `vignettes/refs.bib` redirects to a broken host). The Rd anchors
+    `\link[ggplot2:scale_x_discrete]` are not flagged. Conforms to extrachecks.
+  - *Known limitation*: when a scale has more than two categories *and* custom breaks, the
+    breaks error comes first and lists all categories; following it leads to the
+    level-count error. Both messages are accurate, and nothing is drawn wrongly.
+  File: `R/geom-fourfold.R` (`.fourfold_check_breaks()`, `.fourfold_panel_table()`).
+
+- [ ] **Check that the scale maps the two categories to positions 1 and 2** (found
+  2026-09-29 by the independent verification of the breaks item) — counts are placed with
+  `as.integer(data$x)`, which assumes category *i* sits at position *i*. ggplot2 4.0's
+  discrete-scale `palette` breaks this silently (also at HEAD): with levels `c("a", "b")`,
+  `scale_x_discrete(palette = function(n) rev(seq_len(n)))` draws `a` over `b`'s counts,
+  and `palette = function(n) c(1, 1.5)` truncates 1.5 to 1 and piles every count into
+  column `a`. A contrived variant: `limits = c("a", NA, "b")` with `breaks = c("a", "b")`
+  and data in `a` and `NA` labels the `NA` column "b" (the breaks check ignores `NA`).
+  Possible fix: require `scale$map(categories)` to be exactly `c(1, 2)`, or place counts
+  by matching `data$x` to the mapped category positions. Could be done together with the
+  continuous-scale and `na.rm` items.
+  File: `R/geom-fourfold.R` (`.fourfold_panel_table()`).
+
+- [ ] **Continuous `x`/`y` scales mislabel or mis-tabulate silently** (found 2026-09-29
+  while fixing the breaks item above) — the breaks check applies only to discrete scales.
+  A numeric `x` coded 1/2 on a continuous scale errors with the default breaks ("panel 1
+  has 5 and 2" levels), but with `scale_x_continuous(breaks = c(2, 1))` it draws the
+  counts for `x = 1` under the label "2". Values are placed with `as.integer()`, so
+  `x = c(1, 1.5)` with `breaks = c(1, 2)` silently puts every count in the first column.
+  The docs require "a variable with exactly two levels", so the simplest treatment is to
+  reject non-discrete `x`/`y` scales with an informative error (e.g. suggest `factor()`).
   File: `R/geom-fourfold.R` (`.fourfold_panel_table()`).
 
 - [ ] **Handle tables with an entirely empty row or column explicitly** — for
@@ -72,7 +145,9 @@ As these items are resolved, check them off as [X] and record the fix and verifi
   positions from the missing-value category when building the table. Verify missing `x`,
   `y`, and `weight` values: `na.rm = TRUE` should remove incomplete observations silently;
   `FALSE` should remove them with the documented warning. Retain useful errors for panels
-  with no complete observations or no positive total.
+  with no complete observations or no positive total. (`.fourfold_check_breaks()` already
+  ignores the `NA` category. Note that missing `x` rows currently reach the table as
+  position 3 rather than `NA`, so the `is.na()` filter does not remove them.)
   File: `R/geom-fourfold.R` (`.fourfold_panel_table()`).
 
 ## Development scripts
