@@ -750,3 +750,72 @@ them isn't justified.
 
 Sections 2–8 give the details and evidence behind each point. Some notes for vcdExtra's
 `woolf_test()` are collected in section 13.
+
+### MF's reply (2026-09-29)
+
+This is a thorough and very useful analysis, much more than my initial, vague idea of
+"adding marginal tables."
+As noted in section 11, I now think we should
+**defer marginal plots to a later release**. So none of this blocks the first
+CRAN release, and we can take the time to get it right.
+
+**1. Pooled estimate rather than collapsed tables.** I don't think this has to be
+either/or. My original idea was to show "the effect of pooling", and that *is* the contrast
+between the collapsed table and the strata: non-collapsibility and Simpson's paradox. Your
+Woolf margins answer a different and equally good question: *can* these strata be pooled?
+The synthetic table (`dev/synthetic-2x2x2x4.md`) shows why I'd keep both. Every Female
+stratum has a positive log odds ratio (Mantel–Haenszel 0.33), yet the collapsed Female
+table is −0.15. A pooled margin would hide exactly that reversal. So I'd suggest
+`pooled = c("woolf", "mh", "collapsed")`, with Woolf as the default, and document clearly
+what each margin means. Agreed on `woolf_test(decompose = TRUE)`: the Rows/Cols terms
+shouldn't be built from collapsed counts, and I'll take that up in vcdExtra.
+
+**2. Strata with an empty row or column.** Leaving them out of the margins and the test's
+df, and flagging them, seems right. The existing empty row/column *drawing* bug in
+`issues/TASKS.md` is separate, though. It affects the current release (your Titanic
+example gives `NaN` rings), but this is an edge case.
+Let's try to fix that now, independently of the margin feature.
+
+A simple fix: whenever a zero cell triggers the 0.5 correction, use the *corrected* table
+consistently.
+
+- **Rings:** rebuild the confidence-interval tables from the corrected table's margins,
+  not the observed ones (in `.fourfold_table_with_or_and_margins()`). The interval is
+  already computed from the corrected table, so this just makes the rings consistent with
+  it.
+- **Sectors:** fall back to the corrected table only where the standardization divides by
+  a zero total, i.e. an empty row with `margin = 1` or an empty column with `margin = 2`.
+  There the observed proportions are 0/0.
+
+On the Titanic Child × 1st panel (No row empty, OR 0.27, CI 0.004–20.4), this turns every
+`NaN` ring into a finite one. The rings are very wide, which honestly shows that the
+stratum carries almost no information. The empty row's sectors with `margin = 1` become
+equal halves. Fully standardized sectors are unchanged, since they already use the
+corrected odds ratio. `vcd::fourfold()` has the same problem (`findTableWithOAM(theta,
+tab)` uses the uncorrected table), so the same fix could go there.
+
+**3. Colour in the margin panels.** Margin panels answer different questions from the
+strata, so I'd treat them as their own family: Holm across the R + C + 1 margin tests,
+separate from the strata. Since this changes no colours on Detergent, it's worth checking
+on the synthetic table, where it may matter.
+
+**4. Where the label goes.** Let's decide from mock-ups when we come back to this. A
+stacked label in whichever top corner is free sounds promising.
+
+**5. Shading.** A `geom_fourfold()` argument is fine with me, and I agree it should be
+released together with the margin changes.
+
+**6. Computed variables.** Yes to `is_margin`. I'd hold off on documenting the computed
+columns as public, and on exporting a stat, until the feature settles, since naming them
+commits us once they're on CRAN.
+
+**7. Argument name.** `pooled` is fine, including if `"collapsed"` becomes one of its
+values.
+
+**8. Example data.** Detergent and the synthetic table, which has known targets, a
+`confound` knob and no zero cells. UCB by Dept would show single-variable margins. I'd
+avoid Titanic until the question 2 rule is in place, because its zeros complicate
+everything.
+
+**9. Reference ring.** Agreed: use the same estimator as `pooled`, and only at the corner
+value in margin panels.
