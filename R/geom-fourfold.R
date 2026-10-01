@@ -67,6 +67,47 @@ fourfold_palette <- function() {
   min(.fourfold_square_count_limit, .fourfold_count_offset - text_height)
 }
 
+# Each panel draws one table, so the drawing properties are fixed for the
+# layer. A mapping in the layer itself is an error, including one to a computed
+# variable with after_stat(), after_scale(), or stage(); one inherited from the
+# plot is left unused, since it may be meant for other layers (the stat drops
+# ordinary mappings, and GeomFourfold drops the computed ones).
+.fourfold_fixed_aes <- c("colour", "linewidth", "alpha", "size", "family")
+
+# aes() has already standardized names such as color and lwd. A NULL entry, as
+# in aes(colour = NULL), removes an inherited mapping and is allowed.
+.fourfold_check_mapping <- function(mapping) {
+  # Anything other than an aes() mapping is left to ggplot2's own checks.
+  if (!ggplot2::is_mapping(mapping)) {
+    return(invisible())
+  }
+  mapped <- intersect(names(mapping), .fourfold_fixed_aes)
+  mapped <- mapped[!vapply(mapped, function(name) is.null(mapping[[name]]),
+                           logical(1))]
+  if (length(mapped)) {
+    mapped <- paste0("`", mapped, "`")
+    if (length(mapped) > 1L) {
+      mapped <- paste(
+        paste(mapped[-length(mapped)], collapse = ", "),
+        mapped[length(mapped)],
+        sep = if (length(mapped) > 2L) ", and " else " and "
+      )
+    }
+    stop(
+      sprintf(
+        paste0(
+          "%s cannot be mapped in geom_fourfold(), which draws one table per ",
+          "panel; set colour, linewidth, and alpha as fixed arguments, e.g. ",
+          "`geom_fourfold(colour = \"grey30\")`, and text size and font with ",
+          "`theme_fourfold()`"
+        ),
+        mapped
+      ),
+      call. = FALSE
+    )
+  }
+}
+
 .fourfold_match_arg <- function(arg, choices, name) {
   tryCatch(
     match.arg(arg, choices),
@@ -722,6 +763,9 @@ GeomFourfold <- ggplot2::ggproto(
   extra_params = c("na.rm", "palette", "ticks", "extended", "shape"),
   draw_key = ggplot2::draw_key_blank,
   setup_data = function(data, params) {
+    # Drawing properties are fixed for the layer: drop any mapped with
+    # after_stat() and inherited from the plot (see .fourfold_fixed_aes).
+    data <- data[setdiff(names(data), .fourfold_fixed_aes)]
     # One layer-wide value, so that every facet places its counts alike.
     data$counts_reach <- .fourfold_counts_reach(
       data,
@@ -730,6 +774,16 @@ GeomFourfold <- ggplot2::ggproto(
       ticks = params$ticks
     )
     data
+  },
+  use_defaults = function(self, data, params = list(),
+                          modifiers = ggplot2::aes(), default_aes = NULL,
+                          theme = NULL, ...) {
+    # Likewise drop after_scale() and stage() modifications of them.
+    modifiers <- modifiers[setdiff(names(modifiers), .fourfold_fixed_aes)]
+    ggplot2::ggproto_parent(ggplot2::Geom, self)$use_defaults(
+      data, params, modifiers,
+      default_aes = default_aes, theme = theme, ...
+    )
   },
   draw_panel = function(
       data, panel_params, coord, palette, ticks, extended,
@@ -915,9 +969,21 @@ GeomFourfold <- ggplot2::ggproto(
 #'   `factor()`.
 #' - `y` (required): a categorical variable with exactly two levels.
 #' - `weight`: non-negative cell frequencies; defaults to `1`.
-#' - `colour`, `linewidth`, `alpha`, `size`, and `family`: fixed or mapped
-#'   drawing properties. `size` and `family` default to values inherited from
-#'   the plot theme.
+#'
+#' Each panel draws one table, so its drawing properties are set for the whole
+#' layer rather than mapped: give `colour`, `linewidth`, and `alpha` as fixed
+#' arguments, for example `geom_fourfold(colour = "grey30")`. Text `size` and
+#' `family` are inherited from the plot theme, such as [theme_fourfold()], and
+#' can also be given as fixed arguments. Fill colours are set with `palette`.
+#' Mapping any of these five in `geom_fourfold()` is an error, including a
+#' mapping to a computed variable with [ggplot2::after_stat()],
+#' [ggplot2::after_scale()], or [ggplot2::stage()]. Any such mapping inherited
+#' from [ggplot2::ggplot()] is ignored, since it may be meant for other layers.
+#' The exception is an inherited `after_stat()` mapping to a variable that
+#' `geom_fourfold()` does not compute, such as `after_stat(n)` for
+#' [ggplot2::geom_count()]: ggplot2 evaluates it before the layer can ignore
+#' it, so it stops the plot. Use `inherit.aes = FALSE` in `geom_fourfold()`, or
+#' move the mapping to the layer that uses it.
 #'
 #' @section Zero counts:
 #' If any cell of a panel's table is zero, 0.5 is added to all four cells
@@ -1072,6 +1138,7 @@ geom_fourfold <- function(
     na.rm = FALSE,
     show.legend = FALSE,
     inherit.aes = TRUE) {
+  .fourfold_check_mapping(mapping)
   validated <- .fourfold_validate_params(
     std, margin, conf_level, extended, ticks, p_adjust_method, palette,
     shape

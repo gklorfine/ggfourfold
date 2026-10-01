@@ -718,3 +718,101 @@ test_that("faceted Titanic with the crew draws every panel", {
   expect_true(all(is.na(built$odds_ratio[blank])))
   expect_false(anyNA(built$odds_ratio[!blank]))
 })
+
+# Drawing properties -----------------------------------------------------------
+
+test_that("mapping a drawing property in the layer is an error", {
+  mappings <- list(
+    ggplot2::aes(colour = x), ggplot2::aes(color = x),
+    ggplot2::aes(linewidth = w), ggplot2::aes(lwd = w),
+    ggplot2::aes(alpha = w), ggplot2::aes(size = w), ggplot2::aes(family = y)
+  )
+  for (mapping in mappings) {
+    expect_error(
+      geom_fourfold(mapping),
+      "cannot be mapped in geom_fourfold(), which draws one table per panel",
+      fixed = TRUE
+    )
+  }
+  expect_error(
+    geom_fourfold(ggplot2::aes(colour = x, size = w)),
+    "`colour` and `size` cannot be mapped",
+    fixed = TRUE
+  )
+  expect_error(
+    geom_fourfold(ggplot2::aes(colour = x, alpha = w, size = w)),
+    "`colour`, `alpha`, and `size` cannot be mapped",
+    fixed = TRUE
+  )
+  # So are mappings to computed variables, which would otherwise work.
+  computed <- list(
+    ggplot2::aes(colour = ggplot2::after_stat(significant)),
+    ggplot2::aes(colour = ggplot2::after_stat(PANEL)),
+    ggplot2::aes(linewidth = ggplot2::after_stat(odds_ratio)),
+    ggplot2::aes(alpha = ggplot2::after_scale(0.3)),
+    ggplot2::aes(colour = ggplot2::stage(x, after_scale = "red"))
+  )
+  for (mapping in computed) {
+    expect_error(geom_fourfold(mapping), "cannot be mapped in geom_fourfold()",
+                 fixed = TRUE)
+  }
+  # Other aesthetics are unaffected, and aes(colour = NULL) removes an
+  # inherited mapping as usual.
+  expect_s3_class(
+    geom_fourfold(ggplot2::aes(x, y, weight = w)), "LayerInstance"
+  )
+  expect_s3_class(geom_fourfold(ggplot2::aes(colour = NULL)), "LayerInstance")
+  # Something other than a mapping gets ggplot2's own error.
+  expect_error(geom_fourfold(data.frame(size = 1)), "must be created by")
+})
+
+test_that("drawing properties mapped in ggplot() are ignored", {
+  unmapped <- ggplot2::ggplot(fourfold_data, ggplot2::aes(x, y, weight = w)) +
+    geom_fourfold()
+  mapped <- ggplot2::ggplot(
+    fourfold_data,
+    ggplot2::aes(x, y, weight = w, colour = x, linewidth = w, alpha = w,
+                 size = w)
+  ) +
+    geom_fourfold()
+  expect_no_warning(built <- ggplot2::layer_data(mapped))
+  expect_identical(built, ggplot2::layer_data(unmapped))
+  # So are inherited mappings to computed variables.
+  inherited <- list(
+    ggplot2::aes(colour = ggplot2::after_stat(significant)),
+    ggplot2::aes(colour = ggplot2::after_stat(PANEL)),
+    ggplot2::aes(alpha = ggplot2::after_scale(0.4)),
+    ggplot2::aes(colour = ggplot2::stage(x, after_scale = "red"))
+  )
+  for (mapping in inherited) {
+    computed <- ggplot2::ggplot(fourfold_data, ggplot2::aes(x, y, weight = w)) +
+      mapping + geom_fourfold()
+    expect_no_warning(computed_data <- ggplot2::layer_data(computed))
+    expect_identical(computed_data, ggplot2::layer_data(unmapped))
+  }
+  # The mapping still reaches another layer that uses it.
+  with_text <- mapped + ggplot2::geom_text(ggplot2::aes(label = w))
+  expect_no_warning(text <- ggplot2::layer_data(with_text, 2))
+  expect_length(unique(text$colour), 2)
+  expect_identical(ggplot2::layer_data(with_text, 1), built)
+})
+
+test_that("fixed drawing properties are applied", {
+  plot <- table_plot(
+    matrix(c(1, 2, 3, 4), 2),
+    colour = "red", linewidth = 2, alpha = 0.5, size = 7, family = "mono"
+  )
+  built <- ggplot2::layer_data(plot)
+  expect_identical(unique(built$colour), "red")
+  expect_identical(unique(built$linewidth), 2)
+  expect_identical(unique(built$alpha), 0.5)
+  expect_identical(unique(built$size), 7)
+  expect_identical(unique(built$family), "mono")
+  grDevices::pdf(NULL)
+  on.exit(grDevices::dev.off())
+  drawn <- ggplot2::ggplotGrob(plot)
+  panel <- drawn$grobs[[which(drawn$layout$name == "panel")]]
+  frame <- grid::getGrob(panel, "fourfold-frame", grep = TRUE, global = TRUE)
+  expect_identical(frame$gp$col, scales::alpha("red", 0.5))
+  expect_equal(frame$gp$lwd, 2 * ggplot2::.pt)
+})

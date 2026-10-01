@@ -132,10 +132,22 @@ with exactly two levels. Convert numeric codes, such as 0/1, with
 \code{factor()}.
 \item \code{y} (required): a categorical variable with exactly two levels.
 \item \code{weight}: non-negative cell frequencies; defaults to \code{1}.
-\item \code{colour}, \code{linewidth}, \code{alpha}, \code{size}, and \code{family}: fixed or mapped
-drawing properties. \code{size} and \code{family} default to values inherited from
-the plot theme.
 }
+
+Each panel draws one table, so its drawing properties are set for the whole
+layer rather than mapped: give \code{colour}, \code{linewidth}, and \code{alpha} as fixed
+arguments, for example \code{geom_fourfold(colour = "grey30")}. Text \code{size} and
+\code{family} are inherited from the plot theme, such as \code{\link[=theme_fourfold]{theme_fourfold()}}, and
+can also be given as fixed arguments. Fill colours are set with \code{palette}.
+Mapping any of these five in \code{geom_fourfold()} is an error, including a
+mapping to a computed variable with \code{\link[ggplot2:after_stat]{ggplot2::after_stat()}},
+\code{\link[ggplot2:after_scale]{ggplot2::after_scale()}}, or \code{\link[ggplot2:stage]{ggplot2::stage()}}. Any such mapping inherited
+from \code{\link[ggplot2:ggplot]{ggplot2::ggplot()}} is ignored, since it may be meant for other layers.
+The exception is an inherited \code{after_stat()} mapping to a variable that
+\code{geom_fourfold()} does not compute, such as \code{after_stat(n)} for
+\code{\link[ggplot2:geom_count]{ggplot2::geom_count()}}: ggplot2 evaluates it before the layer can ignore
+it, so it stops the plot. Use \code{inherit.aes = FALSE} in \code{geom_fourfold()}, or
+move the mapping to the layer that uses it.
 }
 
 \section{Zero counts}{

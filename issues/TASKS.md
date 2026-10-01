@@ -404,7 +404,8 @@ As these items are resolved, check them off as [X] and record the fix and verifi
   File: `R/geom-fourfold.R` (`.fourfold_panel_table()`, `.fourfold_compute_layer()`,
   `.fourfold_counts_reach()`, `GeomFourfold$draw_panel()`).
 
-- [ ] **Align mapped drawing aesthetics with the documented API** — the help advertises
+- [X] **Align mapped drawing aesthetics with the documented API** (fixed 2026-10-01) —
+  the help advertises
   `colour`, `linewidth`, `alpha`, `size`, and `family` as fixed or mapped properties, but
   `.fourfold_compute_layer()` constructs fresh output without preserving those mappings.
   Reproduced with `aes(colour = x)`: all outlines use the default black. `draw_panel()` also
@@ -412,6 +413,124 @@ As these items are resolved, check them off as [X] and record the fix and verifi
   supported mapping behavior, including aggregation within a panel, or document these as
   fixed arguments and explicitly reject unsupported mappings rather than silently ignoring
   them. Regenerate the help after updating the roxygen text.
+  - *What HEAD actually did* (corrected after review): ordinary mappings, evaluated
+    before the stat, were silently ignored because the stat builds fresh output without
+    those columns. Mappings to computed variables, applied after the stat, did work:
+    `aes(colour = after_stat(significant))` drew each panel's outlines by significance,
+    `after_stat(PANEL)` gave each stratum its own outline colour, `linewidth =
+    after_stat(odds_ratio)` and `after_scale()`/`stage()` modifications applied too, both
+    in the layer and inherited from `ggplot()`. A mapped value that varies within a
+    panel, such as `after_stat(count)`, was silently drawn with the first cell's value,
+    because `draw_panel()` reads the drawing properties from the first row.
+  - *Decision* (GK, 2026-10-01): fixed arguments only, including blocking the
+    computed-variable mappings that worked at HEAD (option A; deliberate, and tentative
+    — see the next item).
+    - Ordinary mappings: a panel draws one table, so a mapping that varies within a
+      panel (e.g. `aes(colour = Gender)`) has no single value to draw; fills are the
+      semantic `palette`; text size and font come from the plot theme.
+    - Computed-variable mappings (`after_stat()`, `after_scale()`, `stage()`): supporting
+      them would make the computed column names (`significant`, `odds_ratio`, `PANEL`,
+      ...) public API on CRAN. MF asked on 2026-09-29 (`issues/marginal-plots.md`,
+      section 14, reply 6) to hold off documenting the computed columns as public until
+      the margin feature settles. Blocking now costs nobody (the package is not on CRAN
+      yet), and unblocking later is non-breaking; the reverse would break user code. The
+      first version of this record wrongly said a per-panel mapping would need the
+      column carried through the stat; the computed columns already are.
+    - A mapping in the layer itself (`geom_fourfold(aes(colour = ...))`, or of
+      `linewidth`, `alpha`, `size`, or `family`, including `color`, `lwd`, and the other
+      names `aes()` standardizes, and computed-variable mappings) is an error when the
+      layer is created. `aes(colour = NULL)`, which removes an inherited mapping, is
+      allowed.
+    - A mapping inherited from `ggplot()` is ignored, since a plot-level mapping is
+      often meant for another layer such as `geom_text()`; an error there would break
+      legitimate plots. This matches how ggplot2 treats an inherited aesthetic a layer
+      cannot use. (A warning was considered and rejected: it would fire on every
+      multi-layer plot that maps colour globally.) Inherited computed-variable mappings,
+      which HEAD applied, are now ignored too, so the rule is the same for both kinds.
+  - *Fix*: new `.fourfold_check_mapping()`, called first in `geom_fourfold()`, stops
+    with e.g. "`colour` and `size` cannot be mapped in geom_fourfold(), which draws one
+    table per panel; set colour, linewidth, and alpha as fixed arguments, e.g.
+    `geom_fourfold(colour = "grey30")`, and text size and font with
+    `theme_fourfold()`". It skips anything that is not an `aes()` mapping
+    (`ggplot2::is_mapping()`), so a data frame passed in the mapping position still gets
+    ggplot2's own error, and skips `NULL` entries. The five properties are listed once,
+    in `.fourfold_fixed_aes`. The stat already drops ordinary mappings; for inherited
+    computed ones, `GeomFourfold$setup_data()` drops the `after_stat()` columns and a
+    new `GeomFourfold$use_defaults()` drops the `after_scale()`/`stage()` modifiers
+    before calling ggplot2's method. Reading the drawing properties from the first row
+    in `draw_panel()` is correct now that they are constant.
+  - *Docs*: the Aesthetics section lists only `x`, `y`, and `weight` as aesthetics and
+    explains the fixed drawing properties, that text size and font are inherited from
+    the plot theme, `palette` for fills, the error for a layer mapping (including
+    computed variables), and that an inherited one is ignored. `man/geom_fourfold.Rd`
+    regenerated.
+  - *Tests* (appended; 388 expectations in all): a layer mapping of each property
+    (with `color` and `lwd`) is an error, as are `after_stat()`, `after_scale()`, and
+    `stage()` mappings; two or three are listed with "and"; `x`/`y`/`weight` mappings
+    and `aes(colour = NULL)` are accepted; a data frame gets ggplot2's error;
+    plot-level ordinary and computed mappings give layer data identical to no mapping,
+    without warnings, while ordinary ones still reach a `geom_text()` layer; fixed
+    values reach the layer data and the drawn grobs (colour with alpha, line width in
+    points).
+  - *Verification*: the 250-plot battery (no mappings) is identical to HEAD (944d040)
+    in layer data, warnings, errors, and pixels. Mapping cases: plot-level ordinary
+    mappings (one, several, with fixed overrides) and fixed values are identical to HEAD
+    in data and pixels, and a plot-level mapping gives the same result as
+    `inherit.aes = FALSE`; layer mappings of colour and size, which HEAD silently
+    ignored, now error; plot-level `after_stat(significant)`, `after_stat(PANEL)`,
+    `after_scale(alpha)`, and `stage(..., after_scale = "red")`, which HEAD applied, now
+    give the default black outlines; fixed values and theme-derived text sizes
+    (`theme_bw(base_size = 20)`: 7.03) are unchanged. No README, vignette, or example
+    maps these properties. Both dev scripts pass; `R CMD check --as-cran` on the built
+    package: Status OK, including Rd cross-references and the PDF and HTML manuals.
+  - *Independent verification* (the two statistician subagents, on the first version
+    of this change): both confirmed ordinary layer mappings error, inherited ones change
+    nothing, fixed values work, and nothing else changes (3,780 grid entries and 1,140
+    PNGs; 801 plots). Both found that the check also blocked computed-variable mappings
+    that worked at HEAD and that the record misdescribed HEAD; this led to the decision
+    above. Their other findings, addressed: `aes(colour = NULL)` was rejected; a data
+    frame in the mapping position got a misleading message; inherited computed mappings
+    were still applied, contrary to the docs; "text size and family come from
+    `theme_fourfold()`" was too narrow; the message's list grammar; a long roxygen line.
+    Second round (both, on the revised change): correct, with no regressions. One
+    reviewer's 3,780 grid entries and 1,140 PNGs, and the other's 822 plots (five
+    themes, fixed values, empty panels), are identical to 944d040 except the intended
+    plot-level `after_stat()`/`after_scale()`/`stage()` cases (11 plots), whose layer
+    data are now `identical()` to the unmapped plot while `geom_text()` still gets the
+    mappings. The `use_defaults()` override matches ggplot2 4.0.3's signature; fixed
+    values (including `I("red")`), theme defaults, `from_theme`, `get_geom_defaults()`,
+    and `update_geom_defaults()` behave as at HEAD; `setup_data()` drops nothing the
+    drawing needs. Finding addressed: the docs' "inherited mappings are ignored" needed
+    the `after_stat()` exception below. Not adopted (optional): dropping an inherited
+    `fill = after_stat(...)` column too (unused and harmless, as at HEAD).
+  - *Limitations*: an inherited `after_stat()` mapping to a variable the fourfold stat
+    does not compute, e.g. `ggplot(..., aes(size = after_stat(n))) + geom_fourfold() +
+    geom_count()`, still stops the plot ("object 'n' not found"), as at HEAD: ggplot2
+    evaluates it before the geom can drop it. Documented, with `inherit.aes = FALSE` or
+    moving the mapping as the remedy. Calling `ggplot2::layer()` directly with
+    `GeomFourfold` skips the layer-mapping check (advanced use; such mappings are then
+    ignored).
+  Files: `R/geom-fourfold.R` (`geom_fourfold()`, `.fourfold_check_mapping()`,
+  `GeomFourfold$setup_data()`, `GeomFourfold$use_defaults()`), `man/geom_fourfold.Rd`.
+
+- [ ] **Tentative: allow drawing properties mapped to per-panel computed variables**
+  (potential feature, deferred 2026-10-01; decide with MF once the computed columns are
+  documented) — the item above blocks mappings such as
+  `geom_fourfold(aes(colour = after_stat(significant)))`, which worked before it. They
+  would let users outline significant panels in another colour, give each stratum its
+  own outline colour (`after_stat(PANEL)`), or scale line width by the odds ratio.
+  - *Why deferred*: the mapped names (`significant`, `odds_ratio`, `PANEL`, ...) would
+    become public API on CRAN. MF asked to hold off documenting the computed columns
+    until the margin feature settles (`issues/marginal-plots.md`, section 14, reply 6),
+    and the margin feature may add or rename some (e.g. `is_margin`).
+  - *What it would take*: let `after_stat()`, `after_scale()`, and `stage()` mappings
+    through `.fourfold_check_mapping()` (ordinary mappings stay an error), stop dropping
+    them in `GeomFourfold$setup_data()` and `use_defaults()`, and add an error when a
+    mapped value differs between the cells of a panel (e.g. `after_stat(count)`), since
+    a panel is drawn with one value. Document the computed variables as public, with
+    examples, and decide whether legends should show (`show.legend` is `FALSE`). Small
+    code change, plus tests; non-breaking, since it only turns errors into working
+    plots.
   Files: `R/geom-fourfold.R`, `man/geom_fourfold.Rd`.
 
 - [ ] **Remove missing categories consistently with `na.rm`** — adding a row with an `NA`
