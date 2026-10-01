@@ -13,3 +13,6 @@ inst/doc
 
 .positai
 docs
+
+# Exports from dev/examples.R
+dev/output/

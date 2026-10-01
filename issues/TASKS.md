@@ -360,7 +360,8 @@ As these items are resolved, check them off as [X] and record the fix and verifi
 
 ## Development scripts
 
-- [ ] **Repair stale source paths and the missing verification reference** —
+- [X] **Repair stale source paths and the missing verification reference** (fixed
+  2026-09-30) —
   `Rscript dev/verify-geom-fourfold.R` currently stops immediately trying to source
   `dev/geom-fourfold.R`; the implementation now lives in `R/`. The script also sources a
   nonexistent `dev/ggfourfold.R` and calls its unavailable `ggfourfold_data()` reference
@@ -369,6 +370,55 @@ As these items are resolved, check them off as [X] and record the fix and verifi
   loading and run instructions, replace or restore the reference calculation, and check
   both scripts from a fresh R session at the package root. Keep the numerical reference
   independent of the implementation being tested.
+  - *Fix*: both scripts now load the package with `pkgload::load_all()` from the
+    script's own directory (which also exposes the internal helpers the verification
+    uses), and their headers give `Rscript dev/verify-geom-fourfold.R` and
+    `Rscript dev/examples.R`. Both look for the file being `source()`d before Rscript's
+    `--file`, so they also work when sourced from another script, and fall back to the
+    file name when `source(chdir = TRUE)` has made a relative path stale. In
+    `dev/examples.R`, `.show_fourfold_example()` now draws each plot on a null device
+    when not interactive, so `Rscript dev/examples.R` checks all six, including the
+    count placement done at drawing time; export paths moved
+    from `dev/fourfold/output/` to `dev/output/` (now in `.gitignore`); and the Titanic
+    example's comment no longer cites "structural zeroes" (it now points to the Zero
+    counts section). The verification script writes its one bare `ggplotGrob()` to a
+    null device instead of `Rplots.pdf` in the working directory, and its closing
+    message no longer says "dev geom".
+  - *Reference*: the removed files were never in this repository's history, so
+    `ggfourfold_data()` could not be restored. `fourfold_reference()` replaces it,
+    independently of the package's closed forms: standardized cells by iterative
+    proportional fitting to unit row and column totals (0.5 added when a cell is zero,
+    as in vcd), ring tables by `uniroot()` on the log odds ratio with the observed
+    totals, then the same standardization. The fitting stops once the row totals are 1
+    after a column step (stopping on a small change per step stopped early, wrongly by
+    up to 9e-10, on 813 of 1,659 strongly associated random tables; the new rule was
+    within 1.1e-13 whenever it stopped, and otherwise errors at the iteration cap). It
+    matches the package on UCB at the script's original tolerance of 1e-13. A new block
+    checks the rings with `margin = 1`, `margin = 2`, `ind.max`, and `all.max` against
+    the same reference with the matching standardization; previously only the default
+    display's rings were checked, and that display cannot show which totals the rings
+    were built from.
+  - *Verification*: from fresh R sessions, the verification script passes run with
+    Rscript from the package root and from another directory, and via `source()`
+    (with `chdir = TRUE`, and by absolute path from elsewhere); `dev/examples.R` runs
+    with Rscript from both, and via `source()` with relative, absolute, and
+    `chdir = TRUE` paths, with all 6 example plots building without warnings. No files
+    are written to the package root. Mutation checks on a scratch copy: scaling the
+    default sectors by 1 + 1e-9, or the ring solver's cell by 1 + 1e-7, or building every
+    panel's rings from `tab + 0.5`, makes the verification script fail.
+  - *Independent verification* (two statistician subagents). The first, on the first
+    repair: both scripts ran in every mode above, the reference was accurate to 2.3e-16
+    (fitting) and 2e-15 (ring cells) against Rmpfr, and planted errors of 1 + 1e-13 were
+    caught. Its findings — the `chdir = TRUE` path, the missing ring checks for
+    non-default standardizations, the stopping rule, sourcing the verification from
+    elsewhere, plus building every example, ignoring `dev/output/`, and the "dev geom"
+    message — are all addressed above. The second, on the revised scripts: exit 0 and
+    no files written in 16 invocation modes; fitting accurate to 2.2e-16 on UCB and on
+    2,999 random tables (|log OR| up to 9.1, none failing to converge); planted errors
+    caught down to 1 + 3e-13 in rings and 1 + 1e-12 in sectors and solver cells, plus
+    rings from `tab + 1e-6`, swapped margins, a panel maximum for `all.max`, and swapped
+    bounds. Its suggestions, adopted: draw (not only build) the examples, and note that
+    `fourfold_reference()` needs strata without an empty row or column.
   Files: `dev/verify-geom-fourfold.R`, `dev/examples.R`.
 
 ## Display / layout

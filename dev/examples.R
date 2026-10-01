@@ -1,20 +1,16 @@
-# Examples for the development fourfold geom.
+# Examples for geom_fourfold().
 #
 # Run the complete file from the package root with:
-#   Rscript dev/fourfold/examples.R
+#   Rscript dev/examples.R
 #
 # In RStudio, source the file once, then run individual example sections to
 # display their named plot objects in the Plots pane.
 
+# The directory of this script when it is run with source() or Rscript,
+# otherwise the working directory. load_all() finds the package root from
+# there. source() is checked first: when this file is sourced from another
+# script run with Rscript, --file names that other script.
 .fourfold_examples_dir <- function() {
-  args <- commandArgs(trailingOnly = FALSE)
-  file_arg <- grep("^--file=", args, value = TRUE)
-  candidates <- character()
-
-  if (length(file_arg)) {
-    candidates <- dirname(sub("^--file=", "", file_arg[1]))
-  }
-
   source_files <- vapply(
     sys.frames(),
     function(frame) {
@@ -24,26 +20,34 @@
   )
   source_files <- source_files[!is.na(source_files)]
   if (length(source_files)) {
-    candidates <- c(candidates, dirname(tail(source_files, 1)))
+    file <- tail(source_files, 1)
+    # With source(chdir = TRUE), a relative path no longer resolves from the
+    # new working directory, which is the script's own.
+    if (!file.exists(file)) file <- basename(file)
+    return(dirname(normalizePath(file)))
   }
 
-  candidates <- unique(c(candidates, "dev/fourfold", "."))
-  for (candidate in candidates) {
-    implementation <- file.path(candidate, "geom-fourfold.R")
-    if (file.exists(implementation)) {
-      return(normalizePath(candidate))
-    }
+  args <- commandArgs(trailingOnly = FALSE)
+  file_arg <- grep("^--file=", args, value = TRUE)
+  if (length(file_arg)) {
+    return(dirname(normalizePath(sub("^--file=", "", file_arg[1]))))
   }
 
-  stop("Could not locate dev/fourfold/geom-fourfold.R", call. = FALSE)
+  getwd()
 }
 
-source(file.path(.fourfold_examples_dir(), "geom-fourfold.R"))
-source(file.path(.fourfold_examples_dir(), "theme-fourfold.R"))
+pkgload::load_all(.fourfold_examples_dir(), quiet = TRUE)
 library(ggplot2)
 
+# Interactively, display the plot. Otherwise draw it on a null device, so
+# that running the file with Rscript checks every example, including the
+# count placement done at drawing time.
 .show_fourfold_example <- function(x) {
   if (interactive()) {
+    print(x)
+  } else if (inherits(x, "ggplot")) {
+    grDevices::pdf(NULL)
+    on.exit(grDevices::dev.off())
     print(x)
   }
   invisible(x)
@@ -119,8 +123,9 @@ titanic_grid <- ggplot(
   titanic,
   aes(x = Sex, y = Survived, weight = Freq)
 ) +
-  # Some Titanic strata contain structural zeroes. Suppressing confidence
-  # rings keeps this layout example focused on the two-variable facet design.
+  # Suppressing confidence rings keeps this layout example focused on the
+  # two-variable facet design. (Every 1st- and 2nd-class child survived, so
+  # those panels have an empty row; see "Zero counts" in ?geom_fourfold.)
   geom_fourfold(conf_level = 0) +
   facet_grid(
     rows = vars(Age),
@@ -223,10 +228,10 @@ ucb_inference <- ucb_inference[
 # output preserves the same layout without depending on a raster resolution.
 
 if (FALSE) {
-  dir.create("dev/fourfold/output", showWarnings = FALSE, recursive = TRUE)
+  dir.create("dev/output", showWarnings = FALSE, recursive = TRUE)
 
   ggsave(
-    "dev/fourfold/output/ucb-fourfold.png",
+    "dev/output/ucb-fourfold.png",
     ucb_wrap,
     width = 10,
     height = 7,
@@ -235,7 +240,7 @@ if (FALSE) {
     bg = "white"
   )
   ggsave(
-    "dev/fourfold/output/ucb-fourfold.pdf",
+    "dev/output/ucb-fourfold.pdf",
     ucb_wrap,
     width = 10,
     height = 7,
@@ -243,7 +248,7 @@ if (FALSE) {
     bg = "white"
   )
   ggsave(
-    "dev/fourfold/output/ucb-fourfold.svg",
+    "dev/output/ucb-fourfold.svg",
     ucb_wrap,
     width = 10,
     height = 7,

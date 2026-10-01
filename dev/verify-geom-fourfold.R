@@ -1,27 +1,49 @@
-# Numerical, API, and visual verification for the development fourfold files.
+# Numerical, API, and visual verification for geom_fourfold().
 #
 # Run from the package root with:
-#   Rscript dev/fourfold/verify-geom-fourfold.R
+#   Rscript dev/verify-geom-fourfold.R
 #
 # Set FOURFOLD_GEOM_VERIFY_DIR to retain output in a chosen directory.
 
-args <- commandArgs(trailingOnly = FALSE)
-file_arg <- grep("^--file=", args, value = TRUE)
-script_dir <- if (length(file_arg)) {
-  dirname(normalizePath(sub("^--file=", "", file_arg[1])))
-} else {
-  normalizePath("dev")
-}
-source(file.path(script_dir, "geom-fourfold.R"))
-source(file.path(script_dir, "theme-fourfold.R"))
-source(file.path(script_dir, "ggfourfold.R"))
-
-if (!requireNamespace("vcd", quietly = TRUE) ||
+if (!requireNamespace("pkgload", quietly = TRUE) ||
+    !requireNamespace("vcd", quietly = TRUE) ||
     !requireNamespace("gridExtra", quietly = TRUE) ||
     !requireNamespace("png", quietly = TRUE) ||
     !requireNamespace("svglite", quietly = TRUE)) {
-  stop("Verification requires vcd, gridExtra, png, and svglite", call. = FALSE)
+  stop(
+    "Verification requires pkgload, vcd, gridExtra, png, and svglite",
+    call. = FALSE
+  )
 }
+
+# The directory of this script when it is run with source() or Rscript,
+# otherwise dev/ under the working directory. source() is checked first:
+# when this file is sourced from another script run with Rscript, --file
+# names that other script.
+script_dir <- local({
+  source_files <- vapply(
+    sys.frames(),
+    function(frame) {
+      if (is.null(frame$ofile)) NA_character_ else frame$ofile
+    },
+    character(1)
+  )
+  source_files <- source_files[!is.na(source_files)]
+  file_arg <- grep("^--file=", commandArgs(trailingOnly = FALSE), value = TRUE)
+  if (length(source_files)) {
+    file <- tail(source_files, 1)
+    # With source(chdir = TRUE), a relative path no longer resolves from the
+    # new working directory, which is the script's own.
+    if (!file.exists(file)) file <- basename(file)
+    dirname(normalizePath(file))
+  } else if (length(file_arg)) {
+    dirname(normalizePath(sub("^--file=", "", file_arg[1])))
+  } else {
+    normalizePath("dev")
+  }
+})
+# load_all() also makes the internal helpers used below available.
+pkgload::load_all(dirname(script_dir), quiet = TRUE)
 
 expect_error <- function(expr, pattern) {
   error <- tryCatch(
@@ -65,11 +87,101 @@ panel_rows <- function(data) {
   data[!duplicated(data$PANEL), , drop = FALSE]
 }
 
+# Reference values, computed without the package's closed-form solutions so
+# that they check them independently.
+
+# Iterative proportional fitting to unit row and column totals, which keeps
+# the odds ratio: the default display (std = "margins", margin = c(1, 2)).
+# As in vcd::fourfold(), 0.5 is added to every cell when any cell is zero.
+# Fitting stops once the row totals are also 1 after a column step; strongly
+# associated tables converge slowly and then hit the iteration limit rather
+# than stopping early with a wrong table.
+equal_margins <- function(tab) {
+  if (any(tab == 0)) tab <- tab + 0.5
+  for (iteration in seq_len(10000L)) {
+    tab <- tab / rowSums(tab)
+    tab <- t(t(tab) / colSums(tab))
+    if (max(abs(rowSums(tab) - 1)) < 2e-16) {
+      return(unname(tab))
+    }
+  }
+  stop("iterative proportional fitting did not converge", call. = FALSE)
+}
+
+# The table with the row and column totals of `tab` and odds ratio `or`,
+# found by root finding. The tolerance is absolute, which suits the
+# count-sized tables used here.
+table_with_or <- function(or, tab) {
+  rows <- rowSums(tab)
+  columns <- colSums(tab)
+  cells <- function(x) {
+    matrix(c(columns[1] - x, x, rows[1] - columns[1] + x, rows[2] - x), 2)
+  }
+  log_or <- function(x) {
+    m <- cells(x)
+    log(m[1, 1]) + log(m[2, 2]) - log(m[1, 2]) - log(m[2, 1]) - log(or)
+  }
+  lower <- max(0, columns[1] - rows[1])
+  upper <- min(columns[1], rows[2])
+  inset <- 1e-12 * (upper - lower)
+  cells(stats::uniroot(
+    log_or, c(lower + inset, upper - inset), tol = 1e-14
+  )$root)
+}
+
+# Standardized cells and confidence-ring radii (rows: lower, upper) for each
+# 2 x 2 stratum of a 2 x 2 x k table. Ring tables keep each stratum's
+# observed totals, so strata must not have an entirely empty row or column.
+fourfold_reference <- function(tables, conf_level = 0.95,
+                               standardize = equal_margins) {
+  strata <- lapply(seq_len(dim(tables)[3]), function(k) tables[, , k])
+  confidence_radii <- lapply(strata, function(tab) {
+    corrected <- if (any(tab == 0)) tab + 0.5 else tab
+    log_or <- log(corrected[1, 1] * corrected[2, 2] /
+                  (corrected[1, 2] * corrected[2, 1]))
+    se <- sqrt(sum(1 / corrected))
+    z <- stats::qnorm((1 + conf_level) / 2)
+    limits <- exp(log_or + c(-1, 1) * z * se)
+    t(vapply(limits, function(limit) {
+      sqrt(c(standardize(table_with_or(limit, tab))))
+    }, numeric(4)))
+  })
+  list(
+    standardized = lapply(strata, standardize),
+    confidence_radii = confidence_radii
+  )
+}
+
+# Compares a plot's standardized cells and ring radii with a reference.
+check_against_reference <- function(data, reference) {
+  for (panel in seq_along(reference$standardized)) {
+    candidate <- data[as.integer(data$PANEL) == panel, , drop = FALSE]
+    candidate <- candidate[order(candidate$cell), ]
+    stopifnot(
+      isTRUE(all.equal(
+        candidate$standardized,
+        unname(c(reference$standardized[[panel]])),
+        tolerance = 1e-13
+      )),
+      isTRUE(all.equal(
+        candidate$conf_low_radius,
+        unname(reference$confidence_radii[[panel]][1, ]),
+        tolerance = 1e-13
+      )),
+      isTRUE(all.equal(
+        candidate$conf_high_radius,
+        unname(reference$confidence_radii[[panel]][2, ]),
+        tolerance = 1e-13
+      ))
+    )
+  }
+}
+
 # --- Numerical fidelity ----------------------------------------------------
 
 built <- fourfold_data(fourfold_plot())
 summary <- panel_rows(built)
-reference <- ggfourfold_data(UCBAdmissions)
+reference <- fourfold_reference(UCBAdmissions)
 
 manual_or <- apply(UCBAdmissions, 3, function(tab) {
   (tab[1, 1] * tab[2, 2]) / (tab[1, 2] * tab[2, 1])
@@ -96,27 +208,11 @@ stopifnot(
   identical(summary$significant, unname(manual_adjusted_p < 0.05))
 )
 
+check_against_reference(built, reference)
 for (panel in seq_len(6L)) {
   candidate <- built[as.integer(built$PANEL) == panel, , drop = FALSE]
   candidate <- candidate[order(candidate$cell), ]
-  stopifnot(
-    identical(candidate$count, unname(c(UCBAdmissions[, , panel]))),
-    isTRUE(all.equal(
-      candidate$standardized,
-      unname(c(reference$standardized[[panel]])),
-      tolerance = 1e-13
-    )),
-    isTRUE(all.equal(
-      candidate$conf_low_radius,
-      unname(reference$confidence_radii[[panel]][1, ]),
-      tolerance = 1e-13
-    )),
-    isTRUE(all.equal(
-      candidate$conf_high_radius,
-      unname(reference$confidence_radii[[panel]][2, ]),
-      tolerance = 1e-13
-    ))
-  )
+  stopifnot(identical(candidate$count, unname(c(UCBAdmissions[, , panel]))))
 
   tab <- UCBAdmissions[, , panel]
   for (bound in c("conf_low", "conf_high")) {
@@ -165,6 +261,25 @@ for (selected_margin in 1:2) {
   }
 }
 
+# Rings keep the observed totals under every standardization. The default
+# display depends only on the odds ratio, so it cannot show which totals the
+# rings were built from.
+ring_standardizations <- list(
+  list(args = list(margin = 1), standardize = function(m) prop.table(m, 1)),
+  list(args = list(margin = 2), standardize = function(m) prop.table(m, 2)),
+  list(args = list(std = "ind.max"), standardize = function(m) m / max(m)),
+  list(
+    args = list(std = "all.max"),
+    standardize = function(m) m / max(UCBAdmissions)
+  )
+)
+for (setting in ring_standardizations) {
+  check_against_reference(
+    fourfold_data(do.call(fourfold_plot, setting$args)),
+    fourfold_reference(UCBAdmissions, standardize = setting$standardize)
+  )
+}
+
 # p-value adjustment is layer-wide and honors alternative methods.
 bonferroni <- panel_rows(fourfold_data(fourfold_plot(
   p_adjust_method = "bonferroni"
@@ -188,11 +303,10 @@ stopifnot(
   all(is.na(no_extended$p_adjusted)),
   all(no_extended$palette_index %in% 1:2)
 )
-device_before_grob <- grDevices::dev.cur()
+# A null device, so that no Rplots.pdf is written to the working directory.
+grDevices::pdf(NULL)
 invisible(ggplot2::ggplotGrob(no_conf_plot))
-if (grDevices::dev.cur() != device_before_grob) {
-  invisible(grDevices::dev.off())
-}
+invisible(grDevices::dev.off())
 
 # Zero cells receive vcd's Haldane-Anscombe correction for inference.
 zero <- data.frame(
@@ -518,5 +632,5 @@ if (nzchar(pdftoppm)) {
 }
 message("Minimum label clearances (pixels):")
 print(round(clearance, 1))
-message("All dev geom numerical, API, and rendering checks passed.")
+message("All geom_fourfold() numerical, API, and rendering checks passed.")
 message("Verification output: ", normalizePath(out_dir))
