@@ -819,3 +819,96 @@ everything.
 
 **9. Reference ring.** Agreed: use the same estimator as `pooled`, and only at the corner
 value in margin panels.
+
+### GK's reply: the empty row/column fix (2026-09-30)
+
+Following MF's point 2, the drawing bug is fixed now, separately from the margin feature
+(commit `e49a15d`). This is a plain summary; the full record is the `issues/TASKS.md`
+item "Handle tables with an entirely empty row or column explicitly" (the *Decision* and
+*Fix* bullets cover what changed; the rest is the verification trail).
+
+**The problem.** When a whole row or column of a table is zero, as for the Titanic 1st-
+and 2nd-class children (every one survived), the rings were missing or wrong. R warned
+"NaNs produced", the lower ring wasn't drawn, and the upper ring sat on top of the
+sectors. With `margin = 1` it was worse than we'd noticed: the empty row couldn't be
+drawn at all, so ggplot2 dropped it, the labels became "NA", and the counts landed in
+the wrong corners (the 1st-class children panel showed 5 under Male/No).
+
+**What we did.** We followed MF's idea of using the 0.5-corrected table, but only where
+the real table can't be used:
+
+- **Rings.** A ring is the table with the real row and column totals at a confidence
+  limit. If a row or column is empty, those totals allow no other table, so the rings of
+  that panel now use the totals of the corrected table instead. The rings come out very
+  wide, which honestly shows that such a panel says nothing about the odds ratio.
+- **Sectors.** They still show the real data. The one exception is `margin = 1` with an
+  empty row (or `margin = 2` with an empty column): 0 ÷ 0 can't be drawn, so that row is
+  drawn from the corrected table, as two equal halves. The other row keeps its real
+  proportions (5/6 and 1/6 for the children, not 5.5/7 and 1.5/7).
+- **Help page.** A new "Zero counts" section in `?geom_fourfold` explains all of this.
+  There is no console message.
+
+**Where this differs from MF's suggestion, and why.**
+
+1. *Only empty rows and columns switch.* MF suggested using the corrected table whenever
+   any zero cell triggers the correction. A table with a single zero but no empty row or
+   column already drew correctly, so we left it alone, as vcd does. Switching it would
+   have moved its rings a little with `margin = 1`, `ind.max`, or `all.max`, and built
+   them around n + 2 people while the sectors show n. An independent check reached the
+   same view.
+2. *The corrected table is scaled back to the real total.* This changes nothing except
+   with `std = "all.max"`, where the extra 2 made the rings too big; with small weights
+   they reached 686 times the size of the frame.
+3. *Default display rings are drawn straight from the limits.* With `margin = c(1, 2)`,
+   which depends only on the odds ratio, each ring is now drawn directly at its
+   confidence limit instead of by building a table first. The result is the same except
+   when a limit is exactly 0 or infinity (for example, a cell of 1e-7 and no exact
+   zero). The table built there has zero cells, which then got the 0.5 correction a
+   second time, so the ring landed well inside the interval.
+
+**Also found and fixed along the way.**
+
+- The ring calculation lost accuracy on extreme tables: very large or very small odds
+  ratios, tiny weights, huge totals. It could give NaN, negative cells, or rings bigger
+  than the frame, and occasionally a visibly wrong ring. It now works out each of the
+  four cells directly and is accurate everywhere we tested; the old version was off by
+  up to 2% on 4,000 random tables and failed outright on several hundred of them.
+- Weights so extreme that the odds ratio itself overflows (around 1e200 and 1e-200) now
+  give a clear error message instead of a cryptic one.
+- Separately (commit `186726b`), `dev/verify-geom-fourfold.R` and `dev/examples.R` run
+  again; they had been pointing at files that no longer exist.
+
+Ordinary tables draw exactly as before, and counts, odds ratios, intervals, p-values,
+and colours are unchanged everywhere. Two independent reviewers checked the changes
+against the previous version and against `vcd::fourfold()`.
+
+**Two follow-up decisions (GK).**
+
+1. *Panels with an empty row or column keep their p-value and shading.* Such a panel
+   gets its odds ratio and p-value only from the 0.5 correction, yet the p-value can
+   still come out "significant": `c(0, 1000, 0, 1)` gets an adjusted p of 0.0026 and is
+   drawn with the strong shading. We considered giving such panels no p-value, so they
+   would be drawn plainly. We kept the current behaviour, which matches vcd, and the
+   help page now warns that for these panels the colour, shading, and direction tick say
+   nothing about an association.
+2. *A panel whose four counts are all zero is now drawn blank* (commit `bd2cb10`).
+   Before, such a panel, for example the Titanic crew children, stopped the whole plot
+   with an error. Now it shows only its frame, labels, and the four zeros, with no
+   sectors, rings, or tick. It has no odds ratio or p-value and is left out of
+   the p-value adjustment, so the other panels are unchanged. We chose this over vcd's
+   approach (next section), which draws such a panel as if it were a real table.
+
+We're happy to revisit either if MF sees it differently.
+
+**For vcd.** `vcd::fourfold()` uses the same ring code as our old version, so the same
+things apply there:
+
+1. Rings are built from the uncorrected table (MF's original point), which breaks for an
+   empty row or column.
+2. At a limit of infinity, `findTableWithOAM()` returns a table with zero cells, and
+   `stdize()` then adds 0.5 again, so the ring is drawn well inside the interval. For
+   `c(1e-7, 5, 3, 1)` the upper ring is drawn at 0.883/0.469 instead of at the edge.
+3. The quadratic in `findTableWithOAM()` loses accuracy on extreme tables, as above.
+4. A stratum whose counts are all zero is drawn from the corrected table, as four equal
+   quarter-circles (an odds ratio of exactly 1), which looks like a real table with no
+   association although there is no data.
