@@ -146,8 +146,12 @@ match the calculations in
 [`vcd::fourfold()`](https://rdrr.io/pkg/vcd/man/fourfold.html). If any
 observed cell is zero, 0.5 is added to all four cells for inference; see
 the Zero counts section for how such tables are drawn. P-values are
-adjusted across all panels in the layer. Confidence intervals themselves
-are not adjusted.
+adjusted across all panels in the layer that have one. A panel whose
+counts are all zero has none, whereas
+[`vcd::fourfold()`](https://rdrr.io/pkg/vcd/man/fourfold.html) counts it
+with a p-value of 1, so in a layer with such a panel the adjusted
+p-values differ from those it gives. Confidence intervals themselves are
+not adjusted.
 
 With `shape = "square"`, each cell is drawn as a quarter-square with the
 same area as the corresponding quarter-circle (side \\r\sqrt{\pi}/2\\
@@ -185,8 +189,19 @@ If any cell of a panel's table is zero, 0.5 is added to all four cells
 before the odds ratio, its standard error, and the confidence interval
 are computed, as in
 [`vcd::fourfold()`](https://rdrr.io/pkg/vcd/man/fourfold.html). The
-count labels always show the observed counts. A panel whose four counts
-are all zero is an error.
+count labels always show the observed counts.
+
+A panel whose four counts are all zero, such as an empty stratum in a
+faceted display, is drawn blank: only its frame, axes, labels, and zero
+counts are shown, with no sectors, rings, or direction tick. It has no
+odds ratio, confidence interval, or p-value (they are `NA`) and is left
+out of the p-value adjustment, so it does not change the other panels.
+(With the default `margin = c(1, 2)`,
+[`vcd::fourfold()`](https://rdrr.io/pkg/vcd/man/fourfold.html) instead
+draws such a stratum from the corrected table, as four equal
+quarter-circles.) A facet level with no rows at all, for example with
+`drop = FALSE`, is left empty by ggplot2 as usual, without a frame or
+counts.
 
 Each confidence ring shows the table that has the observed row and
 column totals and an odds ratio equal to one confidence limit,

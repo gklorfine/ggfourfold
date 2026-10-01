@@ -181,7 +181,10 @@ cells are completed with zero counts.</p>
 the calculations in <code><a href="https://rdrr.io/pkg/vcd/man/fourfold.html" class="external-link">vcd::fourfold()</a></code>. If any observed cell is zero, 0.5 is
 added to all four cells for inference; see the Zero counts section for how
 such tables are drawn. P-values are adjusted across all panels in the
-layer. Confidence intervals themselves are not adjusted.</p>
+layer that have one. A panel whose counts are all zero has none, whereas
+<code><a href="https://rdrr.io/pkg/vcd/man/fourfold.html" class="external-link">vcd::fourfold()</a></code> counts it with a p-value of 1, so in a layer with such a
+panel the adjusted p-values differ from those it gives. Confidence
+intervals themselves are not adjusted.</p>
 <p>With <code>shape = "square"</code>, each cell is drawn as a quarter-square with the
 same area as the corresponding quarter-circle (side
 \(r\sqrt{\pi}/2\) for radius \(r\)), so the two
@@ -214,7 +217,16 @@ the plot theme.</p></li>
 <p>If any cell of a panel's table is zero, 0.5 is added to all four cells
 before the odds ratio, its standard error, and the confidence interval are
 computed, as in <code><a href="https://rdrr.io/pkg/vcd/man/fourfold.html" class="external-link">vcd::fourfold()</a></code>. The count labels always show the
-observed counts. A panel whose four counts are all zero is an error.</p>
+observed counts.</p>
+<p>A panel whose four counts are all zero, such as an empty stratum in a
+faceted display, is drawn blank: only its frame, axes, labels, and zero
+counts are shown, with no sectors, rings, or direction tick. It has no odds
+ratio, confidence interval, or p-value (they are <code>NA</code>) and is left out of
+the p-value adjustment, so it does not change the other panels.
+(With the default <code>margin = c(1, 2)</code>, <code><a href="https://rdrr.io/pkg/vcd/man/fourfold.html" class="external-link">vcd::fourfold()</a></code> instead draws such
+a stratum from the corrected table, as four equal quarter-circles.) A facet
+level with no rows at all, for example with <code>drop = FALSE</code>, is left empty
+by ggplot2 as usual, without a frame or counts.</p>
 <p>Each confidence ring shows the table that has the observed row and column
 totals and an odds ratio equal to one confidence limit, standardized like
 the data. With the default <code>margin = c(1, 2)</code>, which depends only on the
