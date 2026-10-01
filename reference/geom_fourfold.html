@@ -161,7 +161,9 @@ default aesthetic mappings.</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A ggplot2 layer that can be added to a <code><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot2::ggplot()</a></code> object.</p>
+    <p>A list of a ggplot2 layer and a default coordinate system,
+<code>coord_cartesian(reverse = "y", ratio = 1)</code>, which can be added to a
+<code><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot2::ggplot()</a></code> object (see the Coordinate systems section).</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -169,7 +171,8 @@ default aesthetic mappings.</p></dd>
 variable to <code>y</code>, and cell frequencies to <code>weight</code>. When <code>weight</code> is omitted,
 each row counts as one observation. The first <code>x</code> level is drawn on the left
 and the second on the right; the first <code>y</code> level is drawn at the top and the
-second at the bottom. Set factor levels explicitly when their order matters.
+second at the bottom (see the Coordinate systems section). Set factor levels
+explicitly when their order matters.
 Alternatively, reorder categories with the <code>limits</code> argument of
 <code><a href="https://ggplot2.tidyverse.org/reference/scale_discrete.html" class="external-link">ggplot2::scale_x_discrete()</a></code> or <code><a href="https://ggplot2.tidyverse.org/reference/scale_discrete.html" class="external-link">ggplot2::scale_y_discrete()</a></code>, and rename
 them with <code>labels</code>. Scale <code>breaks</code> that reorder or omit categories, and a
@@ -222,6 +225,67 @@ The exception is an inherited <code><a href="https://ggplot2.tidyverse.org/refer
 <code><a href="https://ggplot2.tidyverse.org/reference/geom_count.html" class="external-link">ggplot2::geom_count()</a></code>: ggplot2 evaluates it before the layer can ignore
 it, so it stops the plot. Use <code>inherit.aes = FALSE</code> in <code>geom_fourfold()</code>, or
 move the mapping to the layer that uses it.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="coordinate-systems">Coordinate systems<a class="anchor" aria-label="anchor" href="#coordinate-systems"></a></h2>
+
+
+<p>The display is drawn in the plot's coordinate system, so axes, gridlines,
+and other layers agree with it. The first <code>x</code> level is at position 1 and the
+second at position 2, and likewise for <code>y</code>; the display fills the square
+from 0.5 to 2.5 on both axes, and each cell's quadrant is centred on its
+category position.</p>
+<p><code>geom_fourfold()</code> therefore also adds
+<code>coord_cartesian(reverse = "y", ratio = 1)</code> to the plot, as
+<code><a href="https://ggplot2.tidyverse.org/reference/ggsf.html" class="external-link">ggplot2::geom_sf()</a></code> adds <code><a href="https://ggplot2.tidyverse.org/reference/ggsf.html" class="external-link">ggplot2::coord_sf()</a></code>. Reversing the <code>y</code> axis
+keeps the first <code>y</code> level at the top, as in <code><a href="https://rdrr.io/pkg/vcd/man/fourfold.html" class="external-link">vcd::fourfold()</a></code>, for every
+layer; reversing the <code>y</code> scale with <code>limits</code> would instead reorder the
+table. The unit <code>ratio</code> keeps circles round under any theme. Both axes span
+the same range by default, so it also makes the panels square. A theme's
+<code>aspect.ratio</code> overrides <code>ratio</code>: it fixes the panel's shape, and circles
+become ellipses when the ranges of the axes differ (see the Missing values
+section).</p>
+<p>A coordinate system that you add to the plot replaces this one, as usual in
+ggplot2. Add yours after the last <code>geom_fourfold()</code> in the plot: a later
+<code>geom_fourfold()</code> replaces your coordinate system with its own, with
+ggplot2's message. Without <code>reverse = "y"</code>, the first <code>y</code> level is drawn at
+the bottom, as for any ggplot2 layer. To keep it at the top and the circles
+round, add <code>coord_cartesian(reverse = "y", ratio = 1, ...)</code>: without
+<code>ratio</code>, the display stretches to fill the panel, so circles become
+ellipses wherever the panel is not square.
+Common additions such as <code><a href="https://ggplot2.tidyverse.org/reference/coord_fixed.html" class="external-link">ggplot2::coord_fixed()</a></code> and
+<code><a href="https://ggplot2.tidyverse.org/reference/coord_fixed.html" class="external-link">ggplot2::coord_equal()</a></code> also replace the default, and draw the first <code>y</code>
+level at the bottom unless reversed. Any <code>reverse</code> setting is drawn
+correctly. Used directly with <code><a href="https://ggplot2.tidyverse.org/reference/layer.html" class="external-link">ggplot2::layer()</a></code>, <code>GeomFourfold</code> adds no
+coordinate system and follows the one the plot has.</p>
+<p>The coordinate system must be Cartesian, such as <code><a href="https://ggplot2.tidyverse.org/reference/coord_cartesian.html" class="external-link">ggplot2::coord_cartesian()</a></code>
+or <code><a href="https://ggplot2.tidyverse.org/reference/coord_fixed.html" class="external-link">ggplot2::coord_fixed()</a></code>. <code><a href="https://ggplot2.tidyverse.org/reference/coord_flip.html" class="external-link">ggplot2::coord_flip()</a></code> is an error: swap the
+<code>x</code> and <code>y</code> aesthetics instead, which transposes each table and keeps its
+odds ratio. So are <code><a href="https://ggplot2.tidyverse.org/reference/ggsf.html" class="external-link">ggplot2::coord_sf()</a></code>, <code><a href="https://ggplot2.tidyverse.org/reference/coord_transform.html" class="external-link">ggplot2::coord_transform()</a></code>, and
+polar coordinates, which would distort the areas that carry the display's
+meaning. Because of the fixed <code>ratio</code>, ggplot2 does not allow free facet
+scales (<code>scales = "free"</code>) with the default coordinate system. To use them,
+add your own coordinate system without <code>ratio</code> after <code>geom_fourfold()</code>,
+such as <code>coord_cartesian(reverse = "y")</code>. Then <code>facet_grid(space = "free")</code>
+also works, including with <code><a href="theme_fourfold.html">theme_fourfold()</a></code>, which sets no aspect ratio;
+it shares widths among columns (heights among rows) in proportion to the
+ranges of their axes. Free scales and free space are therefore possible
+only with your own coordinate system without <code>ratio</code>, and the displays are
+then round only where a panel happens to be square.</p>
+<p>The display is not clipped to the panel, so that counts outside the frame
+stay whole. Zooming with the <code>xlim</code> and <code>ylim</code> of the coordinate system
+therefore does not crop it, and the display can then extend over
+neighbouring panels and strips.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="annotations">Annotations<a class="anchor" aria-label="anchor" href="#annotations"></a></h2>
+
+
+<p>A point or label that another layer, such as <code><a href="https://ggplot2.tidyverse.org/reference/geom_point.html" class="external-link">ggplot2::geom_point()</a></code>,
+<code><a href="https://ggplot2.tidyverse.org/reference/geom_text.html" class="external-link">ggplot2::geom_text()</a></code>, or <code><a href="https://ggplot2.tidyverse.org/reference/annotate.html" class="external-link">ggplot2::annotate()</a></code>, places at an <code>x</code> level and
+a <code>y</code> level is drawn at the centre of that cell's quadrant. This is a fixed
+position, the same in every panel, not the centre of the sector, whose size
+varies with the data. See the examples.</p>
     </div>
     <div class="section level2">
     <h2 id="zero-counts">Zero counts<a class="anchor" aria-label="anchor" href="#zero-counts"></a></h2>
@@ -302,9 +366,19 @@ exactly as if its stratum were not in the data. (With
 <code>facet_grid(margins = TRUE)</code>, the margin panels that pool that stratum are
 unknown too, and are also left empty.) With <code>na.rm = FALSE</code>, the default, a
 warning names each panel that lost rows or was left empty; with
-<code>na.rm = TRUE</code>, these warnings are not given. With free scales, ggplot2
-itself may still warn about the axes of an empty panel ("Position guide is
-perpendicular to the intended axis"), as it does for its own layers.</p>
+<code>na.rm = TRUE</code>, these warnings are not given. With free scales, which need
+a coordinate system you add without <code>ratio</code> (see the Coordinate systems
+section), ggplot2 itself may still warn about the axes of an empty panel
+("Position guide is perpendicular to the intended axis"), as it does for
+its own layers.</p>
+<p>A missing <code>x</code> or <code>y</code> keeps a place for missing values on its axis, as for
+every geom, because ggplot2 trains position scales before the stat runs.
+The display removes those rows, but the axis stays wider, so the panels that
+share that scale are wider (or taller) than the display, with space beside
+it. With the default coordinate system the display stays round, and the
+counts and statistics are not affected.
+<code>scale_x_discrete(na.translate = FALSE)</code> (<code><a href="https://ggplot2.tidyverse.org/reference/scale_discrete.html" class="external-link">scale_y_discrete()</a></code> for <code>y</code>)
+removes that place.</p>
     </div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
@@ -344,6 +418,16 @@ Visualization and Modeling Techniques for Categorical and Count Data</em>
 <span class="r-in"><span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/facet_wrap.html" class="external-link">facet_wrap</a></span><span class="op">(</span><span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/vars.html" class="external-link">vars</a></span><span class="op">(</span><span class="va">Dept</span><span class="op">)</span>, ncol <span class="op">=</span> <span class="fl">3</span><span class="op">)</span> <span class="op">+</span></span></span>
 <span class="r-in"><span>  <span class="fu"><a href="theme_fourfold.html">theme_fourfold</a></span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="geom_fourfold-2.png" alt="" width="700" height="433"></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Other layers are placed by category: a label in the Male-Admitted cell</span></span></span>
+<span class="r-in"><span><span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/subset.html" class="external-link">subset</a></span><span class="op">(</span><span class="va">ucb</span>, <span class="va">Dept</span> <span class="op">==</span> <span class="st">"A"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">Gender</span>, y <span class="op">=</span> <span class="va">Admit</span>, weight <span class="op">=</span> <span class="va">Freq</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">)</span> <span class="op">+</span></span></span>
+<span class="r-in"><span>  <span class="fu">geom_fourfold</span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span></span>
+<span class="r-in"><span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/annotate.html" class="external-link">annotate</a></span><span class="op">(</span><span class="st">"label"</span>, x <span class="op">=</span> <span class="st">"Male"</span>, y <span class="op">=</span> <span class="st">"Admitted"</span>, label <span class="op">=</span> <span class="st">"Male"</span><span class="op">)</span> <span class="op">+</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="theme_fourfold.html">theme_fourfold</a></span><span class="op">(</span><span class="op">)</span></span></span>
+<span class="r-plt img"><img src="geom_fourfold-3.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

@@ -116,9 +116,10 @@ A `GeomFourfold` ggproto object.
 
 ## Value
 
-A ggplot2 layer that can be added to a
+A list of a ggplot2 layer and a default coordinate system,
+`coord_cartesian(reverse = "y", ratio = 1)`, which can be added to a
 [`ggplot2::ggplot()`](https://ggplot2.tidyverse.org/reference/ggplot.html)
-object.
+object (see the Coordinate systems section).
 
 ## Details
 
@@ -126,9 +127,9 @@ Map the two-level horizontal variable to `x`, the two-level vertical
 variable to `y`, and cell frequencies to `weight`. When `weight` is
 omitted, each row counts as one observation. The first `x` level is
 drawn on the left and the second on the right; the first `y` level is
-drawn at the top and the second at the bottom. Set factor levels
-explicitly when their order matters. Alternatively, reorder categories
-with the `limits` argument of
+drawn at the top and the second at the bottom (see the Coordinate
+systems section). Set factor levels explicitly when their order matters.
+Alternatively, reorder categories with the `limits` argument of
 [`ggplot2::scale_x_discrete()`](https://ggplot2.tidyverse.org/reference/scale_discrete.html)
 or
 [`ggplot2::scale_y_discrete()`](https://ggplot2.tidyverse.org/reference/scale_discrete.html),
@@ -204,6 +205,86 @@ mapping to a variable that `geom_fourfold()` does not compute, such as
 ggplot2 evaluates it before the layer can ignore it, so it stops the
 plot. Use `inherit.aes = FALSE` in `geom_fourfold()`, or move the
 mapping to the layer that uses it.
+
+## Coordinate systems
+
+The display is drawn in the plot's coordinate system, so axes,
+gridlines, and other layers agree with it. The first `x` level is at
+position 1 and the second at position 2, and likewise for `y`; the
+display fills the square from 0.5 to 2.5 on both axes, and each cell's
+quadrant is centred on its category position.
+
+`geom_fourfold()` therefore also adds
+`coord_cartesian(reverse = "y", ratio = 1)` to the plot, as
+[`ggplot2::geom_sf()`](https://ggplot2.tidyverse.org/reference/ggsf.html)
+adds
+[`ggplot2::coord_sf()`](https://ggplot2.tidyverse.org/reference/ggsf.html).
+Reversing the `y` axis keeps the first `y` level at the top, as in
+[`vcd::fourfold()`](https://rdrr.io/pkg/vcd/man/fourfold.html), for
+every layer; reversing the `y` scale with `limits` would instead reorder
+the table. The unit `ratio` keeps circles round under any theme. Both
+axes span the same range by default, so it also makes the panels square.
+A theme's `aspect.ratio` overrides `ratio`: it fixes the panel's shape,
+and circles become ellipses when the ranges of the axes differ (see the
+Missing values section).
+
+A coordinate system that you add to the plot replaces this one, as usual
+in ggplot2. Add yours after the last `geom_fourfold()` in the plot: a
+later `geom_fourfold()` replaces your coordinate system with its own,
+with ggplot2's message. Without `reverse = "y"`, the first `y` level is
+drawn at the bottom, as for any ggplot2 layer. To keep it at the top and
+the circles round, add `coord_cartesian(reverse = "y", ratio = 1, ...)`:
+without `ratio`, the display stretches to fill the panel, so circles
+become ellipses wherever the panel is not square. Common additions such
+as
+[`ggplot2::coord_fixed()`](https://ggplot2.tidyverse.org/reference/coord_fixed.html)
+and
+[`ggplot2::coord_equal()`](https://ggplot2.tidyverse.org/reference/coord_fixed.html)
+also replace the default, and draw the first `y` level at the bottom
+unless reversed. Any `reverse` setting is drawn correctly. Used directly
+with
+[`ggplot2::layer()`](https://ggplot2.tidyverse.org/reference/layer.html),
+`GeomFourfold` adds no coordinate system and follows the one the plot
+has.
+
+The coordinate system must be Cartesian, such as
+[`ggplot2::coord_cartesian()`](https://ggplot2.tidyverse.org/reference/coord_cartesian.html)
+or
+[`ggplot2::coord_fixed()`](https://ggplot2.tidyverse.org/reference/coord_fixed.html).
+[`ggplot2::coord_flip()`](https://ggplot2.tidyverse.org/reference/coord_flip.html)
+is an error: swap the `x` and `y` aesthetics instead, which transposes
+each table and keeps its odds ratio. So are
+[`ggplot2::coord_sf()`](https://ggplot2.tidyverse.org/reference/ggsf.html),
+[`ggplot2::coord_transform()`](https://ggplot2.tidyverse.org/reference/coord_transform.html),
+and polar coordinates, which would distort the areas that carry the
+display's meaning. Because of the fixed `ratio`, ggplot2 does not allow
+free facet scales (`scales = "free"`) with the default coordinate
+system. To use them, add your own coordinate system without `ratio`
+after `geom_fourfold()`, such as `coord_cartesian(reverse = "y")`. Then
+`facet_grid(space = "free")` also works, including with
+[`theme_fourfold()`](https://gavinklorfine.com/ggfourfold/reference/theme_fourfold.md),
+which sets no aspect ratio; it shares widths among columns (heights
+among rows) in proportion to the ranges of their axes. Free scales and
+free space are therefore possible only with your own coordinate system
+without `ratio`, and the displays are then round only where a panel
+happens to be square.
+
+The display is not clipped to the panel, so that counts outside the
+frame stay whole. Zooming with the `xlim` and `ylim` of the coordinate
+system therefore does not crop it, and the display can then extend over
+neighbouring panels and strips.
+
+## Annotations
+
+A point or label that another layer, such as
+[`ggplot2::geom_point()`](https://ggplot2.tidyverse.org/reference/geom_point.html),
+[`ggplot2::geom_text()`](https://ggplot2.tidyverse.org/reference/geom_text.html),
+or
+[`ggplot2::annotate()`](https://ggplot2.tidyverse.org/reference/annotate.html),
+places at an `x` level and a `y` level is drawn at the centre of that
+cell's quadrant. This is a fixed position, the same in every panel, not
+the centre of the sector, whose size varies with the data. See the
+examples.
 
 ## Zero counts
 
@@ -296,9 +377,20 @@ drawn exactly as if its stratum were not in the data. (With
 are unknown too, and are also left empty.) With `na.rm = FALSE`, the
 default, a warning names each panel that lost rows or was left empty;
 with `na.rm = TRUE`, these warnings are not given. With free scales,
-ggplot2 itself may still warn about the axes of an empty panel
-("Position guide is perpendicular to the intended axis"), as it does for
-its own layers.
+which need a coordinate system you add without `ratio` (see the
+Coordinate systems section), ggplot2 itself may still warn about the
+axes of an empty panel ("Position guide is perpendicular to the intended
+axis"), as it does for its own layers.
+
+A missing `x` or `y` keeps a place for missing values on its axis, as
+for every geom, because ggplot2 trains position scales before the stat
+runs. The display removes those rows, but the axis stays wider, so the
+panels that share that scale are wider (or taller) than the display,
+with space beside it. With the default coordinate system the display
+stays round, and the counts and statistics are not affected.
+`scale_x_discrete(na.translate = FALSE)`
+([`scale_y_discrete()`](https://ggplot2.tidyverse.org/reference/scale_discrete.html)
+for `y`) removes that place.
 
 ## References
 
@@ -340,6 +432,16 @@ ggplot2::ggplot(
 ) +
   geom_fourfold(shape = "square") +
   ggplot2::facet_wrap(ggplot2::vars(Dept), ncol = 3) +
+  theme_fourfold()
+
+
+# Other layers are placed by category: a label in the Male-Admitted cell
+ggplot2::ggplot(
+  subset(ucb, Dept == "A"),
+  ggplot2::aes(x = Gender, y = Admit, weight = Freq)
+) +
+  geom_fourfold() +
+  ggplot2::annotate("label", x = "Male", y = "Admitted", label = "Male") +
   theme_fourfold()
 
 ```

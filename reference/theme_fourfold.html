@@ -5,13 +5,13 @@
       fontURL: "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2"
     }
   };
-</script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"><link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet"><script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet"><script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><link href="../extra.css" rel="stylesheet"><meta property="og:title" content="Theme for fourfold displays — theme_fourfold"><meta name="description" content="theme_fourfold() supplies a square, uncluttered panel and responsive
-typography for geom_fourfold(). It also styles facet strips like fourfold
-stratum headings and provides compact spacing that remains readable in both
-the RStudio plot pane and exported graphics."><meta property="og:description" content="theme_fourfold() supplies a square, uncluttered panel and responsive
-typography for geom_fourfold(). It also styles facet strips like fourfold
-stratum headings and provides compact spacing that remains readable in both
-the RStudio plot pane and exported graphics."><meta property="og:image" content="https://gavinklorfine.com/ggfourfold/logo.png"></head><body>
+</script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"><link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet"><script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet"><script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><link href="../extra.css" rel="stylesheet"><meta property="og:title" content="Theme for fourfold displays — theme_fourfold"><meta name="description" content="theme_fourfold() supplies an uncluttered panel and responsive typography
+for geom_fourfold(). It also styles facet strips like fourfold stratum
+headings and provides compact spacing that remains readable in both the
+RStudio plot pane and exported graphics."><meta property="og:description" content="theme_fourfold() supplies an uncluttered panel and responsive typography
+for geom_fourfold(). It also styles facet strips like fourfold stratum
+headings and provides compact spacing that remains readable in both the
+RStudio plot pane and exported graphics."><meta property="og:image" content="https://gavinklorfine.com/ggfourfold/logo.png"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -46,10 +46,10 @@ the RStudio plot pane and exported graphics."><meta property="og:image" content=
     </div>
 
     <div class="ref-description section level2">
-    <p><code>theme_fourfold()</code> supplies a square, uncluttered panel and responsive
-typography for <code><a href="geom_fourfold.html">geom_fourfold()</a></code>. It also styles facet strips like fourfold
-stratum headings and provides compact spacing that remains readable in both
-the RStudio plot pane and exported graphics.</p>
+    <p><code>theme_fourfold()</code> supplies an uncluttered panel and responsive typography
+for <code><a href="geom_fourfold.html">geom_fourfold()</a></code>. It also styles facet strips like fourfold stratum
+headings and provides compact spacing that remains readable in both the
+RStudio plot pane and exported graphics.</p>
     </div>
 
     <div class="section level2">
@@ -86,6 +86,12 @@ count labels drawn inside <code><a href="geom_fourfold.html">geom_fourfold()</a>
 physical panel size while retaining a readable lower bound. Additional theme
 elements passed through <code>...</code> are applied last and therefore override the
 defaults.</p>
+<p>The theme sets no <code>aspect.ratio</code>. The display stays round, and the panels
+square by default, because <code><a href="geom_fourfold.html">geom_fourfold()</a></code> adds a coordinate system with
+<code>ratio = 1</code> (see the Coordinate systems section of <code><a href="geom_fourfold.html">geom_fourfold()</a></code>).
+Passing <code>aspect.ratio</code> through <code>...</code> fixes the panel's shape and overrides
+that ratio, so circles become ellipses when the ranges of the <code>x</code> and <code>y</code>
+axes differ, for example when a missing value keeps a place on one axis.</p>
 <p>This theme uses ggplot2's theme-derived geom defaults and requires ggplot2
 4.0.0 or later.</p>
     </div>

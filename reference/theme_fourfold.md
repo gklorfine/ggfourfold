@@ -1,6 +1,6 @@
 # Theme for fourfold displays
 
-`theme_fourfold()` supplies a square, uncluttered panel and responsive
+`theme_fourfold()` supplies an uncluttered panel and responsive
 typography for
 [`geom_fourfold()`](https://gavinklorfine.com/ggfourfold/reference/geom_fourfold.md).
 It also styles facet strips like fourfold stratum headings and provides
@@ -42,6 +42,17 @@ and count labels drawn inside
 Those labels respond to the physical panel size while retaining a
 readable lower bound. Additional theme elements passed through `...` are
 applied last and therefore override the defaults.
+
+The theme sets no `aspect.ratio`. The display stays round, and the
+panels square by default, because
+[`geom_fourfold()`](https://gavinklorfine.com/ggfourfold/reference/geom_fourfold.md)
+adds a coordinate system with `ratio = 1` (see the Coordinate systems
+section of
+[`geom_fourfold()`](https://gavinklorfine.com/ggfourfold/reference/geom_fourfold.md)).
+Passing `aspect.ratio` through `...` fixes the panel's shape and
+overrides that ratio, so circles become ellipses when the ranges of the
+`x` and `y` axes differ, for example when a missing value keeps a place
+on one axis.
 
 This theme uses ggplot2's theme-derived geom defaults and requires
 ggplot2 4.0.0 or later.
