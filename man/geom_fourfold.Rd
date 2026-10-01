@@ -66,8 +66,9 @@ quarter-squares of equal area.}
 \item{palette}{Character vector of at least six valid colours in the
 semantic order used by \code{fourfold_palette()}.}
 
-\item{na.rm}{If \code{FALSE}, the default, missing observations are removed with
-a warning. If \code{TRUE}, they are removed silently.}
+\item{na.rm}{If \code{FALSE}, the default, rows with a missing \code{x} or \code{y} are
+removed, and panels with a missing \code{weight} are left empty, with a
+warning. If \code{TRUE}, this is done silently. See the Missing values section.}
 
 \item{show.legend}{Logical indicating whether this layer should be included
 in legends. The default is \code{FALSE} because the semantic fills are not a
@@ -98,8 +99,9 @@ scale \code{palette} that moves them, are errors.
 
 One panel must contain exactly one 2-by-2 table. Use
 \code{\link[ggplot2:facet_grid]{ggplot2::facet_grid()}} or \code{\link[ggplot2:facet_wrap]{ggplot2::facet_wrap()}} to display stratified
-tables. Duplicate \code{x}/\code{y} combinations within a panel are summed and missing
-cells are completed with zero counts.
+tables. Duplicate \code{x}/\code{y} combinations within a panel are summed and cells
+with no rows are completed with zero counts. For missing values, see the
+Missing values section.
 
 Odds ratios, Wald confidence intervals, and extended-display p-values match
 the calculations in \code{vcd::fourfold()}. If any observed cell is zero, 0.5 is
@@ -215,6 +217,29 @@ ratios, so the rings lie on the sectors, as if the estimate were precise.
 An exactly empty row or column gets the wide rings described above
 instead. Round such weights, for example with \code{round(w, 8)}, if they are
 meant to be zero.
+}
+
+\section{Missing values}{
+
+A row with a missing \code{x} or \code{y} cannot be placed in the table and is
+removed; a panel with no rows left is left empty. A row with a missing
+\code{weight} but known \code{x} and \code{y} is different: its cell's count, and so the
+panel's table, is unknown. Counting it as zero would change the odds ratio,
+so its whole panel is left empty instead. (\code{vcd::fourfold()} likewise draws
+no table with a missing count; it stops with an error.) A cell with no rows
+at all is still a zero count.
+
+An empty panel has no frame, counts, or labels, so it cannot be mistaken
+for a panel whose counts are all zero, and it looks the same as a facet
+level with no rows. It has no rows in the layer data and takes no part in
+\code{std = "all.max"} or the p-value adjustment, so the other panels are drawn
+exactly as if its stratum were not in the data. (With
+\code{facet_grid(margins = TRUE)}, the margin panels that pool that stratum are
+unknown too, and are also left empty.) With \code{na.rm = FALSE}, the default, a
+warning names each panel that lost rows or was left empty; with
+\code{na.rm = TRUE}, these warnings are not given. With free scales, ggplot2
+itself may still warn about the axes of an empty panel ("Position guide is
+perpendicular to the intended axis"), as it does for its own layers.
 }
 
 \examples{

@@ -816,3 +816,256 @@ test_that("fixed drawing properties are applied", {
   expect_identical(frame$gp$col, scales::alpha("red", 0.5))
   expect_equal(frame$gp$lwd, 2 * ggplot2::.pt)
 })
+
+# Missing values ---------------------------------------------------------------
+
+missing_plot <- function(data, ...,
+                         facet = ggplot2::facet_wrap(ggplot2::vars(Dept))) {
+  ggplot2::ggplot(data, ggplot2::aes(Gender, Admit, weight = Freq)) +
+    geom_fourfold(...) +
+    facet
+}
+
+# Layer data without PANEL (renumbered when a stratum is dropped), row names,
+# or the class that row subsetting removes from x and y.
+same_values <- function(with_missing, without) {
+  for (column in setdiff(names(without), "PANEL")) {
+    expect_identical(unclass(with_missing[[column]]), unclass(without[[column]]))
+  }
+}
+
+test_that("rows with a missing x or y are removed, as with na.rm in ggplot2", {
+  ucb <- as.data.frame(UCBAdmissions)
+  extra <- list(
+    data.frame(Admit = "Admitted", Gender = NA, Dept = "A", Freq = 5),
+    data.frame(Admit = NA, Gender = "Female", Dept = "B", Freq = 5)
+  )
+  without <- ggplot2::layer_data(missing_plot(ucb))
+  for (row in extra) {
+    with_missing <- rbind(ucb, row)
+    panel <- if (is.na(row$Gender)) 1 else 2
+    expect_warning(
+      built <- ggplot2::layer_data(missing_plot(with_missing)),
+      sprintf("^Removed 1 row containing missing fourfold values in panel %d\\.$",
+              panel)
+    )
+    same_values(built, without)
+    expect_no_warning(
+      built <- ggplot2::layer_data(missing_plot(with_missing, na.rm = TRUE))
+    )
+    same_values(built, without)
+  }
+
+  # An explicit NA level, a logical variable, and individual-level data.
+  with_level <- rbind(ucb, extra[[1]])
+  with_level$Gender <- addNA(with_level$Gender)
+  same_values(
+    ggplot2::layer_data(missing_plot(with_level, na.rm = TRUE)), without
+  )
+  logical <- transform(ucb, Gender = Gender == "Male")
+  same_values(
+    ggplot2::layer_data(missing_plot(rbind(logical, extra[[1]]), na.rm = TRUE)),
+    ggplot2::layer_data(missing_plot(logical))
+  )
+  individual <- ucb[rep(seq_len(nrow(ucb)), ucb$Freq),
+                    c("Admit", "Gender", "Dept")]
+  individual <- individual[seq(1, nrow(individual), by = 7), ]
+  missing <- seq(1, nrow(individual), by = 11)
+  with_missing <- individual
+  with_missing$Gender[missing[c(TRUE, FALSE)]] <- NA
+  with_missing$Admit[missing[c(FALSE, TRUE)]] <- NA
+  individual_plot <- function(data) {
+    ggplot2::ggplot(data, ggplot2::aes(Gender, Admit)) +
+      geom_fourfold(na.rm = TRUE) +
+      ggplot2::facet_wrap(ggplot2::vars(Dept))
+  }
+  same_values(
+    ggplot2::layer_data(individual_plot(with_missing)),
+    ggplot2::layer_data(individual_plot(individual[-missing, ]))
+  )
+})
+
+test_that("labels skip the missing-value category", {
+  with_missing <- rbind(
+    as.data.frame(UCBAdmissions),
+    data.frame(Admit = "Admitted", Gender = NA, Dept = "A", Freq = 5)
+  )
+  labelled <- function(...) {
+    unique(ggplot2::layer_data(
+      missing_plot(with_missing, na.rm = TRUE) + ggplot2::scale_x_discrete(...)
+    )$x_label)
+  }
+  expect_identical(labelled(), c("Male", "Female"))
+  expect_identical(labelled(labels = c("M", "F")), c("M", "F"))
+  expect_identical(labelled(labels = c(Female = "F")), c("Male", "F"))
+  expect_identical(labelled(labels = toupper), c("MALE", "FEMALE"))
+  expect_identical(labelled(limits = c("Female", "Male")), c("Female", "Male"))
+  expect_identical(labelled(na.translate = FALSE), c("Male", "Female"))
+})
+
+test_that("a missing value is never drawn as a category with free scales", {
+  ucb <- as.data.frame(UCBAdmissions)
+  ucb$Gender <- as.character(ucb$Gender)
+  free <- ggplot2::facet_wrap(ggplot2::vars(Dept), scales = "free_x")
+  # Without its Female rows, panel 3's scale has one category, as it would
+  # without the rows; the missing value used to be drawn as a second one.
+  females <- ucb$Dept == "C" & ucb$Gender == "Female"
+  with_missing <- ucb
+  with_missing$Gender[females] <- NA
+  expect_error(
+    ggplot2::layer_data(missing_plot(with_missing, na.rm = TRUE, facet = free)),
+    "panel 3 has 1 and 2"
+  )
+  expect_error(
+    ggplot2::layer_data(missing_plot(ucb[!females, ], facet = free)),
+    "panel 3 has 1 and 2"
+  )
+  # With fixed scales the Female column is empty, as without the rows.
+  same_values(
+    ggplot2::layer_data(missing_plot(with_missing, na.rm = TRUE)),
+    ggplot2::layer_data(missing_plot(ucb[!females, ]))
+  )
+
+  # A panel whose x values are all missing is left empty.
+  with_missing <- ucb
+  with_missing$Gender[ucb$Dept == "C"] <- NA
+  expect_warning(
+    built <- ggplot2::layer_data(missing_plot(with_missing, facet = free)),
+    "Removed 4 rows containing missing fourfold values in panel 3, leaving it empty."
+  )
+  expect_false(3 %in% built$PANEL)
+  expect_equal(nrow(built), 20)
+})
+
+test_that("a missing weight leaves its panel empty rather than counting zero", {
+  ucb <- as.data.frame(UCBAdmissions)
+  settings <- list(
+    list(), list(std = "all.max", shape = "square"),
+    list(std = "ind.max", shape = "square"), list(margin = 1),
+    list(conf_level = 0), list(p_adjust_method = "none")
+  )
+  for (missing in list(1, 2, which(ucb$Dept == "C"), c(1, 2))) {
+    with_missing <- ucb
+    with_missing$Freq[missing] <- NA
+    stratum <- unique(ucb$Dept[missing])
+    for (setting in settings) {
+      expect_warning(
+        built <- ggplot2::layer_data(
+          do.call(missing_plot, c(list(with_missing), setting))
+        ),
+        sprintf(
+          paste0(
+            "^Left fourfold panel %d empty: %d %s a missing ",
+            "weight, so the panel's table is unknown\\.$"
+          ),
+          match(stratum, levels(ucb$Dept)), length(missing),
+          if (length(missing) == 1L) "row has" else "rows have"
+        )
+      )
+      # The other panels, including the p-value adjustment and all.max
+      # standardization, are as if the stratum were not in the data.
+      without <- ggplot2::layer_data(do.call(
+        missing_plot, c(list(droplevels(ucb[ucb$Dept != stratum, ])), setting)
+      ))
+      same_values(built, without)
+      expect_no_warning(ggplot2::layer_data(
+        do.call(missing_plot, c(list(with_missing, na.rm = TRUE), setting))
+      ))
+    }
+  }
+
+  # NaN is missing too; a row whose x is also missing is simply removed.
+  with_missing <- ucb
+  with_missing$Freq[1] <- NaN
+  expect_false(1 %in% suppressWarnings(
+    ggplot2::layer_data(missing_plot(with_missing))$PANEL
+  ))
+  with_missing$Gender[1] <- NA
+  expect_warning(
+    built <- ggplot2::layer_data(missing_plot(with_missing)),
+    "Removed 1 row containing"
+  )
+  expect_equal(built$count[built$PANEL == 1], c(0, 313, 89, 19))
+})
+
+test_that("invalid weights are an error even in a panel left empty", {
+  ucb <- as.data.frame(UCBAdmissions)
+  for (invalid in c(-1, Inf)) {
+    with_missing <- ucb
+    with_missing$Freq[1:2] <- c(NA, invalid)
+    expect_error(
+      ggplot2::layer_data(missing_plot(with_missing, na.rm = TRUE)),
+      "fourfold weights in panel 1 must be finite and non-negative"
+    )
+  }
+})
+
+test_that("empty panels and an empty layer are drawn without errors", {
+  ucb <- as.data.frame(UCBAdmissions)
+  for (shape in c("circle", "square")) {
+    for (missing in list(ucb$Dept == "C", TRUE)) {
+      with_missing <- ucb
+      with_missing$Freq[missing] <- NA
+      plot <- missing_plot(with_missing, shape = shape, na.rm = TRUE) +
+        theme_fourfold()
+      expect_no_warning(built <- ggplot2::layer_data(plot))
+      expect_equal(nrow(built), if (isTRUE(missing)) 0 else 20)
+      grDevices::pdf(NULL)
+      expect_no_error(ggplot2::ggplotGrob(plot))
+      grDevices::dev.off()
+    }
+  }
+  # Not a frame or zero counts: an empty panel draws nothing at all.
+  single <- ucb[ucb$Dept == "A", ]
+  single$Freq[1] <- NA
+  plot <- ggplot2::ggplot(single, ggplot2::aes(Gender, Admit, weight = Freq)) +
+    geom_fourfold(na.rm = TRUE)
+  expect_false(any(grepl("fourfold", panel_grob_names(plot))))
+})
+
+
+test_that("invalid weights on rows with missing categories remain errors", {
+  for (axis in c("Gender", "Admit")) {
+    for (invalid in c(-5, Inf, -Inf)) {
+      for (remove in c(FALSE, TRUE)) {
+        data <- as.data.frame(UCBAdmissions)
+        data[[axis]][1] <- NA
+        data$Freq[1] <- invalid
+        expect_error(
+          ggplot2::layer_data(missing_plot(data, na.rm = remove)),
+          "fourfold weights in panel 1 must be finite and non-negative"
+        )
+      }
+    }
+  }
+})
+
+test_that("a palette cannot map missing values onto a real category", {
+  for (axis in c("x", "y")) {
+    data <- as.data.frame(UCBAdmissions)
+    data[[if (axis == "x") "Gender" else "Admit"]][1] <- NA
+    scale <- if (axis == "x") ggplot2::scale_x_discrete else
+      ggplot2::scale_y_discrete
+    expect_error(
+      ggplot2::layer_data(
+        missing_plot(data, na.rm = TRUE) + scale(palette = function(n) c(1, 2, 1))
+      ),
+      paste0("fourfold ", axis, " in panel 1 maps missing values to the position of a category")
+    )
+  }
+})
+
+test_that("an unknown table takes precedence over removed category rows", {
+  data <- as.data.frame(UCBAdmissions)
+  data$Gender[1] <- NA
+  data$Freq[2] <- NA
+  expect_warning(
+    built <- ggplot2::layer_data(missing_plot(data, na.rm = FALSE)),
+    "^Left fourfold panel 1 empty: 1 row has a missing weight, so the panel's table is unknown\\.$"
+  )
+  expect_false(1 %in% built$PANEL)
+  same_values(
+    built,
+    ggplot2::layer_data(missing_plot(droplevels(data[data$Dept != "A", ])))
+  )
+})

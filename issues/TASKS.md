@@ -533,30 +533,128 @@ As these items are resolved, check them off as [X] and record the fix and verifi
     plots.
   Files: `R/geom-fourfold.R`, `man/geom_fourfold.Rd`.
 
-- [ ] **Remove missing categories consistently with `na.rm`** — adding a row with an `NA`
-  factor value mapped to `x` causes an "exactly two x levels" error even when
-  `na.rm = TRUE`. The discrete scale retains a missing-value category after incomplete
-  observations are removed, so validation sees three labels. Separate the valid category
-  positions from the missing-value category when building the table. Verify missing `x`,
-  `y`, and `weight` values: `na.rm = TRUE` should remove incomplete observations silently;
-  `FALSE` should remove them with the documented warning. Retain useful errors for panels
-  with no complete observations. (`.fourfold_check_positions()` and
-  `.fourfold_check_breaks()` already ignore the `NA` category; a trailing `NA` category
-  passes both. Note that missing `x` rows currently reach the table as
-  position 3 rather than `NA`, so the `is.na()` filter does not remove them.)
-  - *To decide here* (raised 2026-09-30 by both reviewers of the blank-panel item
-    above): a panel with no complete observations, e.g. every weight `NA` with
-    `na.rm = TRUE`, still stops the whole plot ("fourfold panel 7 contains no complete
-    observations"), while a panel whose counts are all zero is now drawn blank. It
-    should not be drawn like a zero panel: its counts are unknown, not zero. Options:
-    - *Keep the error* (GK's current leaning, if it matches vcd). `vcd::fourfold()`
-      takes a table rather than rows, so it has no `na.rm`, but it stops on any missing
-      count, even a single missing cell, with "missing value where TRUE/FALSE needed"
-      (checked 2026-09-30). Keeping our clearer error matches that.
-    - *Draw an ordinary empty ggplot2 panel* (no frame, no counts), as for a facet
-      level with no rows at all: with `na.rm = TRUE` the user asked for those rows to
-      be dropped, and after dropping them the panel has no data.
-  File: `R/geom-fourfold.R` (`.fourfold_panel_table()`).
+- [X] **Remove missing categories consistently with `na.rm`** (fixed 2026-10-01) —
+  adding a row with an `NA` factor value mapped to `x` caused an "exactly two x levels"
+  error even when `na.rm = TRUE`. The discrete scale keeps a missing-value category, so
+  missing `x`/`y` rows reached the table as position 3 rather than `NA`, the `is.na()`
+  filter did not remove them, and validation counted three labels.
+  `.fourfold_check_positions()` and `.fourfold_check_breaks()` already ignored the `NA`
+  category.
+  - *Found while fixing*:
+    - *A missing value could be drawn as a category* (found by reviewer A). With
+      `scales = "free_x"` and all of one panel's Female rows `NA`, that panel's scale
+      was ("Male", `NA`), so the missing value landed at position 2. It passed every
+      check and was drawn as a second category labelled "NA", with an odds ratio
+      (1.13) and no error, even with `na.rm = TRUE`.
+    - *A missing weight counted as zero* (found by both reviewers). Removing a row with
+      an `NA` weight left its cell at 0, which in aggregated data (one row per cell) is
+      an invented zero count, not complete-case deletion. With UCB Dept A's
+      Male–Admitted weight `NA`, the odds ratio went from 0.349 to 0.00035 and the Holm
+      p-value from 3.7e-4 to 1.8e-7, silently with `na.rm = TRUE`.
+  - *Decisions* (GK, 2026-10-01, after the two reviewers below were asked for
+    independent recommendations):
+    - `na.rm` follows ggplot2: incomplete rows are always removed; `na.rm = FALSE` warns
+      and `na.rm = TRUE` suppresses those warnings (ggplot2 may still warn about
+      empty free-scale panel guides; see the limitation below).
+    - A row with a missing `x` or `y` is removed. A row with a missing `weight` and
+      known `x` and `y` makes its cell's count, and so the panel's table, unknown: the
+      panel is left empty rather than drawn with a zero. (Options considered: count it
+      as zero and document that; an error, as in vcd, which stops on any `NA` count.)
+    - A panel with no known table, whether all its rows were removed or it has a
+      missing weight, is left as an ordinary empty ggplot2 panel, with no frame,
+      counts, or label. It no longer stops the plot. Options considered: keep the error
+      ("fourfold panel 7 contains no complete observations"); a centred "NA" or "no
+      complete data" label (GK's first leaning); "NA" in the four count positions. Both
+      reviewers recommended the empty panel: it cannot be read as zero counts or as no
+      association; it matches ggplot2 when `na.rm` empties a facet and the existing
+      look of a facet level with no rows; a label would mark only fully missing panels,
+      making partly missing ones look complete by contrast; and users can add a label
+      with `annotate()` but could not remove a built-in one. Four "NA" counts looked
+      almost like the all-zero panel.
+  - *Fix* (`.fourfold_panel_table()`, `.fourfold_compute_layer()`):
+    - The scale checks now run first. Missing `x`/`y` are found by the new
+      `.fourfold_missing_category()`: `NA`, or the position the panel's scale maps `NA`
+      to (`scale$map(NA)`), so it works with fixed and free scales and with
+      `na.translate = FALSE`.
+    - All non-missing weights are validated (finite, non-negative), including rows
+      with missing x/y, before a missing weight empties the panel.
+    - `.fourfold_missing_category()` rejects palettes that map NA onto a real
+      category position, which would otherwise silently corrupt the table; an
+      NA-only free scale remains allowed. The combined x/y check in
+      `.fourfold_panel_table()` uses this helper for each axis.
+    - Labels drop the missing-value break: `get_labels()[!is.na(get_breaks())]`.
+      `get_labels(breaks)` was not used because an unnamed `labels` vector is not
+      subset by it.
+    - A panel without a known table returns `NULL`; `.fourfold_compute_layer()` drops
+      those before `all.max`, inference, and `p.adjust()`, and returns an empty data
+      frame when no panel is left. The panel has no rows in the layer data, so
+      `draw_panel()` is never called for it and needs no change.
+    - Warnings (with `na.rm = FALSE`): "Removed N rows containing missing fourfold
+      values in panel P." (with ", leaving it empty" when none remain) and "Left
+      fourfold panel P empty: N rows have a missing weight, so the panel's table is
+      unknown."
+    - Free scales: a panel that loses all of one category now has one category, as it
+      would without those rows, and stops with "panel 3 has 1 and 2" instead of drawing
+      "NA" as a category. With fixed scales that column is empty, as without the rows.
+  - *Docs*: new "Missing values" section; `na.rm` and the `@details` sentence on cells
+    completed with zeros ("cells with no rows") updated; `man/geom_fourfold.Rd`
+    regenerated. Margin panels from `facet_grid(margins = TRUE)` that pool an
+    unknown stratum are unknown too and left empty.
+  - *Tests* (9 new `test_that()` blocks): missing `x`/`y` equal to dropping the rows,
+    for a trailing `NA` level, `addNA()`, a logical variable, and individual-level
+    data; labels with the `NA` category under custom, named, function, reordered, and
+    `na.translate = FALSE` labels; the free-scale bug; a missing weight equal to
+    dropping its stratum (`identical()` values, 6 settings including `all.max`, square,
+    and `p_adjust_method`), `NaN`, and a row with both `x` and weight missing; invalid
+    weights next to a missing one; empty panels and an all-empty layer built and drawn
+    for both shapes, with no grobs in the empty panel. Five of the original six fail at HEAD
+    (f8e09d0); the invalid-weights one guards a check that already worked. Follow-up
+    regressions cover invalid weights on missing-category rows on either axis,
+    colliding NA palettes on either axis, and a panel with separate missing x and
+    missing weight rows. The equivalence cases now include `Freq[2] <- NA`, leaving
+    the largest known cell in the emptied panel to exercise `all.max`. Warning
+    assertions require exactly "1 row has" or "N rows have".
+  - *Initial verification* (preceding Claude session; `dev/` scripts not changed;
+    scratch scripts compared HEAD f8e09d0 and the change): the 8 complete-data plots (UCB, square, `all.max`, `ind.max`,
+    free scales, Titanic grid, individual-level data) have identical layer data and
+    warnings, and 4 rendered PNGs are pixel-identical. 20 equivalence checks are exact
+    (`all.equal(tolerance = 0)`): every missing-value plot equals the plot with those
+    rows or that stratum removed, under 7 `std`/`margin`/inference settings. Edge
+    cases: `NA` in the middle or first in `limits` (still the position error), a third
+    real category (still the two-level error), `coord_flip()`, another layer, a
+    `facet_grid()` cell, one panel, and every panel empty all build and draw. Images
+    checked by eye. `dev/verify-geom-fourfold.R` passes; `R CMD check --as-cran`: 0
+    errors, warnings, or notes; no new spelling flags.
+  - *Known limitation (ggplot2's)*: if an entire `x` or `y` column is `NA` and
+    `scale_x_discrete(na.translate = FALSE)` is used, the scale has no categories and
+    ggplot2's limit expansion fails with "replacement has length zero". ggplot2's own
+    `geom_bar()`, `geom_boxplot()` and `stat_summary()` fail the same way; not handled.
+  - *Additional ggplot2 limitation*: drawing an empty panel with free scales can
+    emit "Position guide is perpendicular...", even with `na.rm = TRUE`. This
+    option suppresses the fourfold missing-value warnings, not ggplot2 guide warnings.
+  - *Independent verification* (two reviewers, completed in the preceding Claude
+    session; counts reported in its handoff): over 600 complete-data comparisons
+    against HEAD and 1,275 missing-value equivalence checks were identical. Both
+    reviewers found the fix correct without regressions. Their substantive findings
+    were the invalid-weight validation and NA-palette collision checks above; both
+    are fixed and now covered by regression tests. Documentation now records the
+    free-scale guide warning and unknown margin panels.
+  - *Codex completion verification* (2026-10-01): 1,376 test assertions pass without
+    failures, warnings, or skips; `dev/verify-geom-fourfold.R` passes. Re-ran the
+    complete-data comparisons: 8 results identical to HEAD and 4 PNGs pixel-identical
+    to saved HEAD renderings. All 18 scratch missing-value equivalence checks pass.
+    Reviewed the relevant extrachecks guidance (documentation, examples, suggested
+    dependencies, and DESCRIPTION). `DISPLAY= R CMD check --as-cran` completed with
+    0 errors, 0 warnings, and 1 NOTE: new submission and the existing SAS reference
+    URL lookup failure in the vignette. Log: `/private/tmp/ggfourfold-codex-check/ggfourfold.Rcheck/00check.log`.
+  - *Final independent Codex review* (requested by GK): no actionable findings.
+    The reviewer independently passed 24 exact equivalence cases across both axes,
+    fixed/free scales, and three standardizations; checked a duplicated missing-count
+    row; independently aggregated Titanic grid margins and confirmed exactly the
+    panels pooling the unknown count were excluded; successfully drew the margin plot.
+  File: `R/geom-fourfold.R` (`.fourfold_missing_category()`, `.fourfold_panel_table()`,
+  `.fourfold_compute_layer()`), `man/geom_fourfold.Rd`,
+  `tests/testthat/test-geom-fourfold.R`.
 
 ## Development scripts
 
@@ -622,6 +720,44 @@ As these items are resolved, check them off as [X] and record the fix and verifi
   Files: `dev/verify-geom-fourfold.R`, `dev/examples.R`.
 
 ## Display / layout
+
+- [ ] **The geom draws outside ggplot2's coordinate system** (found 2026-10-01 by
+  reviewer B of the `na.rm` item; diagnosed by GK and Claude) — `draw_panel()` ignores
+  `panel_params` and `coord` and draws each display in its own viewport with a fixed
+  native scale of −1.3 to 1.3, stretched over the whole panel. The `x` and `y` scales
+  only carry the category names, but ggplot2 still builds ordinary discrete axes from
+  them (positions 1 and 2, range 0.4–2.6) and uses them for axes, gridlines, and other
+  layers. With `theme_fourfold()` none of this shows: it is built on `theme_void()` and
+  sets `aspect.ratio = 1`. With any other theme or coordinate system (checked with
+  `theme_grey()` on UCB Dept A):
+  - *The y-axis labels run the other way*: ggplot2 puts position 1 at the bottom, while
+    the geom draws the first `y` level at the top, as in vcd. Gridlines line up with
+    nothing.
+  - *Circles become ellipses* in a non-square panel; area ratios survive, but it no
+    longer looks like a fourfold display.
+  - *`coord_flip()` flips the axes but not the drawing*, so the axis titles name the
+    wrong variables.
+  - *Other layers land in the wrong cells*: `geom_point(aes(Gender, Admit))` at (Male,
+    Admitted) is drawn in the bottom-left (Male–Rejected) cell, and near but not on any
+    cell centre. `geom_text()` labels or annotations on a fourfold have the same
+    problem.
+
+  Counts, odds ratios, and tests are unaffected; only what ggplot2 draws around and on
+  top of the display is wrong. Options:
+  - *(a) Document and reject*: state that the geom is designed for `theme_fourfold()`
+    and that position axes and other position-based layers do not line up with it;
+    stop with a clear error for `coord_flip()` and non-Cartesian coordinate systems.
+  - *(b) Hide the position axes and enforce a square panel*: have `geom_fourfold()`
+    also return guides that remove the x and y axes and keep panels square under any
+    theme. Removes the misleading axes and the ellipses; other layers still do not line
+    up.
+  - *(c) A dedicated `coord_fourfold()`* that owns the panel: square, no position axes,
+    first row at the top, and coordinates other layers can use (such as cell centres).
+    The full fix, but a substantial design change before CRAN.
+
+  Claude's recommendation: (a) and (b) now, (c) as a possible later item. Not part of
+  the `na.rm` fix.
+  File: `R/geom-fourfold.R` (`geom_fourfold()`, `GeomFourfold$draw_panel()`).
 
 - [ ] **Reduce overlap in the unstandardized README display** — review the space occupied
   by the sectors and labels; scale down the display area if text overlaps excessively.
@@ -955,3 +1091,13 @@ Independent calculations matched the Berkeley examples' odds ratios, standard er
 Wald confidence intervals, raw p-values, Holm adjustment, and individual/global maximum
 standardizations. These checks do not resolve the edge cases above, and the existing
 development verification script remains broken as noted above.
+
+
+## Diagnostic follow-ups from the missing-value review
+
+- [ ] Distinguish values excluded by discrete scale limits from actual missing values
+  in the "missing fourfold values" warning (pre-existing behavior).
+- [ ] Consider identifying facets by labels in warnings instead of internal panel
+  numbers (pre-existing behavior).
+- [ ] Recheck the existing SAS reference URL in `vignettes/refs.bib:62`; the
+  network-enabled CRAN check on 2026-10-01 reported a lookup failure for it.

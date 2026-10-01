@@ -346,14 +346,72 @@ fourfold_palette <- function() {
   invisible()
 }
 
+# Missing values of a mapped category: a discrete scale maps them to its own
+# missing-value category, after the table's categories, unless
+# `na.translate = FALSE` leaves them NA.
+.fourfold_missing_category <- function(position, scale, aesthetic, panel) {
+  missing_position <- as.numeric(scale$map(NA))
+  # A scale palette could place it on a table category.
+  categories <- scale$get_limits()
+  categories <- as.character(categories[!is.na(categories)])
+  if (any(missing_position %in% as.numeric(scale$map(categories)))) {
+    stop(
+      sprintf(
+        paste0(
+          "fourfold %s in panel %s maps missing values to the position of ",
+          "a category; use `limits`, not a scale `palette`, to reorder ",
+          "categories"
+        ),
+        aesthetic, panel
+      ),
+      call. = FALSE
+    )
+  }
+  is.na(position) | position %in% missing_position
+}
+
+# Returns NULL for a panel without a known table, which is left empty.
 .fourfold_panel_table <- function(data, panel, layout, na.rm) {
-  incomplete <- is.na(data$x) | is.na(data$y) | is.na(data$weight)
+  panel_scales <- layout$get_scales(as.integer(panel))
+  .fourfold_check_positions(panel_scales$x, "x", panel)
+  .fourfold_check_positions(panel_scales$y, "y", panel)
+  .fourfold_check_breaks(panel_scales$x, "x", panel)
+  .fourfold_check_breaks(panel_scales$y, "y", panel)
+
+  # A row with a missing x or y cannot be placed and is removed. A row with a
+  # missing weight can be placed, but its cell's count, and so the panel's
+  # table, is unknown; it is not a zero count.
+  incomplete <- .fourfold_missing_category(data$x, panel_scales$x, "x", panel) |
+    .fourfold_missing_category(data$y, panel_scales$y, "y", panel)
+  unknown <- !incomplete & is.na(data$weight)
+  weight <- data$weight[!is.na(data$weight)]
+  if (any(!is.finite(weight)) || any(weight < 0)) {
+    stop(sprintf("fourfold weights in panel %s must be finite and non-negative",
+                 panel), call. = FALSE)
+  }
+  if (any(unknown)) {
+    if (!na.rm) {
+      warning(
+        sprintf(
+          paste0(
+            "Left fourfold panel %s empty: %d row%s ha%s a missing weight, ",
+            "so the panel's table is unknown."
+          ),
+          panel, sum(unknown), if (sum(unknown) == 1L) "" else "s",
+          if (sum(unknown) == 1L) "s" else "ve"
+        ),
+        call. = FALSE
+      )
+    }
+    return(NULL)
+  }
   if (any(incomplete)) {
     if (!na.rm) {
       warning(
         sprintf(
-          "Removed %d row%s containing missing fourfold values in panel %s.",
-          sum(incomplete), if (sum(incomplete) == 1L) "" else "s", panel
+          "Removed %d row%s containing missing fourfold values in panel %s%s.",
+          sum(incomplete), if (sum(incomplete) == 1L) "" else "s", panel,
+          if (all(incomplete)) ", leaving it empty" else ""
         ),
         call. = FALSE
       )
@@ -361,21 +419,13 @@ fourfold_palette <- function() {
     data <- data[!incomplete, , drop = FALSE]
   }
   if (!nrow(data)) {
-    stop(sprintf("fourfold panel %s contains no complete observations", panel),
-         call. = FALSE)
-  }
-  if (any(!is.finite(data$weight)) || any(data$weight < 0)) {
-    stop(sprintf("fourfold weights in panel %s must be finite and non-negative",
-                 panel), call. = FALSE)
+    return(NULL)
   }
 
-  panel_scales <- layout$get_scales(as.integer(panel))
-  .fourfold_check_positions(panel_scales$x, "x", panel)
-  .fourfold_check_positions(panel_scales$y, "y", panel)
-  .fourfold_check_breaks(panel_scales$x, "x", panel)
-  .fourfold_check_breaks(panel_scales$y, "y", panel)
-  x_labels <- panel_scales$x$get_labels()
-  y_labels <- panel_scales$y$get_labels()
+  # Labels follow the breaks, which include the missing-value category; the
+  # other breaks are the table's categories, as checked above.
+  x_labels <- panel_scales$x$get_labels()[!is.na(panel_scales$x$get_breaks())]
+  y_labels <- panel_scales$y$get_labels()[!is.na(panel_scales$y$get_breaks())]
   if (length(x_labels) != 2L || length(y_labels) != 2L) {
     stop(
       sprintf(
@@ -423,6 +473,12 @@ fourfold_palette <- function() {
     panels,
     names(panels)
   )
+  # Panels without a known table get no rows, so ggplot2 leaves them empty and
+  # they take no part in all.max standardization or the p-value adjustment.
+  prepared <- Filter(Negate(is.null), prepared)
+  if (!length(prepared)) {
+    return(data.frame())
+  }
   all_max <- max(vapply(prepared, function(x) max(x$table), numeric(1)))
 
   # A panel whose four counts are all zero has nothing to estimate or
@@ -936,8 +992,9 @@ GeomFourfold <- ggplot2::ggproto(
 #'
 #' One panel must contain exactly one 2-by-2 table. Use
 #' [ggplot2::facet_grid()] or [ggplot2::facet_wrap()] to display stratified
-#' tables. Duplicate `x`/`y` combinations within a panel are summed and missing
-#' cells are completed with zero counts.
+#' tables. Duplicate `x`/`y` combinations within a panel are summed and cells
+#' with no rows are completed with zero counts. For missing values, see the
+#' Missing values section.
 #'
 #' Odds ratios, Wald confidence intervals, and extended-display p-values match
 #' the calculations in `vcd::fourfold()`. If any observed cell is zero, 0.5 is
@@ -1049,6 +1106,27 @@ GeomFourfold <- ggplot2::ggproto(
 #' instead. Round such weights, for example with `round(w, 8)`, if they are
 #' meant to be zero.
 #'
+#' @section Missing values:
+#' A row with a missing `x` or `y` cannot be placed in the table and is
+#' removed; a panel with no rows left is left empty. A row with a missing
+#' `weight` but known `x` and `y` is different: its cell's count, and so the
+#' panel's table, is unknown. Counting it as zero would change the odds ratio,
+#' so its whole panel is left empty instead. (`vcd::fourfold()` likewise draws
+#' no table with a missing count; it stops with an error.) A cell with no rows
+#' at all is still a zero count.
+#'
+#' An empty panel has no frame, counts, or labels, so it cannot be mistaken
+#' for a panel whose counts are all zero, and it looks the same as a facet
+#' level with no rows. It has no rows in the layer data and takes no part in
+#' `std = "all.max"` or the p-value adjustment, so the other panels are drawn
+#' exactly as if its stratum were not in the data. (With
+#' `facet_grid(margins = TRUE)`, the margin panels that pool that stratum are
+#' unknown too, and are also left empty.) With `na.rm = FALSE`, the default, a
+#' warning names each panel that lost rows or was left empty; with
+#' `na.rm = TRUE`, these warnings are not given. With free scales, ggplot2
+#' itself may still warn about the axes of an empty panel ("Position guide is
+#' perpendicular to the intended axis"), as it does for its own layers.
+#'
 #' @param mapping Set of aesthetic mappings created by [ggplot2::aes()]. If
 #'   supplied and `inherit.aes = TRUE`, these are combined with the plot's
 #'   default mappings.
@@ -1076,8 +1154,9 @@ GeomFourfold <- ggplot2::ggproto(
 #'   quarter-squares of equal area.
 #' @param palette Character vector of at least six valid colours in the
 #'   semantic order used by `fourfold_palette()`.
-#' @param na.rm If `FALSE`, the default, missing observations are removed with
-#'   a warning. If `TRUE`, they are removed silently.
+#' @param na.rm If `FALSE`, the default, rows with a missing `x` or `y` are
+#'   removed, and panels with a missing `weight` are left empty, with a
+#'   warning. If `TRUE`, this is done silently. See the Missing values section.
 #' @param show.legend Logical indicating whether this layer should be included
 #'   in legends. The default is `FALSE` because the semantic fills are not a
 #'   mapped aesthetic.
