@@ -179,8 +179,9 @@ tables. Duplicate <code>x</code>/<code>y</code> combinations within a panel are 
 cells are completed with zero counts.</p>
 <p>Odds ratios, Wald confidence intervals, and extended-display p-values match
 the calculations in <code><a href="https://rdrr.io/pkg/vcd/man/fourfold.html" class="external-link">vcd::fourfold()</a></code>. If any observed cell is zero, 0.5 is
-added to all four cells for inference. P-values are adjusted across all
-panels in the layer. Confidence intervals themselves are not adjusted.</p>
+added to all four cells for inference; see the Zero counts section for how
+such tables are drawn. P-values are adjusted across all panels in the
+layer. Confidence intervals themselves are not adjusted.</p>
 <p>With <code>shape = "square"</code>, each cell is drawn as a quarter-square with the
 same area as the corresponding quarter-circle (side
 \(r\sqrt{\pi}/2\) for radius \(r\)), so the two
@@ -206,6 +207,57 @@ with exactly two levels. Convert numeric codes, such as 0/1, with
 drawing properties. <code>size</code> and <code>family</code> default to values inherited from
 the plot theme.</p></li>
 </ul></div>
+    <div class="section level2">
+    <h2 id="zero-counts">Zero counts<a class="anchor" aria-label="anchor" href="#zero-counts"></a></h2>
+
+
+<p>If any cell of a panel's table is zero, 0.5 is added to all four cells
+before the odds ratio, its standard error, and the confidence interval are
+computed, as in <code><a href="https://rdrr.io/pkg/vcd/man/fourfold.html" class="external-link">vcd::fourfold()</a></code>. The count labels always show the
+observed counts. A panel whose four counts are all zero is an error.</p>
+<p>Each confidence ring shows the table that has the observed row and column
+totals and an odds ratio equal to one confidence limit, standardized like
+the data. With the default <code>margin = c(1, 2)</code>, which depends only on the
+odds ratio, this is the fully standardized table at that limit. With the
+other <code>std</code> and <code>margin</code> settings, if a whole row or column is zero, the
+observed totals admit no other table, so the rings of that panel are built
+from the row and column totals of the table with 0.5 added to every cell,
+rescaled to the observed total (which matters only for <code>std = "all.max"</code>).
+Panels with isolated zero cells, but no empty row or column, keep the
+observed totals for their rings.</p>
+<p>A table with an empty row or column contains no information about the odds
+ratio: with an empty row, for example, nothing is known about how that row
+would split between the columns. Its odds ratio and p-value exist only
+because of the correction. With an empty row, the odds ratio is the ratio
+of the two counts in the other row, each plus 0.5, so it reflects how that
+row splits rather than an association. The rings are correspondingly wide,
+but the p-value can still fall below the significance level, so the colour,
+significance shading, and direction tick of such a panel say nothing about
+an association.</p>
+<p>The sectors show the observed table wherever the standardization can use
+it:</p><ul><li><p>With <code>std = "margins"</code> and the default <code>margin = c(1, 2)</code>, the sectors
+depend only on the odds ratio, which already includes the correction.</p></li>
+<li><p>With <code>margin = 1</code>, a row that is entirely zero has no proportions, so it
+is drawn from the corrected table, as two equal quarter-circles. The
+other row keeps its observed proportions. The same applies to an empty
+column with <code>margin = 2</code>. An empty column with <code>margin = 1</code>, or an empty
+row with <code>margin = 2</code>, keeps its observed proportions and so has no
+sectors, except in a cell it shares with an empty row (or column) that is
+drawn from the corrected table.</p></li>
+<li><p>With <code>std = "ind.max"</code> or <code>"all.max"</code>, the sectors show the observed
+counts, so an empty row or column has no sectors. Its rings still come
+from the corrected totals, so they need not match the sectors.</p></li>
+</ul><p>Weights that are very small but not zero, such as the remainder of
+floating-point arithmetic (<code>0.1 + 0.2 - 0.3</code>), count as observations, so a
+row or column of them is not empty and its rings keep the observed totals.
+Where the standardization keeps such a row or column near zero
+(<code>std = "ind.max"</code> or <code>"all.max"</code>, <code>margin = 2</code> for a row, or <code>margin = 1</code>
+for a column), its near-zero totals leave almost no room for other odds
+ratios, so the rings lie on the sectors, as if the estimate were precise.
+An exactly empty row or column gets the wide rings described above
+instead. Round such weights, for example with <code>round(w, 8)</code>, if they are
+meant to be zero.</p>
+    </div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
     <p>Friendly, M. (1994). <em>A fourfold display for 2 by 2 by k tables</em>
