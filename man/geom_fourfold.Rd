@@ -105,7 +105,10 @@ Odds ratios, Wald confidence intervals, and extended-display p-values match
 the calculations in \code{vcd::fourfold()}. If any observed cell is zero, 0.5 is
 added to all four cells for inference; see the Zero counts section for how
 such tables are drawn. P-values are adjusted across all panels in the
-layer. Confidence intervals themselves are not adjusted.
+layer that have one. A panel whose counts are all zero has none, whereas
+\code{vcd::fourfold()} counts it with a p-value of 1, so in a layer with such a
+panel the adjusted p-values differ from those it gives. Confidence
+intervals themselves are not adjusted.
 
 With \code{shape = "square"}, each cell is drawn as a quarter-square with the
 same area as the corresponding quarter-circle (side
@@ -140,7 +143,17 @@ the plot theme.
 If any cell of a panel's table is zero, 0.5 is added to all four cells
 before the odds ratio, its standard error, and the confidence interval are
 computed, as in \code{vcd::fourfold()}. The count labels always show the
-observed counts. A panel whose four counts are all zero is an error.
+observed counts.
+
+A panel whose four counts are all zero, such as an empty stratum in a
+faceted display, is drawn blank: only its frame, axes, labels, and zero
+counts are shown, with no sectors, rings, or direction tick. It has no odds
+ratio, confidence interval, or p-value (they are \code{NA}) and is left out of
+the p-value adjustment, so it does not change the other panels.
+(With the default \code{margin = c(1, 2)}, \code{vcd::fourfold()} instead draws such
+a stratum from the corrected table, as four equal quarter-circles.) A facet
+level with no rows at all, for example with \code{drop = FALSE}, is left empty
+by ggplot2 as usual, without a frame or counts.
 
 Each confidence ring shows the table that has the observed row and column
 totals and an odds ratio equal to one confidence limit, standardized like

@@ -263,7 +263,8 @@ As these items are resolved, check them off as [X] and record the fix and verifi
     because of the correction (yet the p-value can be significant), and so its colour,
     shading, and tick say nothing about an association; sectors per
     `std`/`margin`, including an empty column with `margin = 1` crossing an empty row;
-    near-zero weights; an all-zero panel is an error. `@details` points to it.
+    near-zero weights; an all-zero panel was an error (see the next item). `@details`
+    points to it.
     `man/geom_fourfold.Rd` regenerated.
   - *Tests* (appended to `tests/testthat/test-geom-fourfold.R`, 269 expectations in all):
     finite radii and no warnings for an empty row, an empty column, and both, including
@@ -328,12 +329,80 @@ As these items are resolved, check them off as [X] and record the fix and verifi
     standardization keeps such a row near zero its ring quadrants stay near zero too,
     unlike an exact zero (documented, with `round()` suggested). An empty-row panel's
     p-value comes from the correction alone and can be "significant" (e.g.
-    `c(0, 1000, 0, 1)`, adjusted p = 0.0026), as in vcd; documented. A panel whose four
-    counts are all zero is still an error ("must have a positive total"), so e.g.
-    `Titanic` with the crew faceted by `Age ~ Class` fails as a whole; whether to draw
-    it blank is a separate question.
+    `c(0, 1000, 0, 1)`, adjusted p = 0.0026), as in vcd; documented (GK decided on
+    2026-09-30 to keep this behaviour rather than drop such a p-value). A panel whose
+    four counts are all zero was still an error ("must have a positive total"); it is
+    now drawn blank (next item).
   File: `R/geom-fourfold.R` (`.fourfold_compute_layer()`,
   `.fourfold_table_with_or_and_margins()`, `.fourfold_standardize()`).
+
+- [X] **Draw a panel whose counts are all zero as a blank panel** (found 2026-09-30
+  while fixing the item above; fixed 2026-09-30) — a panel whose four counts are all
+  zero stopped the whole plot with "fourfold panel N must have a positive total".
+  `as.data.frame()` of a table keeps zero-count rows, so this was easy to hit: the
+  full `Titanic` faceted by `Age ~ Class` failed because the crew had no children.
+  `vcd::fourfold()` draws such a stratum from the 0.5-corrected table, as four equal
+  quarter-circles with an odds ratio of 1, which looks like a real table with no
+  association although there is no data.
+  - *Decision* (GK, 2026-09-30, after Claude agreed): draw it blank, with the frame,
+    axes, category labels, and the four zero counts, but no sectors, rings, or
+    direction tick. Its odds ratio, standard error, interval, and p-values are `NA`,
+    and it is left out of the p-value adjustment, so it changes nothing in the other
+    panels. No console message (the zeros are visible); documented. The same applies
+    when every panel in the layer is empty. With `margin = 1`, an empty row in an
+    otherwise non-empty panel is still drawn as equal halves (item above): there the
+    rest of the panel has data.
+  - *Fix*: `.fourfold_panel_table()` no longer rejects a zero total.
+    `.fourfold_compute_layer()` marks empty panels: radii 0, statistics `NA`, and a
+    valid but unused palette index, so that ggplot2 does not drop their rows as missing
+    (the cause of the "NA" labels in the item above). `p.adjust()` ignores missing
+    p-values for every method in `stats::p.adjust.methods` (checked), so the other
+    panels' adjusted p-values are unchanged. `draw_panel()` skips the sectors and the
+    direction tick of a panel with all-zero counts, and `.fourfold_counts_reach()`
+    ignores ticks of a panel without an odds ratio.
+  - *Docs*: a paragraph in the "Zero counts" section of `geom_fourfold()` (and the
+    difference from vcd, which holds for the default `margin = c(1, 2)`; with the
+    other settings vcd gets `NaN` and draws nothing), and that a facet level with no
+    rows at all is an ordinary empty ggplot2 panel. `@details` now says p-values are
+    adjusted across the panels that have one, and that vcd counts an empty stratum
+    with p = 1, so adjusted p-values in such a layer differ from vcd's (full `Titanic`
+    by class and age: one panel's Holm value 0.303 here, 0.404 in vcd).
+    `man/geom_fourfold.Rd` regenerated.
+  - *Tests* (appended; 351 expectations in all): an all-zero panel under every
+    `std`/`margin` and the square shape has zero radii, `NA` statistics, a non-missing
+    palette index, no warnings, and draws only the frame, axes, labels, and counts
+    (checked by grob name); adding an empty department to UCB leaves every column of
+    the other six panels identical, including the Holm-adjusted p-values and the
+    layer-wide count placement; faceted `Titanic` with the crew draws every panel. All
+    three fail (error) against HEAD (186726b).
+  - *Dev script*: `dev/verify-geom-fourfold.R` checked for the old error; it now
+    checks the blank panel and that the other panels' adjusted p-values are unchanged.
+  - *Verification*: the 210-plot battery from the item above plus 40 plots with an
+    empty panel (full `Titanic` with the crew, UCB plus an empty department, a single
+    empty table, and a mixed layer, each under the 10 settings), run against HEAD
+    (186726b) and the change. The 210 without an empty panel are identical in layer
+    data, pixels, and errors. The 40 with one all errored at HEAD and now draw without
+    warnings; in the UCB case the other six panels are bit-identical to UCB alone in all
+    10 settings. Images checked by eye. `R CMD check --as-cran` on the built package:
+    Status OK, including the PDF and HTML manuals.
+  - *Independent verification* (the same two statistician subagents). Both found the
+    change correct with no regressions. One ran 784 plots (683 layers without an empty
+    panel identical to 186726b, 0 differing pixels; 101 with one, all drawing without
+    warnings), the other 3,684 cases and 1,104 PNGs without an empty panel (identical)
+    and 1,728 comparisons adding an empty panel under every `std`/`margin`, both
+    shapes, all 8 `p.adjust` methods, and the panel placed first or last (other panels
+    identical in every value; pixel differences only inside the empty panel). Blank
+    panels checked under 216 settings; edge cases drawn blank include `facet_grid(margins
+    = TRUE)`, free scales, zero rows mixed with `NA` weights, `-0` weights, `ticks = 0`,
+    and every panel empty. Planted bugs (counting the empty panel's p as 1, drawing its
+    sectors, dropping the tick guards) each failed a test. Their findings, addressed:
+    the `@details` claim that p-values match vcd, the default-`margin` qualifier on the
+    vcd comparison, the stale test count, a stricter (identical) comparison of the
+    other panels in the test, and a sentence on facet levels with no rows. Both also
+    noted that a panel with no complete observations is still an error; this is left
+    for the `na.rm` item below.
+  File: `R/geom-fourfold.R` (`.fourfold_panel_table()`, `.fourfold_compute_layer()`,
+  `.fourfold_counts_reach()`, `GeomFourfold$draw_panel()`).
 
 - [ ] **Align mapped drawing aesthetics with the documented API** — the help advertises
   `colour`, `linewidth`, `alpha`, `size`, and `family` as fixed or mapped properties, but
@@ -352,10 +421,22 @@ As these items are resolved, check them off as [X] and record the fix and verifi
   positions from the missing-value category when building the table. Verify missing `x`,
   `y`, and `weight` values: `na.rm = TRUE` should remove incomplete observations silently;
   `FALSE` should remove them with the documented warning. Retain useful errors for panels
-  with no complete observations or no positive total. (`.fourfold_check_positions()` and
+  with no complete observations. (`.fourfold_check_positions()` and
   `.fourfold_check_breaks()` already ignore the `NA` category; a trailing `NA` category
   passes both. Note that missing `x` rows currently reach the table as
   position 3 rather than `NA`, so the `is.na()` filter does not remove them.)
+  - *To decide here* (raised 2026-09-30 by both reviewers of the blank-panel item
+    above): a panel with no complete observations, e.g. every weight `NA` with
+    `na.rm = TRUE`, still stops the whole plot ("fourfold panel 7 contains no complete
+    observations"), while a panel whose counts are all zero is now drawn blank. It
+    should not be drawn like a zero panel: its counts are unknown, not zero. Options:
+    - *Keep the error* (GK's current leaning, if it matches vcd). `vcd::fourfold()`
+      takes a table rather than rows, so it has no `na.rm`, but it stops on any missing
+      count, even a single missing cell, with "missing value where TRUE/FALSE needed"
+      (checked 2026-09-30). Keeping our clearer error matches that.
+    - *Draw an ordinary empty ggplot2 panel* (no frame, no counts), as for a facet
+      level with no rows at all: with `na.rm = TRUE` the user asked for those rows to
+      be dropped, and after dropping them the panel has no data.
   File: `R/geom-fourfold.R` (`.fourfold_panel_table()`).
 
 ## Development scripts

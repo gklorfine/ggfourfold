@@ -656,3 +656,65 @@ test_that("odds ratios that over- or underflow are an error", {
     }
   }
 })
+
+# Names of the grobs drawn in a single-panel plot.
+panel_grob_names <- function(plot) {
+  grDevices::pdf(NULL)
+  on.exit(grDevices::dev.off())
+  built <- ggplot2::ggplotGrob(plot)
+  panel <- built$grobs[[which(built$layout$name == "panel")]]
+  grid::grid.ls(panel, print = FALSE)$name
+}
+
+test_that("a panel whose counts are all zero is drawn blank", {
+  for (setting in c(std_settings, list(list(shape = "square")))) {
+    plot <- do.call(table_plot, c(list(matrix(0, 2, 2)), setting))
+    expect_no_warning(built <- ggplot2::layer_data(plot))
+    expect_identical(built$count, c(0, 0, 0, 0))
+    expect_identical(built$radius, c(0, 0, 0, 0))
+    expect_true(all(is.na(unlist(built[c(
+      "conf_low_radius", "conf_high_radius", "odds_ratio", "standard_error",
+      "conf_low", "conf_high", "p_value", "p_adjusted", "significant"
+    )]))))
+    expect_false(anyNA(built$palette_index))
+    expect_no_warning(drawn <- panel_grob_names(plot))
+    expect_true(all(c("fourfold-frame", "fourfold-axes", "fourfold-counts")
+                    %in% drawn))
+    expect_false(any(grepl("sector|conf|direction", drawn)))
+  }
+})
+
+test_that("an empty panel leaves the other panels unchanged", {
+  ucb <- as.data.frame(UCBAdmissions)
+  empty_department <- transform(ucb[ucb$Dept == "A", ], Dept = "G", Freq = 0)
+  plot <- function(data) {
+    ggplot2::ggplot(data, ggplot2::aes(Gender, Admit, weight = Freq)) +
+      geom_fourfold(std = "all.max", shape = "square") +
+      ggplot2::facet_wrap(ggplot2::vars(Dept))
+  }
+  expect_no_warning(with_empty <- ggplot2::layer_data(
+    plot(rbind(ucb, empty_department))
+  ))
+  without <- ggplot2::layer_data(plot(ucb))
+  # The Holm adjustment and the layer-wide count placement ignore it. Values
+  # must be identical; only the class of x and y is lost by row subsetting.
+  others <- with_empty[with_empty$PANEL != 7, ]
+  for (column in setdiff(names(without), "PANEL")) {
+    expect_identical(unclass(others[[column]]), unclass(without[[column]]))
+  }
+  expect_true(all(is.na(with_empty$p_adjusted[with_empty$PANEL == 7])))
+})
+
+test_that("faceted Titanic with the crew draws every panel", {
+  plot <- ggplot2::ggplot(
+    as.data.frame(Titanic), ggplot2::aes(Sex, Survived, weight = Freq)
+  ) +
+    geom_fourfold() +
+    ggplot2::facet_grid(Age ~ Class)
+  expect_no_warning(built <- ggplot2::layer_data(plot))
+  expect_no_warning(ggplot2::ggplotGrob(plot))
+  blank <- ave(built$count, built$PANEL, FUN = sum) == 0
+  expect_equal(sum(blank), 4)
+  expect_true(all(is.na(built$odds_ratio[blank])))
+  expect_false(anyNA(built$odds_ratio[!blank]))
+})

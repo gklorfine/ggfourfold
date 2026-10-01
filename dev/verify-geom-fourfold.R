@@ -445,10 +445,21 @@ expect_error(
   fourfold_data(fourfold_plot(negative)),
   "finite and non-negative"
 )
-zero_total <- transform(ucb[ucb$Dept == "A", ], Freq = 0)
-expect_error(
-  fourfold_data(fourfold_plot(zero_total, facet = FALSE)),
-  "positive total"
+# A panel whose counts are all zero is not an error: it is drawn blank, with
+# no odds ratio, and leaves the other panels unchanged.
+zero_total <- transform(ucb[ucb$Dept == "A", ], Dept = "G", Freq = 0)
+blank_data <- fourfold_data(fourfold_plot(rbind(ucb, zero_total)))
+blank_panel <- blank_data[as.integer(blank_data$PANEL) == 7L, ]
+stopifnot(
+  identical(blank_panel$count, c(0, 0, 0, 0)),
+  identical(blank_panel$radius, c(0, 0, 0, 0)),
+  all(is.na(blank_panel$odds_ratio)),
+  all(is.na(blank_panel$conf_low_radius)),
+  all(is.na(blank_panel$p_adjusted)),
+  isTRUE(all.equal(
+    panel_rows(blank_data[as.integer(blank_data$PANEL) <= 6L, ])$p_adjusted,
+    summary$p_adjusted
+  ))
 )
 
 # --- Rendering and clearance checks ---------------------------------------

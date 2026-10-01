@@ -51,8 +51,10 @@ fourfold_palette <- function() {
   radii <- c(data$radius, data$conf_high_radius)
   reach <- max(radii, na.rm = TRUE) * .fourfold_square_side
   if (extended && ticks > 0) {
-    tick_cell <- ifelse(data$odds_ratio > 1, data$cell %in% c(1L, 4L),
-                        data$cell %in% c(2L, 3L))
+    # A blank panel has no odds ratio and no ticks.
+    tick_cell <- !is.na(data$odds_ratio) &
+      ifelse(data$odds_ratio > 1, data$cell %in% c(1L, 4L),
+             data$cell %in% c(2L, 3L))
     tick_reach <- data$radius[tick_cell] * .fourfold_square_side +
       ticks / sqrt(2)
     reach <- max(reach, tick_reach)
@@ -358,10 +360,6 @@ fourfold_palette <- function() {
     tab[y_index[i], x_index[i]] <-
       tab[y_index[i], x_index[i]] + data$weight[i]
   }
-  if (sum(tab) <= 0) {
-    stop(sprintf("fourfold panel %s must have a positive total", panel),
-         call. = FALSE)
-  }
 
   list(
     panel = panel,
@@ -386,11 +384,19 @@ fourfold_palette <- function() {
   )
   all_max <- max(vapply(prepared, function(x) max(x$table), numeric(1)))
 
+  # A panel whose four counts are all zero has nothing to estimate or
+  # standardize; it is drawn blank, with no odds ratio, and is left out of the
+  # p-value adjustment (p.adjust() ignores missing p-values).
+  empty <- vapply(prepared, function(x) all(x$table == 0), logical(1))
   inference <- lapply(prepared, function(x) .fourfold_odds(x$table))
+  for (i in which(empty)) {
+    inference[[i]]$or <- NA_real_
+    inference[[i]]$se <- NA_real_
+  }
   # With positive cells the odds ratio is finite and positive unless the
   # weights over- or underflow in double precision.
   for (i in seq_along(prepared)) {
-    if (!is.finite(log(inference[[i]]$or))) {
+    if (!empty[i] && !is.finite(log(inference[[i]]$or))) {
       stop(
         sprintf(
           paste(
@@ -419,10 +425,14 @@ fourfold_palette <- function() {
   for (i in seq_along(prepared)) {
     item <- prepared[[i]]
     tab <- item$table
-    fit <- .fourfold_standardize(tab, std, margin, all_max)
+    fit <- if (empty[i]) {
+      matrix(0, nrow = 2L, ncol = 2L)
+    } else {
+      .fourfold_standardize(tab, std, margin, all_max)
+    }
     ci <- c(NA_real_, NA_real_)
     ci_radii <- matrix(NA_real_, nrow = 2L, ncol = 4L)
-    if (conf_level > 0) {
+    if (conf_level > 0 && !empty[i]) {
       ci <- inference[[i]]$or * exp(
         stats::qnorm(c((1 - conf_level) / 2, (1 + conf_level) / 2)) *
           inference[[i]]$se
@@ -457,12 +467,14 @@ fourfold_palette <- function() {
       }
     }
 
-    emphasize <- if (extended && conf_level > 0) {
+    # An empty panel gets a valid but unused palette index, so that ggplot2
+    # does not drop its rows as missing.
+    emphasize <- if (extended && conf_level > 0 && !empty[i]) {
       2L * (1L + (adjusted_p[i] < 1 - conf_level))
     } else {
       0L
     }
-    positive <- unname(inference[[i]]$or > 1)
+    positive <- !empty[i] && unname(inference[[i]]$or > 1)
     palette_index <- unname(c(
       1L + positive + emphasize,
       2L - positive + emphasize,
@@ -734,15 +746,21 @@ GeomFourfold <- ggplot2::ggproto(
       grobs[[length(grobs) + 1L]] <<- grob
     }
 
+    # A panel whose four counts are all zero is drawn blank: frame, axes,
+    # labels, and counts only.
+    blank <- all(data$count == 0)
+
     angle_from <- c(90, 180, 0, 270)
     angle_to <- c(180, 270, 90, 360)
-    for (cell in seq_len(4L)) {
-      add(.fourfold_sector_grob(
-        data$radius[cell], angle_from[cell], angle_to[cell],
-        fill = palette[data$palette_index[cell]],
-        colour = colour, alpha = alpha, lwd = lwd, shape = shape,
-        name = paste0("fourfold-sector-", cell)
-      ))
+    if (!blank) {
+      for (cell in seq_len(4L)) {
+        add(.fourfold_sector_grob(
+          data$radius[cell], angle_from[cell], angle_to[cell],
+          fill = palette[data$palette_index[cell]],
+          colour = colour, alpha = alpha, lwd = lwd, shape = shape,
+          name = paste0("fourfold-sector-", cell)
+        ))
+      }
     }
 
     if (any(is.finite(data$conf_low_radius))) {
@@ -757,7 +775,7 @@ GeomFourfold <- ggplot2::ggproto(
       }
     }
 
-    if (extended && ticks > 0) {
+    if (extended && ticks > 0 && !blank) {
       if (data$odds_ratio[1] > 1) {
         cells <- c(1L, 4L)
         angles <- c(3 * pi / 4, -pi / 4)
@@ -871,7 +889,10 @@ GeomFourfold <- ggplot2::ggproto(
 #' the calculations in `vcd::fourfold()`. If any observed cell is zero, 0.5 is
 #' added to all four cells for inference; see the Zero counts section for how
 #' such tables are drawn. P-values are adjusted across all panels in the
-#' layer. Confidence intervals themselves are not adjusted.
+#' layer that have one. A panel whose counts are all zero has none, whereas
+#' `vcd::fourfold()` counts it with a p-value of 1, so in a layer with such a
+#' panel the adjusted p-values differ from those it gives. Confidence
+#' intervals themselves are not adjusted.
 #'
 #' With `shape = "square"`, each cell is drawn as a quarter-square with the
 #' same area as the corresponding quarter-circle (side
@@ -902,7 +923,17 @@ GeomFourfold <- ggplot2::ggproto(
 #' If any cell of a panel's table is zero, 0.5 is added to all four cells
 #' before the odds ratio, its standard error, and the confidence interval are
 #' computed, as in `vcd::fourfold()`. The count labels always show the
-#' observed counts. A panel whose four counts are all zero is an error.
+#' observed counts.
+#'
+#' A panel whose four counts are all zero, such as an empty stratum in a
+#' faceted display, is drawn blank: only its frame, axes, labels, and zero
+#' counts are shown, with no sectors, rings, or direction tick. It has no odds
+#' ratio, confidence interval, or p-value (they are `NA`) and is left out of
+#' the p-value adjustment, so it does not change the other panels.
+#' (With the default `margin = c(1, 2)`, `vcd::fourfold()` instead draws such
+#' a stratum from the corrected table, as four equal quarter-circles.) A facet
+#' level with no rows at all, for example with `drop = FALSE`, is left empty
+#' by ggplot2 as usual, without a frame or counts.
 #'
 #' Each confidence ring shows the table that has the observed row and column
 #' totals and an odds ratio equal to one confidence limit, standardized like
