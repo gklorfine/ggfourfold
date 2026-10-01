@@ -99,8 +99,9 @@ A `GeomFourfold` ggproto object.
 
 - na.rm:
 
-  If `FALSE`, the default, missing observations are removed with a
-  warning. If `TRUE`, they are removed silently.
+  If `FALSE`, the default, rows with a missing `x` or `y` are removed,
+  and panels with a missing `weight` are left empty, with a warning. If
+  `TRUE`, this is done silently. See the Missing values section.
 
 - show.legend:
 
@@ -139,7 +140,8 @@ One panel must contain exactly one 2-by-2 table. Use
 or
 [`ggplot2::facet_wrap()`](https://ggplot2.tidyverse.org/reference/facet_wrap.html)
 to display stratified tables. Duplicate `x`/`y` combinations within a
-panel are summed and missing cells are completed with zero counts.
+panel are summed and cells with no rows are completed with zero counts.
+For missing values, see the Missing values section.
 
 Odds ratios, Wald confidence intervals, and extended-display p-values
 match the calculations in
@@ -273,6 +275,30 @@ for other odds ratios, so the rings lie on the sectors, as if the
 estimate were precise. An exactly empty row or column gets the wide
 rings described above instead. Round such weights, for example with
 `round(w, 8)`, if they are meant to be zero.
+
+## Missing values
+
+A row with a missing `x` or `y` cannot be placed in the table and is
+removed; a panel with no rows left is left empty. A row with a missing
+`weight` but known `x` and `y` is different: its cell's count, and so
+the panel's table, is unknown. Counting it as zero would change the odds
+ratio, so its whole panel is left empty instead.
+([`vcd::fourfold()`](https://rdrr.io/pkg/vcd/man/fourfold.html) likewise
+draws no table with a missing count; it stops with an error.) A cell
+with no rows at all is still a zero count.
+
+An empty panel has no frame, counts, or labels, so it cannot be mistaken
+for a panel whose counts are all zero, and it looks the same as a facet
+level with no rows. It has no rows in the layer data and takes no part
+in `std = "all.max"` or the p-value adjustment, so the other panels are
+drawn exactly as if its stratum were not in the data. (With
+`facet_grid(margins = TRUE)`, the margin panels that pool that stratum
+are unknown too, and are also left empty.) With `na.rm = FALSE`, the
+default, a warning names each panel that lost rows or was left empty;
+with `na.rm = TRUE`, these warnings are not given. With free scales,
+ggplot2 itself may still warn about the axes of an empty panel
+("Position guide is perpendicular to the intended axis"), as it does for
+its own layers.
 
 ## References
 

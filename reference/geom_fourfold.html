@@ -143,8 +143,9 @@ semantic order used by <code><a href="fourfold_palette.html">fourfold_palette()<
 
 
 <dt id="arg-na-rm">na.rm<a class="anchor" aria-label="anchor" href="#arg-na-rm"></a></dt>
-<dd><p>If <code>FALSE</code>, the default, missing observations are removed with
-a warning. If <code>TRUE</code>, they are removed silently.</p></dd>
+<dd><p>If <code>FALSE</code>, the default, rows with a missing <code>x</code> or <code>y</code> are
+removed, and panels with a missing <code>weight</code> are left empty, with a
+warning. If <code>TRUE</code>, this is done silently. See the Missing values section.</p></dd>
 
 
 <dt id="arg-show-legend">show.legend<a class="anchor" aria-label="anchor" href="#arg-show-legend"></a></dt>
@@ -175,8 +176,9 @@ them with <code>labels</code>. Scale <code>breaks</code> that reorder or omit ca
 scale <code>palette</code> that moves them, are errors.</p>
 <p>One panel must contain exactly one 2-by-2 table. Use
 <code><a href="https://ggplot2.tidyverse.org/reference/facet_grid.html" class="external-link">ggplot2::facet_grid()</a></code> or <code><a href="https://ggplot2.tidyverse.org/reference/facet_wrap.html" class="external-link">ggplot2::facet_wrap()</a></code> to display stratified
-tables. Duplicate <code>x</code>/<code>y</code> combinations within a panel are summed and missing
-cells are completed with zero counts.</p>
+tables. Duplicate <code>x</code>/<code>y</code> combinations within a panel are summed and cells
+with no rows are completed with zero counts. For missing values, see the
+Missing values section.</p>
 <p>Odds ratios, Wald confidence intervals, and extended-display p-values match
 the calculations in <code><a href="https://rdrr.io/pkg/vcd/man/fourfold.html" class="external-link">vcd::fourfold()</a></code>. If any observed cell is zero, 0.5 is
 added to all four cells for inference; see the Zero counts section for how
@@ -280,6 +282,29 @@ ratios, so the rings lie on the sectors, as if the estimate were precise.
 An exactly empty row or column gets the wide rings described above
 instead. Round such weights, for example with <code>round(w, 8)</code>, if they are
 meant to be zero.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="missing-values">Missing values<a class="anchor" aria-label="anchor" href="#missing-values"></a></h2>
+
+
+<p>A row with a missing <code>x</code> or <code>y</code> cannot be placed in the table and is
+removed; a panel with no rows left is left empty. A row with a missing
+<code>weight</code> but known <code>x</code> and <code>y</code> is different: its cell's count, and so the
+panel's table, is unknown. Counting it as zero would change the odds ratio,
+so its whole panel is left empty instead. (<code><a href="https://rdrr.io/pkg/vcd/man/fourfold.html" class="external-link">vcd::fourfold()</a></code> likewise draws
+no table with a missing count; it stops with an error.) A cell with no rows
+at all is still a zero count.</p>
+<p>An empty panel has no frame, counts, or labels, so it cannot be mistaken
+for a panel whose counts are all zero, and it looks the same as a facet
+level with no rows. It has no rows in the layer data and takes no part in
+<code>std = "all.max"</code> or the p-value adjustment, so the other panels are drawn
+exactly as if its stratum were not in the data. (With
+<code>facet_grid(margins = TRUE)</code>, the margin panels that pool that stratum are
+unknown too, and are also left empty.) With <code>na.rm = FALSE</code>, the default, a
+warning names each panel that lost rows or was left empty; with
+<code>na.rm = TRUE</code>, these warnings are not given. With free scales, ggplot2
+itself may still warn about the axes of an empty panel ("Position guide is
+perpendicular to the intended axis"), as it does for its own layers.</p>
     </div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
