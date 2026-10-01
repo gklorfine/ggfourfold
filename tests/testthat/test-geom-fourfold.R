@@ -422,3 +422,237 @@ test_that("numeric data on a discrete scale are an error", {
     ggplot2::layer_data(fourfold_plot())
   )
 })
+
+# Zero counts ------------------------------------------------------------------
+
+# A single panel from a 2 x 2 matrix with rows u, v (y) and columns a, b (x),
+# so that matrix(layer_data(...)$column, 2) has the same layout.
+table_plot <- function(tab, ...) {
+  table_data <- data.frame(
+    x = factor(c("a", "a", "b", "b")),
+    y = factor(c("u", "v", "u", "v")),
+    w = c(tab)
+  )
+  ggplot2::ggplot(table_data, ggplot2::aes(x, y, weight = w)) +
+    geom_fourfold(...)
+}
+
+# The table with the row and column totals of `tab` and odds ratio `or`, found
+# by root finding rather than by the package's closed-form solution.
+table_with_or <- function(or, tab) {
+  rows <- rowSums(tab)
+  columns <- colSums(tab)
+  cells <- function(x) {
+    matrix(c(columns[1] - x, x, rows[1] - columns[1] + x, rows[2] - x), 2)
+  }
+  log_or <- function(x) {
+    m <- cells(x)
+    log(m[1, 1]) + log(m[2, 2]) - log(m[1, 2]) - log(m[2, 1]) - log(or)
+  }
+  lower <- max(0, columns[1] - rows[1])
+  upper <- min(columns[1], rows[2])
+  inset <- 1e-12 * (upper - lower)
+  cells(stats::uniroot(
+    log_or, c(lower + inset, upper - inset), tol = 1e-14
+  )$root)
+}
+
+ring_radii <- function(ring_tables, standardize) {
+  lapply(ring_tables, function(ring) unname(sqrt(c(standardize(ring)))))
+}
+
+empty_row <- matrix(c(0, 5, 0, 1), 2)
+empty_column <- matrix(c(0, 0, 10, 20), 2)
+isolated_zero <- matrix(c(0, 5, 3, 4), 2)
+
+std_settings <- list(
+  list(), list(margin = 1), list(margin = 2),
+  list(std = "ind.max"), list(std = "all.max")
+)
+
+test_that("an empty row or column gives finite radii without warnings", {
+  # The last two would over- and underflow products of totals in the ring
+  # solver if it did not work with proportions.
+  tables <- list(
+    empty_row, empty_column, matrix(c(0, 0, 0, 5), 2),
+    matrix(c(0, 1e200, 0, 1e200), 2), matrix(c(0, 1e-200, 0, 1e-200), 2)
+  )
+  for (tab in tables) {
+    for (setting in std_settings) {
+      plot <- do.call(table_plot, c(list(tab), setting))
+      expect_no_warning(built <- ggplot2::layer_data(plot))
+      expect_true(all(is.finite(unlist(
+        built[c("radius", "conf_low_radius", "conf_high_radius")]
+      ))))
+      expect_no_warning(ggplot2::ggplotGrob(plot))
+    }
+  }
+})
+
+test_that("rings of an empty row or column use the 0.5-corrected totals", {
+  for (tab in list(empty_row, empty_column)) {
+    # Rescaled to the observed total, which matters only for all.max.
+    corrected <- (tab + 0.5) * sum(tab) / (sum(tab) + 2)
+    built <- ggplot2::layer_data(table_plot(tab))
+    limits <- c(built$conf_low[1], built$conf_high[1])
+    # The default display depends only on the odds ratio.
+    u <- sqrt(limits) / (1 + sqrt(limits))
+    fitted <- function(u) sqrt(c(u, 1 - u, 1 - u, u))
+    expect_equal(built$conf_low_radius, fitted(u[1]))
+    expect_equal(built$conf_high_radius, fitted(u[2]))
+
+    rings <- lapply(limits, table_with_or, tab = corrected)
+    standardizers <- list(
+      function(m) prop.table(m, 1),
+      function(m) prop.table(m, 2),
+      function(m) m / max(m),
+      function(m) m / max(tab)
+    )
+    for (i in seq_along(standardizers)) {
+      built <- ggplot2::layer_data(
+        do.call(table_plot, c(list(tab), std_settings[[i + 1]]))
+      )
+      expected <- ring_radii(rings, standardizers[[i]])
+      expect_equal(built$conf_low_radius, expected[[1]], tolerance = 1e-8)
+      expect_equal(built$conf_high_radius, expected[[2]], tolerance = 1e-8)
+    }
+  }
+})
+
+test_that("an empty row is the only row drawn from the corrected table", {
+  built <- ggplot2::layer_data(table_plot(empty_row, margin = 1))
+  expect_equal(
+    matrix(built$standardized, 2),
+    rbind(c(0.5, 0.5), c(5, 1) / 6)
+  )
+  built <- ggplot2::layer_data(table_plot(empty_column, margin = 2))
+  expect_equal(
+    matrix(built$standardized, 2),
+    cbind(c(0.5, 0.5), c(10, 20) / 30)
+  )
+})
+
+test_that("sectors otherwise show the observed table", {
+  # The standardization divides by non-zero totals, so the observed
+  # proportions or counts are drawn although the rings use corrected totals.
+  cases <- list(
+    list(empty_row, list(margin = 2), prop.table(empty_row, 2)),
+    list(empty_column, list(margin = 1), prop.table(empty_column, 1)),
+    list(empty_row, list(std = "ind.max"), empty_row / 5),
+    list(empty_row, list(std = "all.max"), empty_row / 5)
+  )
+  for (case in cases) {
+    built <- ggplot2::layer_data(do.call(table_plot, c(case[1], case[[2]])))
+    expect_equal(matrix(built$standardized, 2), unname(case[[3]]))
+  }
+})
+
+test_that("rings of other tables keep the observed totals", {
+  # Tables with an isolated zero are not changed by the empty row or column
+  # fallback, although the 0.5 correction applies to their inference.
+  for (tab in list(isolated_zero, matrix(c(10, 30, 20, 20), 2))) {
+    standardizers <- list(
+      function(m) prop.table(m, 1),
+      function(m) prop.table(m, 2),
+      function(m) m / max(m),
+      function(m) m / max(tab)
+    )
+    for (i in seq_along(standardizers)) {
+      built <- ggplot2::layer_data(
+        do.call(table_plot, c(list(tab), std_settings[[i + 1]]))
+      )
+      rings <- lapply(c(built$conf_low[1], built$conf_high[1]),
+                      table_with_or, tab = tab)
+      expected <- ring_radii(rings, standardizers[[i]])
+      expect_equal(built$conf_low_radius, expected[[1]], tolerance = 1e-8)
+      expect_equal(built$conf_high_radius, expected[[2]], tolerance = 1e-8)
+    }
+  }
+})
+
+test_that("near-zero weights give finite rings", {
+  tables <- list(
+    matrix(c(1e-10, 5, 1e-10, 1), 2),
+    matrix(c(0.1 + 0.2 - 0.3, 5, 0, 1), 2),
+    matrix(c(0, 5, 1e-15, 1), 2)
+  )
+  for (tab in tables) {
+    for (setting in std_settings) {
+      plot <- do.call(table_plot, c(list(tab), setting))
+      expect_no_warning(built <- ggplot2::layer_data(plot))
+      radii <- unlist(built[c("radius", "conf_low_radius", "conf_high_radius")])
+      expect_true(all(is.finite(radii)))
+      if (is.null(setting$std)) expect_true(all(radii <= 1 + 1e-12))
+    }
+  }
+})
+
+test_that("faceted tables with empty rows draw every panel", {
+  titanic <- as.data.frame(Titanic[c("1st", "2nd", "3rd"), , , ])
+  for (margin in list(c(1, 2), 1)) {
+    plot <- ggplot2::ggplot(
+      titanic, ggplot2::aes(Sex, Survived, weight = Freq)
+    ) +
+      geom_fourfold(margin = margin) +
+      ggplot2::facet_grid(Age ~ Class)
+    expect_no_warning(built <- ggplot2::layer_data(plot))
+    expect_no_warning(ggplot2::ggplotGrob(plot))
+    expect_false(anyNA(built[c("x_label", "y_label", "radius",
+                               "conf_low_radius", "conf_high_radius")]))
+  }
+})
+
+test_that("ring tables keep small cells precise", {
+  # Previously the small cells of the first table came out as 0 at its own
+  # confidence limits, and odds ratios of 0 and Inf need the boundary cells.
+  cases <- list(
+    list(matrix(c(1e9, 1, 1, 1e9), 2), c(6.25e16, 1.6e19)),
+    list(matrix(c(1e-3, 3e-3, 2e-3, 5e-4), 2), c(1e-6, 0.08, 1e6)),
+    list(matrix(c(1, 1e9, 1e12, 1), 2), c(1e-30, 1, 1e30)),
+    list(matrix(c(3, 5, 2, 7), 2), c(1e-300, 0.5, 1, 2, 1e300))
+  )
+  for (case in cases) {
+    tab <- case[[1]]
+    for (or in case[[2]]) {
+      ring <- .fourfold_table_with_or_and_margins(or, tab)
+      expect_true(all(ring > 0))
+      expect_equal(ring[1, 1] * ring[2, 2] / (ring[1, 2] * ring[2, 1]), or,
+                   tolerance = 1e-10)
+      expect_equal(rowSums(ring), unname(rowSums(tab)), tolerance = 1e-12)
+      expect_equal(colSums(ring), unname(colSums(tab)), tolerance = 1e-12)
+    }
+  }
+  tab <- matrix(c(3, 5, 2, 7), 2)
+  expect_equal(.fourfold_table_with_or_and_margins(0, tab),
+               matrix(c(0, 8, 5, 4), 2))
+  expect_equal(.fourfold_table_with_or_and_margins(Inf, tab),
+               matrix(c(5, 3, 0, 9), 2))
+})
+
+test_that("all.max rings of an empty row stay on the scale of the counts", {
+  for (tab in list(matrix(c(0, 1, 0, 1), 2), matrix(c(0, 1e-6, 0, 2e-6), 2))) {
+    built <- ggplot2::layer_data(table_plot(tab, std = "all.max"))
+    expect_true(max(built$conf_low_radius, built$conf_high_radius) <= 1)
+  }
+})
+
+test_that("default rings are drawn at confidence limits of 0 and Inf", {
+  # A cell below about 1e-5 without an exact zero gives the interval [0, Inf].
+  built <- ggplot2::layer_data(table_plot(c(1e-7, 5, 3, 1)))
+  expect_identical(c(built$conf_low[1], built$conf_high[1]), c(0, Inf))
+  expect_equal(built$conf_low_radius, c(0, 1, 1, 0))
+  expect_equal(built$conf_high_radius, c(1, 0, 0, 1))
+})
+
+test_that("odds ratios that over- or underflow are an error", {
+  for (weights in list(c(1e200, 1e200, 1e-200, 1e200),
+                       c(1e-200, 1, 1, 1e-200))) {
+    for (conf_level in c(0.95, 0)) {
+      expect_error(
+        ggplot2::layer_data(table_plot(weights, conf_level = conf_level)),
+        "the odds ratio in fourfold panel 1 cannot be computed",
+        fixed = TRUE
+      )
+    }
+  }
+})

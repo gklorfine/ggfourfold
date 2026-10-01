@@ -103,8 +103,9 @@ cells are completed with zero counts.
 
 Odds ratios, Wald confidence intervals, and extended-display p-values match
 the calculations in \code{vcd::fourfold()}. If any observed cell is zero, 0.5 is
-added to all four cells for inference. P-values are adjusted across all
-panels in the layer. Confidence intervals themselves are not adjusted.
+added to all four cells for inference; see the Zero counts section for how
+such tables are drawn. P-values are adjusted across all panels in the
+layer. Confidence intervals themselves are not adjusted.
 
 With \code{shape = "square"}, each cell is drawn as a quarter-square with the
 same area as the corresponding quarter-circle (side
@@ -132,6 +133,63 @@ with exactly two levels. Convert numeric codes, such as 0/1, with
 drawing properties. \code{size} and \code{family} default to values inherited from
 the plot theme.
 }
+}
+
+\section{Zero counts}{
+
+If any cell of a panel's table is zero, 0.5 is added to all four cells
+before the odds ratio, its standard error, and the confidence interval are
+computed, as in \code{vcd::fourfold()}. The count labels always show the
+observed counts. A panel whose four counts are all zero is an error.
+
+Each confidence ring shows the table that has the observed row and column
+totals and an odds ratio equal to one confidence limit, standardized like
+the data. With the default \code{margin = c(1, 2)}, which depends only on the
+odds ratio, this is the fully standardized table at that limit. With the
+other \code{std} and \code{margin} settings, if a whole row or column is zero, the
+observed totals admit no other table, so the rings of that panel are built
+from the row and column totals of the table with 0.5 added to every cell,
+rescaled to the observed total (which matters only for \code{std = "all.max"}).
+Panels with isolated zero cells, but no empty row or column, keep the
+observed totals for their rings.
+
+A table with an empty row or column contains no information about the odds
+ratio: with an empty row, for example, nothing is known about how that row
+would split between the columns. Its odds ratio and p-value exist only
+because of the correction. With an empty row, the odds ratio is the ratio
+of the two counts in the other row, each plus 0.5, so it reflects how that
+row splits rather than an association. The rings are correspondingly wide,
+but the p-value can still fall below the significance level, so the colour,
+significance shading, and direction tick of such a panel say nothing about
+an association.
+
+The sectors show the observed table wherever the standardization can use
+it:
+\itemize{
+\item With \code{std = "margins"} and the default \code{margin = c(1, 2)}, the sectors
+depend only on the odds ratio, which already includes the correction.
+\item With \code{margin = 1}, a row that is entirely zero has no proportions, so it
+is drawn from the corrected table, as two equal quarter-circles. The
+other row keeps its observed proportions. The same applies to an empty
+column with \code{margin = 2}. An empty column with \code{margin = 1}, or an empty
+row with \code{margin = 2}, keeps its observed proportions and so has no
+sectors, except in a cell it shares with an empty row (or column) that is
+drawn from the corrected table.
+\item With \code{std = "ind.max"} or \code{"all.max"}, the sectors show the observed
+counts, so an empty row or column has no sectors. Its rings still come
+from the corrected totals, so they need not match the sectors.
+}
+
+Weights that are very small but not zero, such as the remainder of
+floating-point arithmetic (\code{0.1 + 0.2 - 0.3}), count as observations, so a
+row or column of them is not empty and its rings keep the observed totals.
+Where the standardization keeps such a row or column near zero
+(\code{std = "ind.max"} or \code{"all.max"}, \code{margin = 2} for a row, or \code{margin = 1}
+for a column), its near-zero totals leave almost no room for other odds
+ratios, so the rings lie on the sectors, as if the estimate were precise.
+An exactly empty row or column gets the wide rings described above
+instead. Round such weights, for example with \code{round(w, 8)}, if they are
+meant to be zero.
 }
 
 \examples{

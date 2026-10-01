@@ -167,7 +167,8 @@ As these items are resolved, check them off as [X] and record the fix and verifi
   - *Verification*: see the item above.
   File: `R/geom-fourfold.R` (`.fourfold_check_positions()`).
 
-- [ ] **Handle tables with an entirely empty row or column explicitly** — for
+- [X] **Handle tables with an entirely empty row or column explicitly** (fixed
+  2026-09-30; record below the original description) — for
   `matrix(c(0, 0, 10, 20), nrow = 2)`, the default display gives identical lower and upper
   confidence-ring radii despite a wide calculated odds-ratio interval. Inference applies
   the 0.5 correction, but confidence tables are reconstructed using the original zero
@@ -200,7 +201,137 @@ As these items are resolved, check them off as [X] and record the fix and verifi
   root is `NaN`. The upper bound (OR 20.4) reproduces the observed table exactly, so the
   upper ring traces the sectors, which is the "identical radii" symptom above. With
   `margin = 1` the sector radii of the empty row are also `NaN` (division by a zero row
-  total), mirroring the `margin = 2` case for an empty column.
+  total), mirroring the `margin = 2` case for an empty column. (Found while fixing: ggplot2
+  then drops the rows with `NaN` radii, so those displays also drew "NA" labels and put
+  counts in the wrong corners, e.g. 5 under Male/No for 1st-class children.)
+  - *Decision* (GK, 2026-09-30, following MF's suggestion in `issues/marginal-plots.md`,
+    section 14, point 2): draw such tables rather than reject them.
+    - Rings use the row and column totals of the 0.5-corrected table **only** when a row
+      or column total is exactly zero. Tables with isolated zero cells keep the observed
+      totals, as before and as in `vcd::fourfold()`. The alternative, switching whenever
+      any cell is zero, would have changed displays that already worked (rings move by up
+      to 0.08 with `ind.max`, 0.4 with `all.max` on small tables) and built their rings
+      around n + 2 while the sectors show n. An independent statistician subagent reached
+      the same recommendation.
+    - Sectors show the observed table wherever the standardization can use it. With
+      `margin = 1`, only an empty row is drawn from the corrected table (0.5/0.5); the
+      other row keeps its observed proportions. Likewise an empty column with
+      `margin = 2`. `ind.max`/`all.max` keep the observed counts, so an empty row has no
+      sectors while its rings come from the corrected totals.
+    - No console message; the behaviour is documented instead.
+  - *Fix*:
+    - `.fourfold_compute_layer()` builds the rings of a panel with a zero row or column
+      total from the corrected table, rescaled to the observed total. Rescaling keeps the
+      odds ratio and every proportion, so it matters only for `all.max`, where the
+      unscaled n + 2 table drew rings up to 686 times the frame for small weights.
+    - With the default `margin = c(1, 2)`, which depends only on the odds ratio, each
+      ring is now drawn directly at its confidence limit, `u = sqrt(L) / (1 + sqrt(L))`,
+      instead of via a ring table. For finite positive limits this is the same value.
+      At a limit of exactly 0 or `Inf` (a cell below about 1e-5 without an exact zero, or
+      `conf_level` within 1e-16 of 1) the ring table has exact zero cells, which the 0.5
+      correction then moved well inside the interval. HEAD and vcd already did this at a
+      limit of `Inf`, through their explicit `or == Inf` branch: for `c(1e-7, 5, 3, 1)`
+      they draw the upper ring at 0.883/0.469 rather than (1, 0, 0, 1). At a limit of 0
+      only rounding residue spared them, and the precise solver below no longer leaves
+      any.
+    - `.fourfold_standardize()` fills a zero-total row (`margin = 1`) or column
+      (`margin = 2`) from the corrected table's proportions.
+    - An odds ratio that over- or underflows (weights such as 1e200 and 1e-200) is now
+      the error "the odds ratio in fourfold panel 1 cannot be computed: the weights are
+      too large or too small". HEAD gave "missing value where TRUE/FALSE needed" or
+      `NaN` radii; with `conf_level = 0` it drew an underflowed odds ratio as exactly 0.
+  - *Precision*: near-zero but positive weights (1e-10, or `0.1 + 0.2 - 0.3`) still gave
+    `NaN` rings, or radii of 2 with `margin = 1`, from cancellation in the quadratic root;
+    the exact-zero test above does not catch them. `.fourfold_table_with_or_and_margins()`
+    now solves for each of the four cells directly (new `.fourfold_cell_with_or()`),
+    moving it to the solved position by swapping rows and/or columns, so small cells are
+    never differences of large totals. Each branch writes the discriminant as a sum of
+    non-negative terms, the root is taken in its cancellation-free form, and odds ratios
+    above 1 are divided out so nothing overflows; odds ratios of 0, `Inf`, and ±1e300
+    give the boundary tables. It solves for the table divided by its total and scales
+    back, so totals of 1e200 or 1e-200 no longer over- or underflow the products of
+    totals (HEAD gave `NaN` radii there; the first revision an R error). Against a 400-bit Rmpfr solution on 3,000 random tables
+    (cells 1e-10 to 1e13, log odds ratios with SD 8): largest relative cell error
+    1.5e-11 (the limit set by double-precision totals), against 3.5e6 for HEAD and 1.0
+    for a first revision that only swapped columns. HEAD was visibly wrong in some
+    cases: `c(.001, .003, .002, .0005)` with `conf_level = 0.5` drew its lower ring
+    45,000 times too large (relative); the change matches the analytic value exactly.
+  - *Docs*: new "Zero counts" section in `geom_fourfold()`: the correction; what rings
+    show, drawn at the limit for the default display, and the corrected-totals fallback
+    (rescaled; only for `all.max` does that matter); that such a panel contains no
+    information about the odds ratio, that its odds ratio and p-value exist only
+    because of the correction (yet the p-value can be significant), and so its colour,
+    shading, and tick say nothing about an association; sectors per
+    `std`/`margin`, including an empty column with `margin = 1` crossing an empty row;
+    near-zero weights; an all-zero panel is an error. `@details` points to it.
+    `man/geom_fourfold.Rd` regenerated.
+  - *Tests* (appended to `tests/testthat/test-geom-fourfold.R`, 269 expectations in all):
+    finite radii and no warnings for an empty row, an empty column, and both, including
+    totals of 1e200 and 1e-200, under every `std`/`margin`; rings of an empty row/column checked against tables found by
+    `uniroot()` on the rescaled corrected totals; the `margin = 1`/`2` sector fallback;
+    observed sectors elsewhere; rings of an isolated-zero and a zero-free table checked
+    against the observed totals; near-zero weights; the faceted Titanic display without
+    warnings or `NA` labels; ring-table precision at extreme odds ratios and table sizes;
+    `all.max` rings within the frame; default rings at limits of 0 and `Inf`; the
+    overflow error. Against HEAD, 101 expectations in 9 of these tests fail (two tests
+    error); the two regression guards (isolated-zero/zero-free rings, observed
+    sectors) pass.
+  - *Verification*: a battery of 210 plots (18 synthetic tables — none, isolated zeros,
+    diagonal zeros, empty rows and columns, both, large and skewed counts, fractional
+    and near-zero weights — plus faceted Titanic, UCB, and a mixed layer, each under 10
+    settings: all `std`/`margin`, `conf_level` 0.99 and 0, `extended = FALSE`, square
+    shape) run against HEAD (3ae2101) and the final change. 84 plots are identical in
+    layer data and pixels. In this battery, the 126 that differ all differ only in panels
+    with an empty or near-zero row or column (rings, and sectors with `margin = 1`/`2`).
+    More generally, rings also change wherever HEAD's ring tables had zero cells or lost
+    precision, e.g. tiny weights whose interval reaches 0 or `Inf` (see *Fix* and
+    *Precision*). Also differing: the layer-wide `counts_reach` in 15 square-shape
+    plots, where HEAD's `NaN` or `Inf` reach had kept counts inside the frame under the
+    squares, or the new full-range rings of a [0, `Inf`] interval reach the corners. Counts, odds ratios, standard errors,
+    intervals, p-values, and colours are identical in all 210. HEAD had `NaN` radii in 92
+    plots and warnings in 92; the change has none. Side-by-side images checked by eye.
+    `R CMD check --as-cran` (remote incoming checks off, `env -u DISPLAY`): Status OK;
+    PDF manual builds; no new spelling flags. `dev/verify-geom-fourfold.R`, once
+    repaired (see "Development scripts" below), passes against the change.
+  - *Independent verification* (two statistician subagents, own plot sets and
+    references, on the first revision; one of them also reviewed the revised solver and
+    `all.max` rescaling). Both confirmed the design works and that inference, palette,
+    labels, and ordinary panels are unchanged (662 and 2,640 cases; pixel-identical for
+    ordinary data). On the revised solver, radii matched `vcd::fourfold()`'s drawn
+    polygons to 3e-14; on the first revision one reviewer had found a 6.3e-5 deviation
+    for `c(1e9, 1, 1, 1e9)`. Their findings, all addressed above: the first revision's solver lost precision for large
+    odds ratios (its discriminant cancelled) and near double roots; `all.max` rings of
+    empty-row panels overshot the frame; rings at limits of exactly 0 or `Inf` were
+    re-corrected; an empty column with `margin = 1` does get a sector where it crosses
+    an empty row; the near-zero paragraph and the colour sentence (which omitted the
+    significance shading) were inaccurate. Not adopted: setting the p-value and shading
+    of empty-row panels to `NA` (documented instead). Second round (one reviewer, on
+    the revised code): the default rings at the limit, the overflow error, the docs, and
+    the tests confirmed (2,640-case grid unchanged from the reviewed version except the
+    [0, `Inf`] rings; every default ring equals `sqrt(u(limit))` exactly; 101 HEAD
+    failures confirmed). Its findings, addressed above: the ring-base rescale and the
+    solver overflowed for totals above about 1e154; this record misstated what HEAD and
+    vcd do at a limit of `Inf`; the near-zero paragraph should say that the rings lie on
+    the sectors, as if the estimate were precise. Third round (the other reviewer, on
+    the final code, against a 2,500-bit Rmpfr reference on 4,000 random tables): no
+    `NaN`, negative, or false-zero cells and a largest relative cell error of 1.1e-12,
+    against 579 `NaN`/negative results, 322 false zeros, and errors up to 1.9e-2 for
+    HEAD; all 340 non-default rings in its 34-table set match the reference built from
+    the documented totals to 3.6e-12; every default ring within 1e-12 of its limit;
+    radii match `vcd::fourfold()` to 6e-12 on 120 non-degenerate combinations (the
+    largest gap, `c(1, 1000, 1000, 1)`, is vcd's own imprecision); all docs claims true.
+    On its 662 plots, 345 are identical up to floating-point noise, 294 changed are
+    tables with an empty or near-zero row or column, and 23 are tiny-weight tables in
+    the default display, whose rings HEAD collapsed to about 0.707 and which are now
+    drawn at their confidence limits.
+  - *Limitations*: near-zero weights count as observations, so where the
+    standardization keeps such a row near zero its ring quadrants stay near zero too,
+    unlike an exact zero (documented, with `round()` suggested). An empty-row panel's
+    p-value comes from the correction alone and can be "significant" (e.g.
+    `c(0, 1000, 0, 1)`, adjusted p = 0.0026), as in vcd; documented. A panel whose four
+    counts are all zero is still an error ("must have a positive total"), so e.g.
+    `Titanic` with the crew faceted by `Age ~ Class` fails as a whole; whether to draw
+    it blank is a separate question.
   File: `R/geom-fourfold.R` (`.fourfold_compute_layer()`,
   `.fourfold_table_with_or_and_margins()`, `.fourfold_standardize()`).
 

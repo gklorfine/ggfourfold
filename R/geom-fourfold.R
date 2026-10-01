@@ -142,7 +142,20 @@ fourfold_palette <- function() {
       u <- root_or / (1 + root_or)
       return(matrix(c(u, 1 - u, 1 - u, u), nrow = 2L))
     }
-    return(prop.table(tab, margin))
+    fit <- prop.table(tab, margin)
+    # A row (margin = 1) or column (margin = 2) with a zero total has no
+    # proportions, so only that row or column is drawn from the table with 0.5
+    # added to every cell.
+    empty <- apply(tab, margin, sum) == 0
+    if (any(empty)) {
+      corrected <- prop.table(.fourfold_odds(tab)$corrected, margin)
+      if (margin == 1) {
+        fit[empty, ] <- corrected[empty, ]
+      } else {
+        fit[, empty] <- corrected[, empty]
+      }
+    }
+    return(fit)
   }
   if (std == "ind.max") {
     return(tab / max(tab))
@@ -150,26 +163,61 @@ fourfold_palette <- function() {
   tab / all_max
 }
 
-.fourfold_table_with_or_and_margins <- function(or, tab) {
-  first_row <- rowSums(tab)[1]
-  second_row <- rowSums(tab)[2]
-  first_column <- colSums(tab)[1]
-
-  if (or == 1) {
-    x <- first_column * second_row / (first_row + second_row)
-  } else if (is.infinite(or)) {
-    x <- max(0, first_column - first_row)
+# The second-row, first-column cell of the 2 x 2 table with odds ratio `or`,
+# row totals `first_row` and `second_row`, and first column total
+# `first_column`: the root of (or - 1) x^2 + b x - first_column * second_row
+# that keeps all four cells non-negative. Each branch writes the discriminant
+# as a sum of non-negative terms and chooses the form of the root without
+# cancellation; for odds ratios above 1 the equation is divided by `or`, so
+# that nothing overflows.
+.fourfold_cell_with_or <- function(or, first_row, second_row, first_column) {
+  if (or <= 1) {
+    b <- or * first_row + (1 - or) * first_column + second_row
+    root <- sqrt(
+      ((1 - or) * first_column - second_row)^2 +
+        or * first_row * (2 * ((1 - or) * first_column + second_row) +
+                            or * first_row)
+    )
+    x <- if (b + root > 0) {
+      2 * first_column * second_row / (b + root)
+    } else {
+      0
+    }
   } else {
-    a <- or - 1
-    b <- or * (first_row - first_column) + second_row + first_column
-    cc <- -first_column * second_row
-    x <- (-b + sqrt(b^2 - 4 * a * cc)) / (2 * a)
+    inverse <- 1 / or
+    a <- 1 - inverse
+    b <- first_row - first_column + inverse * (second_row + first_column)
+    product <- inverse * first_column * second_row
+    root <- sqrt(b^2 + 4 * a * product)
+    x <- if (b < 0) {
+      (-b + root) / (2 * a)
+    } else if (b + root > 0) {
+      2 * product / (b + root)
+    } else {
+      0
+    }
   }
+  # Rounding can leave x just outside the range that keeps all four cells
+  # non-negative.
+  min(max(x, first_column - first_row, 0), first_column, second_row)
+}
 
-  matrix(
+.fourfold_table_with_or_and_margins <- function(or, tab) {
+  # The solution scales with the table, so it is found for proportions, which
+  # keeps the products of totals below from over- or underflowing.
+  total <- sum(tab)
+  rows <- unname(rowSums(tab)) / total
+  columns <- unname(colSums(tab)) / total
+  # Each cell is solved for directly rather than as a difference of totals, so
+  # that small cells keep their precision. Swapping the rows moves the first
+  # cell to the solved position, swapping the columns the fourth, and
+  # swapping both the third; a single swap inverts the odds ratio.
+  total * matrix(
     c(
-      first_column - x, x,
-      first_row - first_column + x, second_row - x
+      .fourfold_cell_with_or(1 / or, rows[2], rows[1], columns[1]),
+      .fourfold_cell_with_or(or, rows[1], rows[2], columns[1]),
+      .fourfold_cell_with_or(or, rows[2], rows[1], columns[2]),
+      .fourfold_cell_with_or(1 / or, rows[1], rows[2], columns[2])
     ),
     nrow = 2L
   )
@@ -339,6 +387,22 @@ fourfold_palette <- function() {
   all_max <- max(vapply(prepared, function(x) max(x$table), numeric(1)))
 
   inference <- lapply(prepared, function(x) .fourfold_odds(x$table))
+  # With positive cells the odds ratio is finite and positive unless the
+  # weights over- or underflow in double precision.
+  for (i in seq_along(prepared)) {
+    if (!is.finite(log(inference[[i]]$or))) {
+      stop(
+        sprintf(
+          paste(
+            "the odds ratio in fourfold panel %s cannot be computed: the",
+            "weights are too large or too small"
+          ),
+          prepared[[i]]$panel
+        ),
+        call. = FALSE
+      )
+    }
+  }
   raw_p <- rep(NA_real_, length(prepared))
   adjusted_p <- rep(NA_real_, length(prepared))
   if (conf_level > 0 && extended) {
@@ -363,11 +427,33 @@ fourfold_palette <- function() {
         stats::qnorm(c((1 - conf_level) / 2, (1 + conf_level) / 2)) *
           inference[[i]]$se
       )
+      # Rings keep the observed row and column totals. With an entirely empty
+      # row or column those totals admit no other odds ratio, so the rings
+      # use the totals of the table with 0.5 added to every cell, rescaled to
+      # the observed total so that std = "all.max" keeps the counts' scale.
+      ring_base <- if (any(rowSums(tab) == 0) || any(colSums(tab) == 0)) {
+        corrected <- inference[[i]]$corrected
+        corrected * (sum(tab) / sum(corrected))
+      } else {
+        tab
+      }
       for (bound in 1:2) {
-        confidence_table <- .fourfold_table_with_or_and_margins(ci[bound], tab)
-        ci_radii[bound, ] <- sqrt(c(.fourfold_standardize(
-          confidence_table, std, margin, all_max
-        )))
+        if (std == "margins" && length(margin) == 2L) {
+          # This display depends only on the odds ratio, so each ring is drawn
+          # at its confidence limit directly. A ring table at a limit of 0 or
+          # Inf has zero cells, which would otherwise get the 0.5 correction
+          # again.
+          root_limit <- sqrt(ci[bound])
+          u <- if (is.infinite(root_limit)) 1 else root_limit / (1 + root_limit)
+          ci_radii[bound, ] <- sqrt(c(u, 1 - u, 1 - u, u))
+        } else {
+          confidence_table <- .fourfold_table_with_or_and_margins(
+            ci[bound], ring_base
+          )
+          ci_radii[bound, ] <- sqrt(c(.fourfold_standardize(
+            confidence_table, std, margin, all_max
+          )))
+        }
       }
     }
 
@@ -783,8 +869,9 @@ GeomFourfold <- ggplot2::ggproto(
 #'
 #' Odds ratios, Wald confidence intervals, and extended-display p-values match
 #' the calculations in `vcd::fourfold()`. If any observed cell is zero, 0.5 is
-#' added to all four cells for inference. P-values are adjusted across all
-#' panels in the layer. Confidence intervals themselves are not adjusted.
+#' added to all four cells for inference; see the Zero counts section for how
+#' such tables are drawn. P-values are adjusted across all panels in the
+#' layer. Confidence intervals themselves are not adjusted.
 #'
 #' With `shape = "square"`, each cell is drawn as a quarter-square with the
 #' same area as the corresponding quarter-circle (side
@@ -810,6 +897,60 @@ GeomFourfold <- ggplot2::ggproto(
 #' - `colour`, `linewidth`, `alpha`, `size`, and `family`: fixed or mapped
 #'   drawing properties. `size` and `family` default to values inherited from
 #'   the plot theme.
+#'
+#' @section Zero counts:
+#' If any cell of a panel's table is zero, 0.5 is added to all four cells
+#' before the odds ratio, its standard error, and the confidence interval are
+#' computed, as in `vcd::fourfold()`. The count labels always show the
+#' observed counts. A panel whose four counts are all zero is an error.
+#'
+#' Each confidence ring shows the table that has the observed row and column
+#' totals and an odds ratio equal to one confidence limit, standardized like
+#' the data. With the default `margin = c(1, 2)`, which depends only on the
+#' odds ratio, this is the fully standardized table at that limit. With the
+#' other `std` and `margin` settings, if a whole row or column is zero, the
+#' observed totals admit no other table, so the rings of that panel are built
+#' from the row and column totals of the table with 0.5 added to every cell,
+#' rescaled to the observed total (which matters only for `std = "all.max"`).
+#' Panels with isolated zero cells, but no empty row or column, keep the
+#' observed totals for their rings.
+#'
+#' A table with an empty row or column contains no information about the odds
+#' ratio: with an empty row, for example, nothing is known about how that row
+#' would split between the columns. Its odds ratio and p-value exist only
+#' because of the correction. With an empty row, the odds ratio is the ratio
+#' of the two counts in the other row, each plus 0.5, so it reflects how that
+#' row splits rather than an association. The rings are correspondingly wide,
+#' but the p-value can still fall below the significance level, so the colour,
+#' significance shading, and direction tick of such a panel say nothing about
+#' an association.
+#'
+#' The sectors show the observed table wherever the standardization can use
+#' it:
+#'
+#' - With `std = "margins"` and the default `margin = c(1, 2)`, the sectors
+#'   depend only on the odds ratio, which already includes the correction.
+#' - With `margin = 1`, a row that is entirely zero has no proportions, so it
+#'   is drawn from the corrected table, as two equal quarter-circles. The
+#'   other row keeps its observed proportions. The same applies to an empty
+#'   column with `margin = 2`. An empty column with `margin = 1`, or an empty
+#'   row with `margin = 2`, keeps its observed proportions and so has no
+#'   sectors, except in a cell it shares with an empty row (or column) that is
+#'   drawn from the corrected table.
+#' - With `std = "ind.max"` or `"all.max"`, the sectors show the observed
+#'   counts, so an empty row or column has no sectors. Its rings still come
+#'   from the corrected totals, so they need not match the sectors.
+#'
+#' Weights that are very small but not zero, such as the remainder of
+#' floating-point arithmetic (`0.1 + 0.2 - 0.3`), count as observations, so a
+#' row or column of them is not empty and its rings keep the observed totals.
+#' Where the standardization keeps such a row or column near zero
+#' (`std = "ind.max"` or `"all.max"`, `margin = 2` for a row, or `margin = 1`
+#' for a column), its near-zero totals leave almost no room for other odds
+#' ratios, so the rings lie on the sectors, as if the estimate were precise.
+#' An exactly empty row or column gets the wide rings described above
+#' instead. Round such weights, for example with `round(w, 8)`, if they are
+#' meant to be zero.
 #'
 #' @param mapping Set of aesthetic mappings created by [ggplot2::aes()]. If
 #'   supplied and `inherit.aes = TRUE`, these are combined with the plot's
