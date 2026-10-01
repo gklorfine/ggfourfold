@@ -78,7 +78,9 @@ mapped aesthetic.}
 default aesthetic mappings.}
 }
 \value{
-A ggplot2 layer that can be added to a \code{\link[ggplot2:ggplot]{ggplot2::ggplot()}} object.
+A list of a ggplot2 layer and a default coordinate system,
+\code{coord_cartesian(reverse = "y", ratio = 1)}, which can be added to a
+\code{\link[ggplot2:ggplot]{ggplot2::ggplot()}} object (see the Coordinate systems section).
 }
 \description{
 \code{geom_fourfold()} draws a fourfold display in each ggplot2 panel. Sector
@@ -91,7 +93,8 @@ Map the two-level horizontal variable to \code{x}, the two-level vertical
 variable to \code{y}, and cell frequencies to \code{weight}. When \code{weight} is omitted,
 each row counts as one observation. The first \code{x} level is drawn on the left
 and the second on the right; the first \code{y} level is drawn at the top and the
-second at the bottom. Set factor levels explicitly when their order matters.
+second at the bottom (see the Coordinate systems section). Set factor levels
+explicitly when their order matters.
 Alternatively, reorder categories with the \code{limits} argument of
 \code{\link[ggplot2:scale_x_discrete]{ggplot2::scale_x_discrete()}} or \code{\link[ggplot2:scale_y_discrete]{ggplot2::scale_y_discrete()}}, and rename
 them with \code{labels}. Scale \code{breaks} that reorder or omit categories, and a
@@ -150,6 +153,69 @@ The exception is an inherited \code{after_stat()} mapping to a variable that
 \code{\link[ggplot2:geom_count]{ggplot2::geom_count()}}: ggplot2 evaluates it before the layer can ignore
 it, so it stops the plot. Use \code{inherit.aes = FALSE} in \code{geom_fourfold()}, or
 move the mapping to the layer that uses it.
+}
+
+\section{Coordinate systems}{
+
+The display is drawn in the plot's coordinate system, so axes, gridlines,
+and other layers agree with it. The first \code{x} level is at position 1 and the
+second at position 2, and likewise for \code{y}; the display fills the square
+from 0.5 to 2.5 on both axes, and each cell's quadrant is centred on its
+category position.
+
+\code{geom_fourfold()} therefore also adds
+\code{coord_cartesian(reverse = "y", ratio = 1)} to the plot, as
+\code{\link[ggplot2:geom_sf]{ggplot2::geom_sf()}} adds \code{\link[ggplot2:coord_sf]{ggplot2::coord_sf()}}. Reversing the \code{y} axis
+keeps the first \code{y} level at the top, as in \code{vcd::fourfold()}, for every
+layer; reversing the \code{y} scale with \code{limits} would instead reorder the
+table. The unit \code{ratio} keeps circles round under any theme. Both axes span
+the same range by default, so it also makes the panels square. A theme's
+\code{aspect.ratio} overrides \code{ratio}: it fixes the panel's shape, and circles
+become ellipses when the ranges of the axes differ (see the Missing values
+section).
+
+A coordinate system that you add to the plot replaces this one, as usual in
+ggplot2. Add yours after the last \code{geom_fourfold()} in the plot: a later
+\code{geom_fourfold()} replaces your coordinate system with its own, with
+ggplot2's message. Without \code{reverse = "y"}, the first \code{y} level is drawn at
+the bottom, as for any ggplot2 layer. To keep it at the top and the circles
+round, add \code{coord_cartesian(reverse = "y", ratio = 1, ...)}: without
+\code{ratio}, the display stretches to fill the panel, so circles become
+ellipses wherever the panel is not square.
+Common additions such as \code{\link[ggplot2:coord_fixed]{ggplot2::coord_fixed()}} and
+\code{\link[ggplot2:coord_equal]{ggplot2::coord_equal()}} also replace the default, and draw the first \code{y}
+level at the bottom unless reversed. Any \code{reverse} setting is drawn
+correctly. Used directly with \code{\link[ggplot2:layer]{ggplot2::layer()}}, \code{GeomFourfold} adds no
+coordinate system and follows the one the plot has.
+
+The coordinate system must be Cartesian, such as \code{\link[ggplot2:coord_cartesian]{ggplot2::coord_cartesian()}}
+or \code{\link[ggplot2:coord_fixed]{ggplot2::coord_fixed()}}. \code{\link[ggplot2:coord_flip]{ggplot2::coord_flip()}} is an error: swap the
+\code{x} and \code{y} aesthetics instead, which transposes each table and keeps its
+odds ratio. So are \code{\link[ggplot2:coord_sf]{ggplot2::coord_sf()}}, \code{\link[ggplot2:coord_transform]{ggplot2::coord_transform()}}, and
+polar coordinates, which would distort the areas that carry the display's
+meaning. Because of the fixed \code{ratio}, ggplot2 does not allow free facet
+scales (\code{scales = "free"}) with the default coordinate system. To use them,
+add your own coordinate system without \code{ratio} after \code{geom_fourfold()},
+such as \code{coord_cartesian(reverse = "y")}. Then \code{facet_grid(space = "free")}
+also works, including with \code{\link[=theme_fourfold]{theme_fourfold()}}, which sets no aspect ratio;
+it shares widths among columns (heights among rows) in proportion to the
+ranges of their axes. Free scales and free space are therefore possible
+only with your own coordinate system without \code{ratio}, and the displays are
+then round only where a panel happens to be square.
+
+The display is not clipped to the panel, so that counts outside the frame
+stay whole. Zooming with the \code{xlim} and \code{ylim} of the coordinate system
+therefore does not crop it, and the display can then extend over
+neighbouring panels and strips.
+}
+
+\section{Annotations}{
+
+A point or label that another layer, such as \code{\link[ggplot2:geom_point]{ggplot2::geom_point()}},
+\code{\link[ggplot2:geom_text]{ggplot2::geom_text()}}, or \code{\link[ggplot2:annotate]{ggplot2::annotate()}}, places at an \code{x} level and
+a \code{y} level is drawn at the centre of that cell's quadrant. This is a fixed
+position, the same in every panel, not the centre of the sector, whose size
+varies with the data. See the examples.
 }
 
 \section{Zero counts}{
@@ -237,9 +303,20 @@ exactly as if its stratum were not in the data. (With
 \code{facet_grid(margins = TRUE)}, the margin panels that pool that stratum are
 unknown too, and are also left empty.) With \code{na.rm = FALSE}, the default, a
 warning names each panel that lost rows or was left empty; with
-\code{na.rm = TRUE}, these warnings are not given. With free scales, ggplot2
-itself may still warn about the axes of an empty panel ("Position guide is
-perpendicular to the intended axis"), as it does for its own layers.
+\code{na.rm = TRUE}, these warnings are not given. With free scales, which need
+a coordinate system you add without \code{ratio} (see the Coordinate systems
+section), ggplot2 itself may still warn about the axes of an empty panel
+("Position guide is perpendicular to the intended axis"), as it does for
+its own layers.
+
+A missing \code{x} or \code{y} keeps a place for missing values on its axis, as for
+every geom, because ggplot2 trains position scales before the stat runs.
+The display removes those rows, but the axis stays wider, so the panels that
+share that scale are wider (or taller) than the display, with space beside
+it. With the default coordinate system the display stays round, and the
+counts and statistics are not affected.
+\code{scale_x_discrete(na.translate = FALSE)} (\code{scale_y_discrete()} for \code{y})
+removes that place.
 }
 
 \examples{
@@ -261,6 +338,15 @@ ggplot2::ggplot(
 ) +
   geom_fourfold(shape = "square") +
   ggplot2::facet_wrap(ggplot2::vars(Dept), ncol = 3) +
+  theme_fourfold()
+
+# Other layers are placed by category: a label in the Male-Admitted cell
+ggplot2::ggplot(
+  subset(ucb, Dept == "A"),
+  ggplot2::aes(x = Gender, y = Admit, weight = Freq)
+) +
+  geom_fourfold() +
+  ggplot2::annotate("label", x = "Male", y = "Admitted", label = "Male") +
   theme_fourfold()
 
 }

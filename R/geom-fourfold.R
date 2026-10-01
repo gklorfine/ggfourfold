@@ -740,13 +740,18 @@ makeContent.fourfold_counts <- function(x) {
     ),
     lineheight = 1
   )
+  # A native scale is reversed when the coordinate system reverses its axis:
+  # native heights are then negative, and the corners swap sides.
+  viewport <- grid::current.viewport()
+  x_direction <- sign(diff(viewport$xscale))
+  y_direction <- sign(diff(viewport$yscale))
   text_height <- max(vapply(
     x$labels,
     function(label) {
-      grid::convertHeight(
+      abs(grid::convertHeight(
         grid::grobHeight(grid::textGrob(label, gp = gp)),
         "native", valueOnly = TRUE
-      )
+      ))
     },
     numeric(1)
   ))
@@ -758,8 +763,9 @@ makeContent.fourfold_counts <- function(x) {
   offset <- if (outside) 1.02 else .fourfold_count_offset
   count_x <- c(-1, -1, 1, 1) * offset
   count_y <- c(1, -1, 1, -1) * offset
-  count_hjust <- c(0, 0, 1, 1)
-  count_vjust <- c(1, 0, 1, 0)
+  # Justification is in screen terms, so it flips with a reversed axis.
+  count_hjust <- if (x_direction > 0) c(0, 0, 1, 1) else c(1, 1, 0, 0)
+  count_vjust <- if (y_direction > 0) c(1, 0, 1, 0) else c(0, 1, 0, 1)
   if (outside) {
     count_hjust <- 1 - count_hjust
     count_vjust <- 1 - count_vjust
@@ -793,6 +799,42 @@ makeContent.fourfold_counts <- function(x) {
     gp = grid::gpar(col = scales::alpha(colour, alpha), lwd = lwd),
     name = name
   )
+}
+
+# Cartesian coordinates only rescale each axis, so the drawing's shape
+# survives; the others (and coord_flip(), which transposes the table) do not.
+.fourfold_check_coord <- function(coord) {
+  if (inherits(coord, "CoordFlip")) {
+    stop(
+      paste0(
+        "fourfold displays do not support coord_flip(); swap the x and y ",
+        "aesthetics instead, which transposes each table with the same odds ",
+        "ratio"
+      ),
+      call. = FALSE
+    )
+  }
+  if (!inherits(coord, "CoordCartesian") || inherits(coord, "CoordSf")) {
+    name <- switch(
+      class(coord)[1],
+      CoordSf = "coord_sf()",
+      CoordTransform = "coord_transform()",
+      CoordPolar = "coord_polar()",
+      CoordRadial = "coord_radial()",
+      class(coord)[1]
+    )
+    stop(
+      sprintf(
+        paste0(
+          "fourfold displays need a Cartesian coordinate system such as ",
+          "coord_cartesian(), not %s"
+        ),
+        name
+      ),
+      call. = FALSE
+    )
+  }
+  invisible()
 }
 
 #' @rdname geom_fourfold
@@ -829,6 +871,15 @@ GeomFourfold <- ggplot2::ggproto(
       extended = params$extended,
       ticks = params$ticks
     )
+    # The extent of the drawing, as for geom_tile(), so that the default scale
+    # expansion leaves room for the labels (local -1.3 to 1.3; see
+    # draw_panel()).
+    if (nrow(data)) {
+      data$xmin <- 0.2
+      data$xmax <- 2.8
+      data$ymin <- 0.2
+      data$ymax <- 2.8
+    }
     data
   },
   use_defaults = function(self, data, params = list(),
@@ -844,6 +895,7 @@ GeomFourfold <- ggplot2::ggproto(
   draw_panel = function(
       data, panel_params, coord, palette, ticks, extended,
       shape = "circle", na.rm = FALSE) {
+    .fourfold_check_coord(coord)
     data <- data[order(data$cell), , drop = FALSE]
     colour <- data$colour[1]
     alpha <- data$alpha[1]
@@ -962,11 +1014,24 @@ GeomFourfold <- ggplot2::ggproto(
       cl = "fourfold_counts"
     ))
 
+    # The drawing's local (u, v) is x = 1.5 + u, y = 1.5 - v in data units, so
+    # its frame spans the four unit cells. A Cartesian coordinate system
+    # rescales each axis separately, and a viewport scale puts local -1 and 1
+    # where the frame corners fall (reversed axes give reversed scales).
+    corners <- coord$transform(
+      data.frame(x = c(0.5, 2.5), y = c(2.5, 0.5)), panel_params
+    )
+    x_per_unit <- 2 / diff(corners$x)
+    y_per_unit <- 2 / diff(corners$y)
+    # Rounded to remove floating-point noise, so that the default coordinate
+    # system gives exactly c(-1.3, 1.3).
+    xscale <- round(c(-1 - corners$x[1] * x_per_unit,
+                      -1 + (1 - corners$x[1]) * x_per_unit), 10)
+    yscale <- round(c(-1 - corners$y[1] * y_per_unit,
+                      -1 + (1 - corners$y[1]) * y_per_unit), 10)
     grid::gTree(
       children = do.call(grid::gList, grobs),
-      vp = grid::viewport(
-        xscale = c(-1.3, 1.3), yscale = c(-1.3, 1.3), clip = "off"
-      ),
+      vp = grid::viewport(xscale = xscale, yscale = yscale, clip = "off"),
       name = "fourfold-panel"
     )
   }
@@ -984,7 +1049,8 @@ GeomFourfold <- ggplot2::ggproto(
 #' variable to `y`, and cell frequencies to `weight`. When `weight` is omitted,
 #' each row counts as one observation. The first `x` level is drawn on the left
 #' and the second on the right; the first `y` level is drawn at the top and the
-#' second at the bottom. Set factor levels explicitly when their order matters.
+#' second at the bottom (see the Coordinate systems section). Set factor levels
+#' explicitly when their order matters.
 #' Alternatively, reorder categories with the `limits` argument of
 #' [ggplot2::scale_x_discrete()] or [ggplot2::scale_y_discrete()], and rename
 #' them with `labels`. Scale `breaks` that reorder or omit categories, and a
@@ -1041,6 +1107,65 @@ GeomFourfold <- ggplot2::ggproto(
 #' [ggplot2::geom_count()]: ggplot2 evaluates it before the layer can ignore
 #' it, so it stops the plot. Use `inherit.aes = FALSE` in `geom_fourfold()`, or
 #' move the mapping to the layer that uses it.
+#'
+#' @section Coordinate systems:
+#' The display is drawn in the plot's coordinate system, so axes, gridlines,
+#' and other layers agree with it. The first `x` level is at position 1 and the
+#' second at position 2, and likewise for `y`; the display fills the square
+#' from 0.5 to 2.5 on both axes, and each cell's quadrant is centred on its
+#' category position.
+#'
+#' `geom_fourfold()` therefore also adds
+#' `coord_cartesian(reverse = "y", ratio = 1)` to the plot, as
+#' [ggplot2::geom_sf()] adds [ggplot2::coord_sf()]. Reversing the `y` axis
+#' keeps the first `y` level at the top, as in `vcd::fourfold()`, for every
+#' layer; reversing the `y` scale with `limits` would instead reorder the
+#' table. The unit `ratio` keeps circles round under any theme. Both axes span
+#' the same range by default, so it also makes the panels square. A theme's
+#' `aspect.ratio` overrides `ratio`: it fixes the panel's shape, and circles
+#' become ellipses when the ranges of the axes differ (see the Missing values
+#' section).
+#'
+#' A coordinate system that you add to the plot replaces this one, as usual in
+#' ggplot2. Add yours after the last `geom_fourfold()` in the plot: a later
+#' `geom_fourfold()` replaces your coordinate system with its own, with
+#' ggplot2's message. Without `reverse = "y"`, the first `y` level is drawn at
+#' the bottom, as for any ggplot2 layer. To keep it at the top and the circles
+#' round, add `coord_cartesian(reverse = "y", ratio = 1, ...)`: without
+#' `ratio`, the display stretches to fill the panel, so circles become
+#' ellipses wherever the panel is not square.
+#' Common additions such as [ggplot2::coord_fixed()] and
+#' [ggplot2::coord_equal()] also replace the default, and draw the first `y`
+#' level at the bottom unless reversed. Any `reverse` setting is drawn
+#' correctly. Used directly with [ggplot2::layer()], `GeomFourfold` adds no
+#' coordinate system and follows the one the plot has.
+#'
+#' The coordinate system must be Cartesian, such as [ggplot2::coord_cartesian()]
+#' or [ggplot2::coord_fixed()]. [ggplot2::coord_flip()] is an error: swap the
+#' `x` and `y` aesthetics instead, which transposes each table and keeps its
+#' odds ratio. So are [ggplot2::coord_sf()], [ggplot2::coord_transform()], and
+#' polar coordinates, which would distort the areas that carry the display's
+#' meaning. Because of the fixed `ratio`, ggplot2 does not allow free facet
+#' scales (`scales = "free"`) with the default coordinate system. To use them,
+#' add your own coordinate system without `ratio` after `geom_fourfold()`,
+#' such as `coord_cartesian(reverse = "y")`. Then `facet_grid(space = "free")`
+#' also works, including with [theme_fourfold()], which sets no aspect ratio;
+#' it shares widths among columns (heights among rows) in proportion to the
+#' ranges of their axes. Free scales and free space are therefore possible
+#' only with your own coordinate system without `ratio`, and the displays are
+#' then round only where a panel happens to be square.
+#'
+#' The display is not clipped to the panel, so that counts outside the frame
+#' stay whole. Zooming with the `xlim` and `ylim` of the coordinate system
+#' therefore does not crop it, and the display can then extend over
+#' neighbouring panels and strips.
+#'
+#' @section Annotations:
+#' A point or label that another layer, such as [ggplot2::geom_point()],
+#' [ggplot2::geom_text()], or [ggplot2::annotate()], places at an `x` level and
+#' a `y` level is drawn at the centre of that cell's quadrant. This is a fixed
+#' position, the same in every panel, not the centre of the sector, whose size
+#' varies with the data. See the examples.
 #'
 #' @section Zero counts:
 #' If any cell of a panel's table is zero, 0.5 is added to all four cells
@@ -1123,9 +1248,20 @@ GeomFourfold <- ggplot2::ggproto(
 #' `facet_grid(margins = TRUE)`, the margin panels that pool that stratum are
 #' unknown too, and are also left empty.) With `na.rm = FALSE`, the default, a
 #' warning names each panel that lost rows or was left empty; with
-#' `na.rm = TRUE`, these warnings are not given. With free scales, ggplot2
-#' itself may still warn about the axes of an empty panel ("Position guide is
-#' perpendicular to the intended axis"), as it does for its own layers.
+#' `na.rm = TRUE`, these warnings are not given. With free scales, which need
+#' a coordinate system you add without `ratio` (see the Coordinate systems
+#' section), ggplot2 itself may still warn about the axes of an empty panel
+#' ("Position guide is perpendicular to the intended axis"), as it does for
+#' its own layers.
+#'
+#' A missing `x` or `y` keeps a place for missing values on its axis, as for
+#' every geom, because ggplot2 trains position scales before the stat runs.
+#' The display removes those rows, but the axis stays wider, so the panels that
+#' share that scale are wider (or taller) than the display, with space beside
+#' it. With the default coordinate system the display stays round, and the
+#' counts and statistics are not affected.
+#' `scale_x_discrete(na.translate = FALSE)` (`scale_y_discrete()` for `y`)
+#' removes that place.
 #'
 #' @param mapping Set of aesthetic mappings created by [ggplot2::aes()]. If
 #'   supplied and `inherit.aes = TRUE`, these are combined with the plot's
@@ -1163,7 +1299,9 @@ GeomFourfold <- ggplot2::ggproto(
 #' @param inherit.aes If `FALSE`, override rather than combine with the plot's
 #'   default aesthetic mappings.
 #'
-#' @return A ggplot2 layer that can be added to a [ggplot2::ggplot()] object.
+#' @return A list of a ggplot2 layer and a default coordinate system,
+#'   `coord_cartesian(reverse = "y", ratio = 1)`, which can be added to a
+#'   [ggplot2::ggplot()] object (see the Coordinate systems section).
 #'
 #' @references
 #' Friendly, M. (1994). *A fourfold display for 2 by 2 by k tables*
@@ -1198,6 +1336,15 @@ GeomFourfold <- ggplot2::ggproto(
 #'   ggplot2::facet_wrap(ggplot2::vars(Dept), ncol = 3) +
 #'   theme_fourfold()
 #'
+#' # Other layers are placed by category: a label in the Male-Admitted cell
+#' ggplot2::ggplot(
+#'   subset(ucb, Dept == "A"),
+#'   ggplot2::aes(x = Gender, y = Admit, weight = Freq)
+#' ) +
+#'   geom_fourfold() +
+#'   ggplot2::annotate("label", x = "Male", y = "Admitted", label = "Male") +
+#'   theme_fourfold()
+#'
 #' @importFrom grDevices col2rgb
 #' @importFrom ggplot2 aes ggproto layer Stat
 #' @importFrom stats p.adjust p.adjust.methods pnorm qnorm
@@ -1222,7 +1369,7 @@ geom_fourfold <- function(
     std, margin, conf_level, extended, ticks, p_adjust_method, palette,
     shape
   )
-  ggplot2::layer(
+  layer <- ggplot2::layer(
     data = data,
     mapping = mapping,
     stat = StatFourfold,
@@ -1244,5 +1391,10 @@ geom_fourfold <- function(
       ),
       list(...)
     )
+  )
+  # As geom_sf() adds coord_sf(): keeps the first row on top, with unit ratio.
+  list(
+    layer,
+    ggplot2::coord_cartesian(reverse = "y", ratio = 1, default = TRUE)
   )
 }

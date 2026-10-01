@@ -3,10 +3,10 @@
 
 #' Theme for fourfold displays
 #'
-#' `theme_fourfold()` supplies a square, uncluttered panel and responsive
-#' typography for [geom_fourfold()]. It also styles facet strips like fourfold
-#' stratum headings and provides compact spacing that remains readable in both
-#' the RStudio plot pane and exported graphics.
+#' `theme_fourfold()` supplies an uncluttered panel and responsive typography
+#' for [geom_fourfold()]. It also styles facet strips like fourfold stratum
+#' headings and provides compact spacing that remains readable in both the
+#' RStudio plot pane and exported graphics.
 #'
 #' @details
 #' `base_size` and `base_family` control all text, including the category and
@@ -14,6 +14,13 @@
 #' physical panel size while retaining a readable lower bound. Additional theme
 #' elements passed through `...` are applied last and therefore override the
 #' defaults.
+#'
+#' The theme sets no `aspect.ratio`. The display stays round, and the panels
+#' square by default, because [geom_fourfold()] adds a coordinate system with
+#' `ratio = 1` (see the Coordinate systems section of [geom_fourfold()]).
+#' Passing `aspect.ratio` through `...` fixes the panel's shape and overrides
+#' that ratio, so circles become ellipses when the ranges of the `x` and `y`
+#' axes differ, for example when a missing value keeps a place on one axis.
 #'
 #' This theme uses ggplot2's theme-derived geom defaults and requires ggplot2
 #' 4.0.0 or later.
@@ -47,7 +54,6 @@ theme_fourfold <- function(base_size = 12, base_family = "", ...) {
   fourfold_theme <- ggplot2::`%+replace%`(
     ggplot2::theme_void(base_size = base_size, base_family = base_family),
     ggplot2::theme(
-      aspect.ratio = 1,
       plot.background = ggplot2::element_rect(fill = "white", colour = NA),
       panel.background = ggplot2::element_rect(fill = "white", colour = NA),
       panel.spacing.x = grid::unit(1.25, "lines"),

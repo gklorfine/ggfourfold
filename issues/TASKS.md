@@ -721,7 +721,7 @@ As these items are resolved, check them off as [X] and record the fix and verifi
 
 ## Display / layout
 
-- [ ] **The geom draws outside ggplot2's coordinate system** (found 2026-10-01 by
+- [X] **The geom draws outside ggplot2's coordinate system** (found 2026-10-01 by
   reviewer B of the `na.rm` item; diagnosed by GK and Claude) — `draw_panel()` ignores
   `panel_params` and `coord` and draws each display in its own viewport with a fixed
   native scale of −1.3 to 1.3, stretched over the whole panel. The `x` and `y` scales
@@ -743,21 +743,94 @@ As these items are resolved, check them off as [X] and record the fix and verifi
     problem.
 
   Counts, odds ratios, and tests are unaffected; only what ggplot2 draws around and on
-  top of the display is wrong. Options:
-  - *(a) Document and reject*: state that the geom is designed for `theme_fourfold()`
-    and that position axes and other position-based layers do not line up with it;
-    stop with a clear error for `coord_flip()` and non-Cartesian coordinate systems.
-  - *(b) Hide the position axes and enforce a square panel*: have `geom_fourfold()`
-    also return guides that remove the x and y axes and keep panels square under any
-    theme. Removes the misleading axes and the ellipses; other layers still do not line
-    up.
-  - *(c) A dedicated `coord_fourfold()`* that owns the panel: square, no position axes,
-    first row at the top, and coordinates other layers can use (such as cell centres).
-    The full fix, but a substantial design change before CRAN.
-
-  Claude's recommendation: (a) and (b) now, (c) as a possible later item. Not part of
-  the `na.rm` fix.
-  File: `R/geom-fourfold.R` (`geom_fourfold()`, `GeomFourfold$draw_panel()`).
+  top of the display is wrong.
+  - *Options first considered* (2026-10-01): (a) document the limitation and reject
+    `coord_flip()`; (b) hide the position axes and force square panels; (c) a dedicated
+    `coord_fourfold()`. Claude recommended (a) and (b). GK preferred a real fix, since an
+    annotation landing in the wrong cell is worse than an unsupported operation.
+  - *Plan* (agreed by GK, 2026-10-01; not implemented): `dev/coordinate-system-plan.md`.
+    Draw in ggplot2's coordinates, following `geom_sf()`:
+    - `geom_fourfold()` returns `list(layer, coord_cartesian(reverse = "y", ratio = 1,
+      default = TRUE))`; plot syntax is unchanged, but the return value is a list, not
+      a `Layer`.
+    - The geom keeps its drawing code and rescales its viewport from
+      `coord$transform()`, with clipping still off; `setup_data()` reports the extent
+      0.2–2.8. The quadrant centres are the category positions, so ordinary layers
+      align.
+    - GK's decisions: a user's own coordinate system replaces the default (document
+      adding `reverse = "y"`); `coord_flip()` and non-Cartesian coordinate systems are
+      errors (swap `x` and `y` instead); the `NA` axis slot is accepted, with a hint in
+      the missing-values warning; `ratio = 1` is included (free facet scales then
+      unsupported; checked not to affect the marginal-table plans).
+    - Count placement must be fixed for unreversed orientations (justification and
+      negative native heights in `makeContent.fourfold_counts()`).
+    - History: an earlier plan written with GPT and its GPT review (not kept in the
+      repository; summarised in the plan's History section) reached the same core design with a
+      heavier mechanism (S7 component class, provenance check, per-vertex transforms,
+      physical-unit diagnostics). A ggplot2-conventions review by a Claude subagent,
+      reproduced by Claude, simplified it; the plan's History section lists each change.
+  - *Found during planning, separate from this item*: `.fourfold_counts_reach()` ignores
+    `conf_low_radius` (for `c(2, 5, 5, 2)`, squares, `ticks = 0`: reach 0.749 versus a
+    true 0.835 and a count limit of 0.80); whether counts go outside can differ between
+    panels of different physical sizes, contrary to the docs.
+  - *Implemented* (2026-10-01, uncommitted; Claude as project manager, code by Sonnet
+    subagents, per `dev/coordinate-system-plan.md`):
+    - `geom_fourfold()` returns `list(layer, coord_cartesian(reverse = "y", ratio = 1,
+      default = TRUE))`.
+    - `GeomFourfold$setup_data()` adds `xmin`/`xmax`/`ymin`/`ymax` = 0.2/2.8;
+      `draw_panel()` checks the coordinate system (new `.fourfold_check_coord()`: errors
+      for `coord_flip()`, with the advice to swap `x` and `y`, and for non-Cartesian
+      systems) and sets the display's viewport scales from `coord$transform()` of the
+      frame corners, rounded to 10 digits so the default is exactly ±1.3; clipping stays
+      off.
+    - `makeContent.fourfold_counts()`: text height in absolute value and justification
+      from the direction of the native scales, so counts sit inward (or outward) under
+      any reversal.
+    - Docs: `@return`, new "Coordinate systems" and "Annotations" sections, an
+      `annotate()` example, Missing values. NEWS left as "Initial CRAN submission."
+      (unreleased package).
+  - *Decision B* (GK, after review): `theme_fourfold()` no longer sets
+    `aspect.ratio = 1`. The theme's aspect ratio overrode the coordinate ratio whenever
+    the x and y ranges differed (a missing value's axis place, a one-axis zoom, an
+    annotation outside the frame), squashing the circles. Now the coordinate ratio keeps
+    circles round and panels square by default; a user's own coordinate system without
+    `ratio = 1` lets the display stretch (documented). The missing-value hint warning
+    added during implementation was removed again, since the axis place no longer
+    distorts the display. Free facet scales are an error with the default coordinate
+    system (fixed ratio); with one's own coordinate system without `ratio` they work.
+  - *Verification* (scratch harness, HEAD 2c098be vs the change, ggplot2 4.0.3 and the
+    minimum 4.0.0 with identical results):
+    - statistics: 245 cases (all `std`/`margin`, shapes, inference settings, 8
+      `p.adjust` methods, UCB, Titanic with and without margins, individual rows,
+      zero/empty/blank tables, missing values): all 5,852 statistical columns
+      `identical()`; warnings identical in all 245; the only behaviour differences are
+      free facet scales (now ggplot2's fixed-ratio error) and `facet_grid(space =
+      "free")` under `theme_fourfold()` (now draws);
+    - pixels: 260 default images (`theme_fourfold()` at base sizes 12 and 8, four
+      device sizes, PDF) identical to HEAD; separately 30 one-image-per-process renders
+      byte-identical after decision B;
+    - alignment: 117 plots (13 coordinate setups × 3 themes × 3 datasets): 6,084 points
+      and text labels at their cells' quadrant centres (error ≤ 1e-16);
+    - text: 96 orientation renders, counts inside/outside the frame placed correctly;
+    - tests: 2,248 expectations pass; `dev/verify-geom-fourfold.R` passes;
+      `R CMD check --as-cran` 0 errors, warnings, notes.
+  - *Independent review* (two Opus subagents as statisticians with ggplot2-extension
+    experience): both approved with changes; no implementation bugs; statistics and
+    default rendering confirmed unchanged (one rendered 204 files one per process; one
+    checked 768 and the other 1,848 aligned panels). Their findings, all addressed:
+    clipping and the absolute text height were untested (planted bugs survived; tests
+    added); the claim that `ratio` keeps circles round "under any theme" was false under
+    `theme_fourfold()` (led to decision B); docs on replacing the coordinate system
+    (include `ratio = 1`, `coord_fixed()`/`coord_equal()`, after the last
+    `geom_fourfold()`), free scales, and zoom spill-over. Re-review after decision B:
+    approve; one false doc claim (free space keeps displays round) fixed; 14 of 15
+    planted bugs caught (the survivor is a pre-existing constant, the outside offset).
+  - *Pre-existing, not from this change* (see the new items under "Diagnostic
+    follow-ups"): very small devices stop with "Viewport has zero dimension(s)"; with
+    `std = "ind.max"` circles, the largest count can overlap its arc; `layer()` with
+    `GeomFourfold`/`StatFourfold` and no parameters fails in the stat.
+  Files: `R/geom-fourfold.R` (`geom_fourfold()`, `GeomFourfold$setup_data()`,
+  `GeomFourfold$draw_panel()`, `makeContent.fourfold_counts()`), tests, docs, NEWS.
 
 - [ ] **Reduce overlap in the unstandardized README display** — review the space occupied
   by the sectors and labels; scale down the display area if text overlaps excessively.
@@ -1093,7 +1166,19 @@ standardizations. These checks do not resolve the edge cases above, and the exis
 development verification script remains broken as noted above.
 
 
-## Diagnostic follow-ups from the missing-value review
+## Diagnostic follow-ups (missing-value and coordinate-system reviews)
+
+- [ ] Very small devices (e.g. Titanic `facet_grid(margins = TRUE)` with
+  `shape = "square"`, `std = "ind.max"` at 1.5 × 4 in) stop with "Viewport has zero
+  dimension(s)" from `convertHeight()` in `makeContent.fourfold_counts()` (also at
+  2c098be; found by the coordinate-system reviewers). A small RStudio plot pane could hit
+  it.
+- [ ] With `std = "ind.max"` and circles, the largest count can overlap its own arc:
+  `.fourfold_counts_reach()` treats circles as never reaching the counts (UCB Dept A,
+  "512"). Related to the `conf_low_radius` reach item above.
+- [ ] `layer(geom = GeomFourfold, stat = StatFourfold)` without parameters fails in the
+  stat (`conf_level > 0 && extended` with NULLs). Give defaults or document that
+  `geom_fourfold()` is the supported constructor.
 
 - [ ] Distinguish values excluded by discrete scale limits from actual missing values
   in the "missing fourfold values" warning (pre-existing behavior).

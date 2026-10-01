@@ -759,9 +759,11 @@ test_that("mapping a drawing property in the layer is an error", {
   # Other aesthetics are unaffected, and aes(colour = NULL) removes an
   # inherited mapping as usual.
   expect_s3_class(
-    geom_fourfold(ggplot2::aes(x, y, weight = w)), "LayerInstance"
+    geom_fourfold(ggplot2::aes(x, y, weight = w))[[1]], "LayerInstance"
   )
-  expect_s3_class(geom_fourfold(ggplot2::aes(colour = NULL)), "LayerInstance")
+  expect_s3_class(
+    geom_fourfold(ggplot2::aes(colour = NULL))[[1]], "LayerInstance"
+  )
   # Something other than a mapping gets ggplot2's own error.
   expect_error(geom_fourfold(data.frame(size = 1)), "must be created by")
 })
@@ -1068,4 +1070,576 @@ test_that("an unknown table takes precedence over removed category rows", {
     built,
     ggplot2::layer_data(missing_plot(droplevels(data[data$Dept != "A", ])))
   )
+})
+
+# Coordinate systems -----------------------------------------------------------
+
+# Dept A of UCBAdmissions, with a point at each cell's category position
+# (Gender level, Admit level) in a layer after the display. `fourfold` gives
+# the arguments of geom_fourfold(), `...` anything else to add.
+cell_plot <- function(..., fourfold = list()) {
+  ucb <- as.data.frame(UCBAdmissions)
+  ggplot2::ggplot(
+    ucb[ucb$Dept == "A", ], ggplot2::aes(Gender, Admit, weight = Freq)
+  ) +
+    do.call(geom_fourfold, fourfold) +
+    ggplot2::geom_point(ggplot2::aes(Gender, Admit)) +
+    list(...)
+}
+
+# The gtable of a plot, as drawn on a null device.
+drawn_gtable <- function(plot) {
+  grDevices::pdf(NULL)
+  on.exit(grDevices::dev.off())
+  ggplot2::ggplotGrob(plot)
+}
+
+# What a single-panel plot draws: the panel, the viewport of the fourfold
+# display, the positions of the points of a geom_point() layer (in npc of the
+# panel), and, if asked, the display's count grobs once their text is placed.
+drawn_plot <- function(plot, counts = FALSE) {
+  grDevices::pdf(NULL)
+  on.exit(grDevices::dev.off())
+  gtable <- ggplot2::ggplotGrob(plot)
+  panel <- gtable$grobs[[which(gtable$layout$name == "panel")]]
+  display <- grid::getGrob(panel, "fourfold-panel", grep = TRUE)
+  shown <- list(panel = panel, vp = display$vp)
+  points <- grid::getGrob(panel, "geom_point", grep = TRUE)
+  if (!is.null(points)) {
+    shown$points <- cbind(x = as.numeric(points$x), y = as.numeric(points$y))
+  }
+  if (counts) {
+    grid::grid.newpage()
+    grid::grid.draw(gtable)
+    grid::grid.force()
+    shown$counts <- grid::grid.get("fourfold-counts")
+  }
+  shown
+}
+
+# Position in npc of a local coordinate of the display on a viewport scale.
+to_npc <- function(local, scale) (local - scale[1]) / (scale[2] - scale[1])
+
+# Coordinate systems, with the sides of the Male and Admitted cell (the first
+# level of each axis) and the native scales the display is then drawn on.
+orientations <- list(
+  default = list(
+    coord = NULL, male_left = TRUE, admitted_top = TRUE,
+    xscale = c(-1.3, 1.3), yscale = c(-1.3, 1.3)
+  ),
+  none = list(
+    coord = ggplot2::coord_cartesian(), male_left = TRUE, admitted_top = FALSE,
+    xscale = c(-1.3, 1.3), yscale = c(1.3, -1.3)
+  ),
+  x = list(
+    coord = ggplot2::coord_cartesian(reverse = "x"),
+    male_left = FALSE, admitted_top = FALSE,
+    xscale = c(1.3, -1.3), yscale = c(1.3, -1.3)
+  ),
+  y = list(
+    coord = ggplot2::coord_cartesian(reverse = "y"),
+    male_left = TRUE, admitted_top = TRUE,
+    xscale = c(-1.3, 1.3), yscale = c(-1.3, 1.3)
+  ),
+  xy = list(
+    coord = ggplot2::coord_cartesian(reverse = "xy"),
+    male_left = FALSE, admitted_top = TRUE,
+    xscale = c(1.3, -1.3), yscale = c(-1.3, 1.3)
+  )
+)
+
+test_that("geom_fourfold() adds its layer and a default coordinate system", {
+  added <- geom_fourfold()
+  expect_type(added, "list")
+  expect_length(added, 2)
+  expect_s3_class(added[[1]], "LayerInstance")
+  expect_s3_class(added[[2]], "CoordCartesian")
+  expect_identical(added[[2]]$reverse, "y")
+  expect_equal(added[[2]]$ratio, 1)
+  expect_true(added[[2]]$default)
+  expect_identical(added[[1]]$geom, GeomFourfold)
+
+  plot <- ggplot2::ggplot(fourfold_data, ggplot2::aes(x, y, weight = w)) +
+    geom_fourfold()
+  expect_length(plot$layers, 1)
+  expect_s3_class(plot$coordinates, "CoordCartesian")
+  expect_identical(plot$coordinates$reverse, "y")
+  expect_equal(plot$coordinates$ratio, 1)
+  expect_true(plot$coordinates$default)
+})
+
+test_that("the layer reports the extent of the drawing and keeps its statistics", {
+  ucb <- as.data.frame(UCBAdmissions)
+  built <- ggplot2::layer_data(
+    ggplot2::ggplot(
+      ucb[ucb$Dept == "A", ], ggplot2::aes(Gender, Admit, weight = Freq)
+    ) +
+      geom_fourfold()
+  )
+  # (ggplot2 gives them the class of the discrete scale.)
+  expect_identical(as.numeric(built$xmin), rep(0.2, 4))
+  expect_identical(as.numeric(built$xmax), rep(2.8, 4))
+  expect_identical(as.numeric(built$ymin), rep(0.2, 4))
+  expect_identical(as.numeric(built$ymax), rep(2.8, 4))
+  # The statistics are those of the table: Dept A of UCBAdmissions.
+  expect_identical(built$count, c(512, 313, 89, 19))
+  expect_identical(built$x_label, c("Male", "Male", "Female", "Female"))
+  expect_identical(built$y_label, c("Admitted", "Rejected", "Admitted", "Rejected"))
+  expect_equal(built$odds_ratio, rep(512 * 19 / (313 * 89), 4))
+  expect_equal(built$standardized, c(0.3714414, 0.6285586, 0.6285586, 0.3714414),
+               tolerance = 1e-6)
+  expect_equal(built$radius, sqrt(built$standardized))
+  expect_equal(built$conf_low_radius[1], 0.5599721, tolerance = 1e-6)
+  expect_equal(built$conf_high_radius[1], 0.6582200, tolerance = 1e-6)
+  expect_equal(built$conf_low[1], 0.2086756, tolerance = 1e-6)
+  expect_equal(built$conf_high[1], 0.5843954, tolerance = 1e-6)
+  expect_equal(built$p_value[1], 6.208742e-05, tolerance = 1e-6)
+  expect_identical(built$palette_index, c(5L, 6L, 6L, 5L))
+  expect_true(all(built$significant))
+
+  # The statistics do not depend on the coordinate system.
+  for (orientation in orientations) {
+    other <- ggplot2::layer_data(ggplot2::ggplot(
+      ucb[ucb$Dept == "A", ], ggplot2::aes(Gender, Admit, weight = Freq)
+    ) + geom_fourfold() + orientation$coord)
+    expect_identical(other, built)
+  }
+
+  # An empty layer reports nothing.
+  empty <- ggplot2::layer_data(
+    ggplot2::ggplot(
+      transform(ucb[ucb$Dept == "A", ], Freq = NA),
+      ggplot2::aes(Gender, Admit, weight = Freq)
+    ) + geom_fourfold(na.rm = TRUE)
+  )
+  expect_equal(nrow(empty), 0)
+})
+
+test_that("by default the display fills the viewport it always had", {
+  for (theme in list(ggplot2::theme_grey(), theme_fourfold())) {
+    shown <- drawn_plot(cell_plot(theme))
+    expect_equal(shown$vp$xscale, c(-1.3, 1.3))
+    expect_equal(shown$vp$yscale, c(-1.3, 1.3))
+    # The display is not clipped (grid stores clip = "off" as NA).
+    expect_true(is.na(shown$vp$clip))
+  }
+  # In every panel, with fixed scales.
+  ucb <- as.data.frame(UCBAdmissions)
+  for (facet in list(
+    ggplot2::facet_wrap(ggplot2::vars(Dept)),
+    ggplot2::facet_grid(. ~ Dept, margins = TRUE),
+    ggplot2::facet_grid(Dept ~ ., margins = TRUE)
+  )) {
+    plot <- ucb_plot(facet, theme_fourfold())
+    expect_no_error(gtable <- drawn_gtable(plot))
+    panels <- gtable$grobs[grepl("^panel", gtable$layout$name)]
+    expect_gte(length(panels), 6)
+    for (panel in panels) {
+      display <- grid::getGrob(panel, "fourfold-panel", grep = TRUE)
+      expect_equal(display$vp$xscale, c(-1.3, 1.3))
+      expect_equal(display$vp$yscale, c(-1.3, 1.3))
+      expect_true(is.na(display$vp$clip))
+    }
+  }
+})
+
+test_that("the display's viewport follows the orientation and zoom", {
+  for (orientation in orientations) {
+    shown <- drawn_plot(cell_plot(orientation$coord))
+    expect_equal(shown$vp$xscale, orientation$xscale)
+    expect_equal(shown$vp$yscale, orientation$yscale)
+    # Clipping is off in every orientation, so that counts outside the frame
+    # stay whole (grid stores clip = "off" as NA; "inherit" would be FALSE).
+    expect_true(is.na(shown$vp$clip))
+  }
+  # Limits on a discrete axis get ggplot2's discrete expansion of 0.6 on each
+  # side, so the frame (2 wide) takes 2 of 3.2 units: native +-1.6.
+  zoom <- drawn_plot(cell_plot(
+    ggplot2::coord_cartesian(reverse = "y", xlim = c(0.5, 2.5))
+  ))
+  expect_equal(zoom$vp$xscale, c(-1.6, 1.6))
+  expect_equal(zoom$vp$yscale, c(-1.3, 1.3))
+  expect_true(is.na(zoom$vp$clip))
+  expand <- drawn_plot(cell_plot(
+    ggplot2::coord_cartesian(reverse = "y", xlim = c(0.5, 2.5), expand = FALSE)
+  ))
+  expect_equal(expand$vp$xscale, c(-1, 1))
+  expect_equal(expand$vp$yscale, c(-1.3, 1.3))
+})
+
+test_that("points at category positions land in the fourfold quadrants", {
+  coords <- c(
+    orientations,
+    list(
+      zoom = list(
+        coord = ggplot2::coord_cartesian(reverse = "y", xlim = c(0.5, 2.5)),
+        male_left = TRUE, admitted_top = TRUE
+      ),
+      fixed = list(
+        coord = ggplot2::coord_fixed(), male_left = TRUE, admitted_top = FALSE
+      ),
+      clipped = list(
+        coord = ggplot2::coord_cartesian(reverse = "xy", clip = "off"),
+        male_left = FALSE, admitted_top = TRUE
+      )
+    )
+  )
+  for (name in names(coords)) {
+    orientation <- coords[[name]]
+    plot <- cell_plot(orientation$coord)
+    shown <- drawn_plot(plot)
+    cells <- ggplot2::layer_data(plot, 2)
+    expect_equal(nrow(cells), 4)
+    expect_setequal(paste(cells$x, cells$y), c("1 1", "1 2", "2 1", "2 2"))
+
+    # Each point is at the centre of its cell's quadrant: local (+-0.5, +-0.5),
+    # with the first level of x at u = -0.5 and the first level of y at
+    # v = +0.5.
+    local <- cbind(u = as.numeric(cells$x) - 1.5, v = 1.5 - as.numeric(cells$y))
+    centres <- cbind(
+      x = to_npc(local[, "u"], shown$vp$xscale),
+      y = to_npc(local[, "v"], shown$vp$yscale)
+    )
+    expect_equal(shown$points, centres, ignore_attr = TRUE, info = name)
+
+    # The Male-Admitted point (x = 1, y = 1) is on the side expected for the
+    # orientation, and the labels of the first levels are on its sides.
+    male_admitted <- which(cells$x == 1 & cells$y == 1)
+    centre <- c(to_npc(0, shown$vp$xscale), to_npc(0, shown$vp$yscale))
+    expect_identical(
+      unname(shown$points[male_admitted, "x"] < centre[1]),
+      orientation$male_left, info = name
+    )
+    expect_identical(
+      unname(shown$points[male_admitted, "y"] > centre[2]),
+      orientation$admitted_top, info = name
+    )
+    left <- grid::getGrob(shown$panel, "fourfold-label-left")
+    top <- grid::getGrob(shown$panel, "fourfold-label-top")
+    expect_identical(left$label, "Male")
+    expect_identical(top$label, "Admitted")
+    expect_identical(
+      to_npc(as.numeric(left$x), shown$vp$xscale) < centre[1], orientation$male_left,
+      info = name
+    )
+    expect_identical(
+      to_npc(as.numeric(top$y), shown$vp$yscale) > centre[2], orientation$admitted_top,
+      info = name
+    )
+  }
+
+  # Without any reversal, the first row is at the bottom, as in ggplot2: the
+  # default is the display with the first y level at the top.
+  default <- drawn_plot(cell_plot())
+  expect_equal(
+    unname(default$points[, "y"][c(1, 3)]), rep(0.5 + 0.5 / 2.6, 2)
+  )
+  expect_equal(
+    unname(default$points[, "y"][c(2, 4)]), rep(0.5 - 0.5 / 2.6, 2)
+  )
+  expect_equal(
+    unname(default$points[, "x"][c(1, 2)]), rep(0.5 - 0.5 / 2.6, 2)
+  )
+})
+
+test_that("the first y level is on top by default and at the bottom without reversal", {
+  for (case in list(list(NULL, TRUE), list(ggplot2::coord_cartesian(), FALSE))) {
+    shown <- drawn_plot(cell_plot(case[[1]]))
+    top <- grid::getGrob(shown$panel, "fourfold-label-top")
+    bottom <- grid::getGrob(shown$panel, "fourfold-label-bottom")
+    expect_identical(top$label, "Admitted")
+    expect_identical(bottom$label, "Rejected")
+    expect_identical(to_npc(as.numeric(top$y), shown$vp$yscale) > 0.5, case[[2]])
+    expect_identical(to_npc(as.numeric(bottom$y), shown$vp$yscale) < 0.5, case[[2]])
+  }
+})
+
+test_that("a coordinate system added after geom_fourfold() replaces the default", {
+  base <- ggplot2::ggplot(fourfold_data, ggplot2::aes(x, y, weight = w))
+  expect_identical((base + geom_fourfold())$coordinates$reverse, "y")
+  expect_no_message(plot <- base + geom_fourfold() + ggplot2::coord_cartesian())
+  expect_identical(plot$coordinates$reverse, "none")
+  expect_null(plot$coordinates$ratio)
+  expect_false(isTRUE(plot$coordinates$default))
+  expect_no_message(
+    plot <- base + geom_fourfold() +
+      ggplot2::coord_cartesian(reverse = "x", clip = "off")
+  )
+  expect_identical(plot$coordinates$reverse, "x")
+  # More layers added with the default do not disturb it, and a plot with two
+  # of them has no message.
+  expect_no_message(plot <- base + geom_fourfold() + geom_fourfold())
+  expect_true(plot$coordinates$default)
+  expect_length(plot$layers, 2)
+})
+
+test_that("a coordinate system added before geom_fourfold() is replaced", {
+  base <- ggplot2::ggplot(fourfold_data, ggplot2::aes(x, y, weight = w))
+  expect_message(
+    plot <- base + ggplot2::coord_cartesian(reverse = "x") + geom_fourfold(),
+    "Coordinate system already present"
+  )
+  expect_identical(plot$coordinates$reverse, "y")
+  expect_equal(plot$coordinates$ratio, 1)
+  expect_true(plot$coordinates$default)
+  shown <- drawn_plot(plot)
+  expect_equal(shown$vp$xscale, c(-1.3, 1.3))
+  expect_equal(shown$vp$yscale, c(-1.3, 1.3))
+})
+
+test_that("coordinate systems other than Cartesian are an error when drawn", {
+  plot <- ucb_plot()
+  expect_error(
+    drawn_gtable(plot + ggplot2::coord_flip()),
+    "fourfold displays do not support coord_flip()", fixed = TRUE
+  )
+  expect_error(
+    drawn_gtable(plot + ggplot2::coord_flip()),
+    "swap the x and y aesthetics instead", fixed = TRUE
+  )
+  others <- list(
+    coord_polar = ggplot2::coord_polar(),
+    coord_radial = ggplot2::coord_radial(),
+    coord_transform = ggplot2::coord_transform()
+  )
+  for (name in names(others)) {
+    bad <- plot + others[[name]]
+    # Only the drawing of the display is affected, not the statistics.
+    expect_no_error(ggplot2::layer_data(bad))
+    expect_error(
+      drawn_gtable(bad),
+      sprintf(
+        "fourfold displays need a Cartesian coordinate system such as coord_cartesian(), not %s()",
+        name
+      ),
+      fixed = TRUE
+    )
+  }
+  expect_no_error(ggplot2::layer_data(plot + ggplot2::coord_flip()))
+
+  # Cartesian coordinate systems with a fixed ratio work.
+  for (coord in list(ggplot2::coord_fixed(), ggplot2::coord_equal(),
+                     ggplot2::coord_fixed(ratio = 2))) {
+    expect_no_error(shown <- drawn_plot(cell_plot(coord)))
+    expect_equal(shown$vp$xscale, c(-1.3, 1.3))
+  }
+})
+
+test_that("free facet scales are an error with the default coordinate system", {
+  ucb <- as.data.frame(UCBAdmissions)
+  free <- list(
+    ggplot2::facet_wrap(ggplot2::vars(Dept), scales = "free"),
+    ggplot2::facet_wrap(ggplot2::vars(Dept), scales = "free_x"),
+    ggplot2::facet_wrap(ggplot2::vars(Dept), scales = "free_y"),
+    ggplot2::facet_grid(. ~ Dept, scales = "free")
+  )
+  for (facet in free) {
+    plot <- ucb_plot(facet)
+    expect_no_error(ggplot2::layer_data(plot))
+    expect_error(drawn_gtable(plot), "can't use free scales", fixed = TRUE)
+  }
+  # With a coordinate system without a fixed ratio they are drawn.
+  expect_no_error(drawn_gtable(
+    ucb_plot(free[[1]], ggplot2::coord_cartesian(reverse = "y"))
+  ))
+})
+
+# The size in inches of the first panel as drawn on a 7 by 7 inch device, and
+# the lengths of its x and y ranges in data units.
+panel_inches <- function(plot) {
+  grDevices::pdf(NULL, width = 7, height = 7)
+  on.exit(grDevices::dev.off())
+  gtable <- ggplot2::ggplotGrob(plot)
+  grid::grid.newpage()
+  grid::grid.draw(gtable)
+  grid::grid.force()
+  listing <- grid::grid.ls(viewports = TRUE, grobs = FALSE, print = FALSE)
+  name <- grep("^panel\\.", listing$name, value = TRUE)[1]
+  grid::downViewport(name)
+  params <- ggplot2::ggplot_build(plot)$layout$panel_params[[1]]
+  c(
+    width = grid::convertWidth(grid::unit(1, "npc"), "in", valueOnly = TRUE),
+    height = grid::convertHeight(grid::unit(1, "npc"), "in", valueOnly = TRUE),
+    x_range = diff(params$x.range), y_range = diff(params$y.range)
+  )
+}
+
+test_that("theme_fourfold() sets no aspect ratio", {
+  expect_null(theme_fourfold()$aspect.ratio)
+  expect_null(theme_fourfold(base_size = 8)$aspect.ratio)
+  expect_equal(theme_fourfold(aspect.ratio = 0.5)$aspect.ratio, 0.5)
+})
+
+test_that("panels are square with the default coordinate system", {
+  for (theme in list(theme_fourfold(), ggplot2::theme_grey())) {
+    gtable <- drawn_gtable(
+      ucb_plot(ggplot2::facet_wrap(ggplot2::vars(Dept), ncol = 3), theme)
+    )
+    panels <- grepl("^panel", gtable$layout$name)
+    expect_true(isTRUE(gtable$respect))
+    widths <- as.numeric(gtable$widths[gtable$layout$l[panels]])
+    heights <- as.numeric(gtable$heights[gtable$layout$t[panels]])
+    expect_true(all(grid::unitType(gtable$widths[gtable$layout$l[panels]]) ==
+                      "null"))
+    expect_true(all(grid::unitType(gtable$heights[gtable$layout$t[panels]]) ==
+                      "null"))
+    expect_equal(widths, rep(1, 6))
+    expect_equal(heights, rep(1, 6))
+  }
+})
+
+test_that("a missing x keeps the display round in a wider panel", {
+  ucb <- as.data.frame(UCBAdmissions)
+  ucb$Gender <- as.character(ucb$Gender)
+  ucb <- rbind(
+    ucb[ucb$Dept == "A", ],
+    data.frame(Admit = "Admitted", Gender = NA, Dept = "A", Freq = 5)
+  )
+  plot <- ggplot2::ggplot(ucb, ggplot2::aes(Gender, Admit, weight = Freq)) +
+    geom_fourfold(na.rm = TRUE) +
+    theme_fourfold()
+  size <- panel_inches(plot)
+  # The axis keeps a place for the missing value: x spans 3.4, y 2.6.
+  expect_equal(unname(size[c("x_range", "y_range")]), c(3.4, 2.6))
+  # One data unit has the same length on both axes, so the panel is wider.
+  expect_equal(
+    unname(size["width"] / size["x_range"]),
+    unname(size["height"] / size["y_range"])
+  )
+  expect_gt(size[["width"]], size[["height"]])
+  # Removing that place makes the panel square again.
+  size <- panel_inches(
+    plot + ggplot2::scale_x_discrete(na.translate = FALSE)
+  )
+  expect_equal(unname(size[["width"]]), unname(size[["height"]]))
+  # A theme's aspect ratio fixes the panel's shape and squashes the display.
+  size <- panel_inches(plot + ggplot2::theme(aspect.ratio = 1))
+  expect_equal(unname(size[["width"]]), unname(size[["height"]]))
+  expect_false(isTRUE(all.equal(
+    unname(size["width"] / size["x_range"]),
+    unname(size["height"] / size["y_range"])
+  )))
+})
+
+test_that("counts are placed inward in every orientation, outward outside", {
+  cells_of <- function(plot) {
+    cells <- ggplot2::layer_data(plot, 1)
+    cells[order(cells$cell), ]
+  }
+  settings <- list(
+    inside = list(),
+    outside = list(std = "ind.max", shape = "square")
+  )
+  for (setting in names(settings)) {
+    for (name in names(orientations)) {
+      info <- paste(setting, name)
+      plot <- cell_plot(orientations[[name]]$coord, fourfold = settings[[setting]])
+      shown <- drawn_plot(plot, counts = TRUE)
+      counts <- shown$counts
+      layer <- cells_of(plot)
+      points <- ggplot2::layer_data(plot, 2)
+      outside <- setting == "outside"
+      expect_identical(counts$outside, outside, info = info)
+      expect_gt(counts$count_limit, 0)
+      expect_lte(counts$count_limit, 0.8)
+
+      centre_x <- to_npc(0, shown$vp$xscale)
+      centre_y <- to_npc(0, shown$vp$yscale)
+      for (cell in 1:4) {
+        text <- grid::getGrob(counts, paste0("fourfold-count-", cell))
+        expect_identical(text$label, as.character(layer$count[cell]), info = info)
+        u <- as.numeric(text$x)
+        v <- as.numeric(text$y)
+        # In the quadrant of the cell, inside the frame unless outside it.
+        expect_identical(sign(u), c(-1, -1, 1, 1)[cell], info = info)
+        expect_identical(sign(v), c(1, -1, 1, -1)[cell], info = info)
+        expect_identical(abs(u) > 1 && abs(v) > 1, outside, info = info)
+        expect_identical(abs(u) < 1 && abs(v) < 1, !outside, info = info)
+        # Towards the middle of the display, or away from it when outside.
+        left <- to_npc(u, shown$vp$xscale) < centre_x
+        bottom <- to_npc(v, shown$vp$yscale) < centre_y
+        inward_h <- if (left) 0 else 1
+        inward_v <- if (bottom) 0 else 1
+        expect_identical(
+          text$hjust, if (outside) 1 - inward_h else inward_h, info = info
+        )
+        expect_identical(
+          text$vjust, if (outside) 1 - inward_v else inward_v, info = info
+        )
+        # And in the screen quadrant of the point at the cell's position.
+        point <- which(points$x == layer$x_index[cell] &
+                         points$y == layer$y_index[cell])
+        expect_length(point, 1)
+        expect_identical(
+          unname(shown$points[point, "x"] < centre_x), left, info = info
+        )
+        expect_identical(
+          unname(shown$points[point, "y"] < centre_y), bottom, info = info
+        )
+      }
+    }
+  }
+})
+
+test_that("the count limit does not depend on the orientation on small panels", {
+  # On a small device the text is tall compared with the frame, so the limit
+  # below which squares and ticks leave the counts alone is well under 0.8, the
+  # value it would take if the (negative) native text height of a reversed
+  # axis were not made positive.
+  limits <- function(plot, size) {
+    grDevices::pdf(NULL, width = size, height = size)
+    on.exit(grDevices::dev.off())
+    gtable <- ggplot2::ggplotGrob(plot)
+    grid::grid.newpage()
+    grid::grid.draw(gtable)
+    grid::grid.force()
+    counts <- grid::grid.get("fourfold-counts", grep = TRUE, global = TRUE)
+    expect_length(counts, 6)
+    list(
+      limit = vapply(counts, function(x) x$count_limit, numeric(1)),
+      outside = vapply(counts, function(x) x$outside, logical(1))
+    )
+  }
+  ucb <- as.data.frame(UCBAdmissions)
+  cases <- list(
+    squares = list(
+      fourfold = list(shape = "square"), theme = theme_fourfold(), size = 2.5
+    ),
+    large_text = list(
+      fourfold = list(std = "ind.max"), theme = theme_fourfold(base_size = 22),
+      size = 3
+    )
+  )
+  for (case in names(cases)) {
+    setting <- cases[[case]]
+    # Square panels, so that only the orientation differs.
+    shown <- lapply(names(orientations), function(name) {
+      coord <- if (name == "default") {
+        NULL
+      } else {
+        ggplot2::coord_cartesian(reverse = name, ratio = 1)
+      }
+      plot <- ggplot2::ggplot(ucb, ggplot2::aes(Gender, Admit, weight = Freq)) +
+        do.call(geom_fourfold, setting$fourfold) +
+        ggplot2::facet_wrap(ggplot2::vars(Dept)) +
+        setting$theme +
+        coord
+      limits(plot, setting$size)
+    })
+    names(shown) <- names(orientations)
+    reference <- shown$default
+    expect_lt(max(reference$limit), 0.8)
+    expect_gt(min(reference$limit), 0)
+    for (name in names(shown)) {
+      expect_identical(shown[[name]]$limit, reference$limit, info = paste(case, name))
+      expect_identical(shown[[name]]$outside, reference$outside, info = paste(case, name))
+    }
+  }
+  # The squares of the first case reach the counts: they are placed outside.
+  expect_true(all(limits(
+    ggplot2::ggplot(ucb, ggplot2::aes(Gender, Admit, weight = Freq)) +
+      geom_fourfold(shape = "square") +
+      ggplot2::facet_wrap(ggplot2::vars(Dept)) + theme_fourfold(),
+    2.5
+  )$outside))
 })
