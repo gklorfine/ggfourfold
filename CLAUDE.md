@@ -13,3 +13,9 @@ Verify all changes extensively. After a change, compare diffs, statistical, nume
 Test edge cases. Be creative here but not unreasonable.
 
 The `vcd` package is a good resource for how things are supposed to be.
+
+`HANDOFF.md` is for GPT to communicate with Claude or vice-versa. It is mainly used so that I can pick up work on a different model after I exhaust my usage on one of the two models.
+
+When usage information is available, check remaining account quota at task start and between major phases. If any applicable quota window has 10% or less remaining, update `HANDOFF.md` before starting more work. If usage information is unavailable, state that; do not guess.
+
+Do not worry about writing to `HANDOFF.md` if there's a good amount of usage remaining (i.e., > 25% remaining)

@@ -12,5 +12,6 @@ Rplots.pdf
 ^LICENSE$
 ^AGENTS\.md$
 ^CLAUDE\.md$
+^HANDOFF\.md$
 ^issues$
 ^cran-comments\.md$
