@@ -179,9 +179,29 @@ controlled by
 
 - `weight`: non-negative cell frequencies; defaults to `1`.
 
-- `colour`, `linewidth`, `alpha`, `size`, and `family`: fixed or mapped
-  drawing properties. `size` and `family` default to values inherited
-  from the plot theme.
+Each panel draws one table, so its drawing properties are set for the
+whole layer rather than mapped: give `colour`, `linewidth`, and `alpha`
+as fixed arguments, for example `geom_fourfold(colour = "grey30")`. Text
+`size` and `family` are inherited from the plot theme, such as
+[`theme_fourfold()`](https://gavinklorfine.com/ggfourfold/reference/theme_fourfold.md),
+and can also be given as fixed arguments. Fill colours are set with
+`palette`. Mapping any of these five in `geom_fourfold()` is an error,
+including a mapping to a computed variable with
+[`ggplot2::after_stat()`](https://ggplot2.tidyverse.org/reference/aes_eval.html),
+[`ggplot2::after_scale()`](https://ggplot2.tidyverse.org/reference/aes_eval.html),
+or
+[`ggplot2::stage()`](https://ggplot2.tidyverse.org/reference/aes_eval.html).
+Any such mapping inherited from
+[`ggplot2::ggplot()`](https://ggplot2.tidyverse.org/reference/ggplot.html)
+is ignored, since it may be meant for other layers. The exception is an
+inherited
+[`after_stat()`](https://ggplot2.tidyverse.org/reference/aes_eval.html)
+mapping to a variable that `geom_fourfold()` does not compute, such as
+`after_stat(n)` for
+[`ggplot2::geom_count()`](https://ggplot2.tidyverse.org/reference/geom_count.html):
+ggplot2 evaluates it before the layer can ignore it, so it stops the
+plot. Use `inherit.aes = FALSE` in `geom_fourfold()`, or move the
+mapping to the layer that uses it.
 
 ## Zero counts
 
