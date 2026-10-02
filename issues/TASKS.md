@@ -1003,8 +1003,11 @@ As these items are resolved, check them off as [X] and record the fix and verifi
 
 ## Inference
 
-- [ ] **Should the confidence rings be adjusted for multiple comparisons?** (raised
+- [x] **Should the confidence rings be adjusted for multiple comparisons?** (raised
   2026-09-27 while writing the vignette's "Confidence rings" section)
+  - *Decision (GK, 2026-10-01): leave the rings unadjusted.* The current behaviour
+    matches `vcd::fourfold()` and is described in the vignette; no change for the first
+    release.
 
   *What the adjustment would apply to.* In a 2 × 2 × k table there is one test per
   stratum, H0: θ_c = 1 for c = 1, …, k. Within a single stratum there is only that one
