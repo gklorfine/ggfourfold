@@ -952,6 +952,34 @@ As these items are resolved, check them off as [X] and record the fix and verifi
 - [ ] **Square tick direction** — the diagonal direction ticks are what usually force square
   counts outside. Consider an alternative for squares (e.g. shorter ticks, or ticks drawn
   along the outer edges) so that typical `std = "margins"` displays can keep counts inside.
+  - **Swatches for MF (2026-10-01): [`dev/tick-swatches.pdf`](../dev/tick-swatches.pdf)**
+    (PNG copy alongside; source `dev/tick-swatches.R`). Every option tried, as a labelled
+    card on UCB Dept A (significant) and Dept C (not significant); square options are
+    S0–S15. Reply with codes. Working sheets: `dev/tick-mockup.R`.
+  - Findings from the mock-ups:
+    - *Shorter diagonal* (S3): barely visible, and still crowds the counts.
+    - *Diagonal half inside the square* (S4): with total length 0.15, `counts = "auto"`
+      keeps the counts inside; but the inner half vanishes on navy (significant) cells, so
+      apparent tick length depends on significance.
+    - *Ticks at the outer-edge midpoints* (S5): clear the counts, but two marks per cell
+      that resemble axis ticks.
+    - *Both outer edges extended past the corner* (S6): still crowds the counts.
+    - *Only the horizontal outer edge extended* (S7–S12): clears the counts in all six
+      departments. At length 0.2 it reads as a mark; at 0.3 it runs into the frame, so it
+      must stop short of the frame (`std = "ind.max"`, S14), and then it can vanish when a
+      square nearly fills the frame. Styled to blend with the square: frame line width in
+      black (S7) reads as a continuation of the edge but is easy to miss; the cell's fill
+      (S11) is faint on pale panels; a filled tab (S12) belongs to the square visually but
+      adds a little filled area (about 2–3% of a cell), against an area display's rule.
+    - *Heavier outer edges, no tick* (S13): cleanest, but invisible on navy cells.
+  - GK likes S7 (black horizontal edge extension, frame line width), perhaps a little
+    heavier (S8/S9). Claude's leaning was to keep diagonal ticks for both shapes (S1/S2)
+    and let `counts = "auto"` move the counts outside. Adopting S7 means circles and
+    squares get different marks, and `counts = "auto"` would need a horizontal reach rule
+    for squares. Awaiting MF's view.
+  - Also found: `counts = "auto"` compares tick endpoints without line width, so a
+    thicker tick can come closer to the counts than the check assumes (S4 nearly touches
+    313, 89, and 391). Account for line width if ticks get thicker.
 
 - [ ] **Proposal: coloured direction ticks, and a way to style them** (MF, 2026-09-27) —
   the diagonal ticks are currently thin black lines drawn with the frame's line width, and
@@ -996,6 +1024,19 @@ As these items are resolved, check them off as [X] and record the fix and verifi
   - A helper constructor, e.g. `ticks = fourfold_ticks(length = 0.15, colour = ...)`, like
     `arrow()` in `geom_segment()`: tidy and self-documenting, but one more exported
     function, and less conventional than the dotted form for simple styling.
+
+  *Swatches for MF (2026-10-01):* [`dev/tick-swatches.pdf`](../dev/tick-swatches.pdf),
+  circle options C0–C6 (current, black/navy/fill/green at 2.5x, navy longer, half inside
+  the circle); square options S0–S15 under the item above. Findings:
+  - Thickness is what makes ticks visible. At 2.5x, black (C1) and navy (C2) look almost
+    the same, and the ticks always lie outside the cell (on white or the rings), never on
+    the navy fill, so the "hard to see on navy" concern mostly goes away.
+  - Fill-coloured ticks (C3) are faint in non-significant panels, as before.
+  - Length 0.25 (C5) moves the counts outside in every panel, even for circles.
+  Claude's leaning: 2.5x line width by default, keep length 0.15 and the frame colour
+  (black) as default, add `tick.colour`/`tick.color` and `tick.linewidth` (skip
+  `tick.linetype`; dashes don't read on a mark this short), keep the `ticks` name, and
+  defer `ring.*`/`frame.*`. Not yet decided.
 
   Related: the "Square tick direction" item above. Decision for GK.
   Files: `R/geom-fourfold.R` (`draw_panel()` tick segments, `geom_fourfold()` arguments and
