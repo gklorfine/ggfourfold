@@ -833,10 +833,14 @@ As these items are resolved, check them off as [X] and record the fix and verifi
   Files: `R/geom-fourfold.R` (`geom_fourfold()`, `GeomFourfold$setup_data()`,
   `GeomFourfold$draw_panel()`, `makeContent.fourfold_counts()`), tests, docs, NEWS.
 
-- [ ] **Reduce overlap in the unstandardized README display** — review the space occupied
+- [x] **Reduce overlap in the unstandardized README display** — review the space occupied
   by the sectors and labels; scale down the display area if text overlaps excessively.
   Existing task retained from the original list.
   Files: `README.Rmd`, `R/geom-fourfold.R`.
+  - Fixed by `counts = "auto"` (2026-10-01): in the README's `std = "ind.max"` display
+    the largest sector reaches the corners, so the counts now sit outside the frame
+    and nothing overlaps; the display was not scaled down (GK). README re-knitted with
+    `devtools::build_readme()`; all four figures were from before the counts change.
 
 - [X] **Square fourfold displays: `shape = c("circle", "square")`** (2026-09-27) — prompted by
   the Fienberg-style square display noted in `dev/fourfold-ideas.md`.
