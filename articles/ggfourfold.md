@@ -278,7 +278,6 @@ Friendly, M. (1994a). *A fourfold display for 2 by 2 by \\k\\ tables*
 
 Friendly, M. (1994b). SAS/IML graphics for fourfold displays.
 *Observations*, *3*(4), 47–56.
-[http://www.sas.com/service/doc/periodicals/obs/ind_files/v3n12pp4.html](http://www.sas.com/service/doc/periodicals/obs/ind_files/v3n12pp4.md)
 
 Friendly, M., & Andrews, R. (2021). The radiant diagrams of Florence
 Nightingale. *SORT*, *45*(1). <https://doi.org/10.2436/20.8080.02.106>

@@ -54,7 +54,9 @@ and strength of association.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="va">GeomFourfold</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="va">StatFourfold</span></span>
+<span></span>
+<span><span class="va">GeomFourfold</span></span>
 <span></span>
 <span><span class="fu">geom_fourfold</span><span class="op">(</span></span>
 <span>  mapping <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -77,7 +79,7 @@ and strength of association.</p>
 
     <div class="section level2">
     <h2 id="format">Format<a class="anchor" aria-label="anchor" href="#format"></a></h2>
-    <p>A <code>GeomFourfold</code> ggproto object.</p>
+    <p><code>StatFourfold</code> and <code>GeomFourfold</code> are ggproto objects.</p>
     </div>
     <div class="section level2">
     <h2 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a></h2>
@@ -271,8 +273,10 @@ ellipses wherever the panel is not square.
 Common additions such as <code><a href="https://ggplot2.tidyverse.org/reference/coord_fixed.html" class="external-link">ggplot2::coord_fixed()</a></code> and
 <code><a href="https://ggplot2.tidyverse.org/reference/coord_fixed.html" class="external-link">ggplot2::coord_equal()</a></code> also replace the default, and draw the first <code>y</code>
 level at the bottom unless reversed. Any <code>reverse</code> setting is drawn
-correctly. Used directly with <code><a href="https://ggplot2.tidyverse.org/reference/layer.html" class="external-link">ggplot2::layer()</a></code>, <code>GeomFourfold</code> adds no
-coordinate system and follows the one the plot has.</p>
+correctly. <code>GeomFourfold</code> and <code>StatFourfold</code> are the ggproto objects behind
+<code>geom_fourfold()</code>. Used directly with <code><a href="https://ggplot2.tidyverse.org/reference/layer.html" class="external-link">ggplot2::layer()</a></code>, they take the
+defaults of <code>geom_fourfold()</code>, and <code>GeomFourfold</code> adds no coordinate system
+and follows the one the plot has.</p>
 <p>The coordinate system must be Cartesian, such as <code><a href="https://ggplot2.tidyverse.org/reference/coord_cartesian.html" class="external-link">ggplot2::coord_cartesian()</a></code>
 or <code><a href="https://ggplot2.tidyverse.org/reference/coord_fixed.html" class="external-link">ggplot2::coord_fixed()</a></code>. <code><a href="https://ggplot2.tidyverse.org/reference/coord_flip.html" class="external-link">ggplot2::coord_flip()</a></code> is an error: swap the
 <code>x</code> and <code>y</code> aesthetics instead, which transposes each table and keeps its
@@ -367,12 +371,14 @@ meant to be zero.</p>
 
 
 <p>A row with a missing <code>x</code> or <code>y</code> cannot be placed in the table and is
-removed; a panel with no rows left is left empty. A row with a missing
-<code>weight</code> but known <code>x</code> and <code>y</code> is different: its cell's count, and so the
-panel's table, is unknown. Counting it as zero would change the odds ratio,
-so its whole panel is left empty instead. (<code><a href="https://rdrr.io/pkg/vcd/man/fourfold.html" class="external-link">vcd::fourfold()</a></code> likewise draws
-no table with a missing count; it stops with an error.) A cell with no rows
-at all is still a zero count.</p>
+removed; a panel with no rows left is left empty. Values that the <code>limits</code>
+of a discrete scale exclude become missing and are removed the same way,
+with the same warning. A row with a missing <code>weight</code> but known <code>x</code> and <code>y</code>
+is different: its cell's count, and so the panel's table, is unknown.
+Counting it as zero would change the odds ratio, so its whole panel is left
+empty instead. (<code><a href="https://rdrr.io/pkg/vcd/man/fourfold.html" class="external-link">vcd::fourfold()</a></code> likewise draws no table with a missing
+count; it stops with an error.) A cell with no rows at all is still a zero
+count.</p>
 <p>An empty panel has no frame, counts, or labels, so it cannot be mistaken
 for a panel whose counts are all zero, and it looks the same as a facet
 level with no rows. It has no rows in the layer data and takes no part in

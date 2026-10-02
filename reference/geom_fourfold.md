@@ -8,6 +8,8 @@ direction and strength of association.
 ## Usage
 
 ``` r
+StatFourfold
+
 GeomFourfold
 
 geom_fourfold(
@@ -31,7 +33,7 @@ geom_fourfold(
 
 ## Format
 
-A `GeomFourfold` ggproto object.
+`StatFourfold` and `GeomFourfold` are ggproto objects.
 
 ## Arguments
 
@@ -257,11 +259,12 @@ as
 and
 [`ggplot2::coord_equal()`](https://ggplot2.tidyverse.org/reference/coord_fixed.html)
 also replace the default, and draw the first `y` level at the bottom
-unless reversed. Any `reverse` setting is drawn correctly. Used directly
-with
+unless reversed. Any `reverse` setting is drawn correctly.
+`GeomFourfold` and `StatFourfold` are the ggproto objects behind
+`geom_fourfold()`. Used directly with
 [`ggplot2::layer()`](https://ggplot2.tidyverse.org/reference/layer.html),
-`GeomFourfold` adds no coordinate system and follows the one the plot
-has.
+they take the defaults of `geom_fourfold()`, and `GeomFourfold` adds no
+coordinate system and follows the one the plot has.
 
 The coordinate system must be Cartesian, such as
 [`ggplot2::coord_cartesian()`](https://ggplot2.tidyverse.org/reference/coord_cartesian.html)
@@ -376,10 +379,12 @@ rings described above instead. Round such weights, for example with
 ## Missing values
 
 A row with a missing `x` or `y` cannot be placed in the table and is
-removed; a panel with no rows left is left empty. A row with a missing
-`weight` but known `x` and `y` is different: its cell's count, and so
-the panel's table, is unknown. Counting it as zero would change the odds
-ratio, so its whole panel is left empty instead.
+removed; a panel with no rows left is left empty. Values that the
+`limits` of a discrete scale exclude become missing and are removed the
+same way, with the same warning. A row with a missing `weight` but known
+`x` and `y` is different: its cell's count, and so the panel's table, is
+unknown. Counting it as zero would change the odds ratio, so its whole
+panel is left empty instead.
 ([`vcd::fourfold()`](https://rdrr.io/pkg/vcd/man/fourfold.html) likewise
 draws no table with a missing count; it stops with an error.) A cell
 with no rows at all is still a zero count.
