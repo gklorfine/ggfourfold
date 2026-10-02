@@ -1,5 +1,47 @@
 # Handoff — 2026-10-01
 
+## Status (Claude, 2026-10-01): counts change committed and pushed to main
+
+GK’s three follow-ups are done: layer-wide count values now come from
+`GeomFourfold$setup_params()` (no helper columns in layer data), invalid
+choices name their argument, and temporary paths are gone from the
+record. Verified: 2,826 tests pass; 1,152 ragg PNGs byte-identical to
+the uncommitted version, count placement identical; layer data identical
+to b8b9149 apart from `counts_reach`. Details: `issues/TASKS.md`. New
+follow-up there: two
+[`geom_fourfold()`](https://gavinklorfine.com/ggfourfold/reference/geom_fourfold.md)
+layers in one plot draw only the first.
+
+## Counts task implemented (GPT -\> Claude/GK, 2026-10-01; since committed)
+
+Implemented `dev/counts-plan.md` using GPT-6.1 Sol implementation and
+validation agents, followed by the requested independent GPT-6 Astra
+statistician/ggplot2 review. Both count-placement bugs are fixed;
+`counts` supports auto, inside, outside, and none. Drawing extent
+unchanged; outside spacing is a later TASKS item. Circle safety
+clearance is 0.04 on each axis. Shared circle label measurements exclude
+blank panels. Statistics and reversal-aware text alignment are
+preserved.
+
+Verification: 2,913 test assertions pass; all three planted bugs caught;
+720 exact baseline/current statistical cases and 20 mode-invariance
+cases pass; 32/52 default images unchanged, all 20 changed pairs and 24
+forced-mode images visually inspected. Count-removed comparisons prove
+only count pixels changed. The independent Sol API/docs audit and both
+dev scripts pass. Astra found no correctness/API defect after 320
+geometry and 16 randomized statistical checks; its documentation wording
+refinement is applied. Final `R CMD check --as-cran` has 0
+errors/warnings and 1 existing NOTE (new submission and SAS reference
+URL). Final post-wording check log: temporary logs, not kept. No new
+spelling flags.
+
+Full evidence and reviews: temporary logs, not kept; reusable harness:
+`dev/counts-verification.R`; implementation/results/follow-up:
+`issues/TASKS.md`. No commit made; await GK’s review/commit approval.
+Pre-existing handoff/plan/task edits were preserved and updated. Last
+quota check: 24% five-hour remaining, 36% weekly remaining;
+implementation, verification, and both reviews are complete.
+
 ## Update (Claude, 2026-10-01): coordinate-system change implemented, uncommitted
 
 The coordinate task further below is superseded. The plan in
@@ -98,7 +140,7 @@ Main required amendments:
   contracting the display; coordinate limits govern zoom. Clarify
   clipping and supported coordinates.
 
-Experiment script: /tmp/astra-fourfold-review.R (54 lines). All version
+Experiment script: a temporary file, not kept (54 lines). All version
 experiments used installed ggplot2 4.0.3; executing the minimum
 supported 4.0.0 remains a gate. The core experiment will also be
 preserved at `dev/coordinate-system-review-experiments.R` for the
@@ -166,14 +208,11 @@ pooled margin counts and drawing.
 
 Network-enabled R CMD check –as-cran: 0 errors, 0 warnings, 1 NOTE (new
 submission and pre-existing SAS vignette reference URL lookup failure).
-Log is at
-/private/tmp/ggfourfold-codex-check/ggfourfold.Rcheck/00check.log. Use
-env -u DISPLAY on this Mac: XQuartz/tcltk hangs at S3 registration, as
-already recorded in issues/TASKS.md:55. The successful run used
-DISPLAY=.
+Log: temporary log, not kept. Use env -u DISPLAY on this Mac:
+XQuartz/tcltk hangs at S3 registration, as already recorded in
+issues/TASKS.md:55. The successful run used DISPLAY=.
 
 Claude’s clean temporary HEAD worktree was removed after comparisons and
 review. Original reviewer scripts/images remain in the Claude
-scratchpad; new rendering and verification artifacts are in
-/private/tmp/ggfourfold-codex-check and
-/private/tmp/ggfourfold-codex-verify. No commit or release performed.
+scratchpad; new rendering and verification artifacts were temporary
+logs, not kept. No commit or release performed.

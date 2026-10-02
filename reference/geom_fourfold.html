@@ -67,6 +67,7 @@ and strength of association.</p>
 <span>  ticks <span class="op">=</span> <span class="fl">0.15</span>,</span>
 <span>  p_adjust_method <span class="op">=</span> <span class="fu">stats</span><span class="fu">::</span><span class="va"><a href="https://rdrr.io/r/stats/p.adjust.html" class="external-link">p.adjust.methods</a></span>,</span>
 <span>  shape <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"circle"</span>, <span class="st">"square"</span><span class="op">)</span>,</span>
+<span>  counts <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"auto"</span>, <span class="st">"inside"</span>, <span class="st">"outside"</span>, <span class="st">"none"</span><span class="op">)</span>,</span>
 <span>  palette <span class="op">=</span> <span class="fu"><a href="fourfold_palette.html">fourfold_palette</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  na.rm <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  show.legend <span class="op">=</span> <span class="cn">FALSE</span>,</span>
@@ -137,6 +138,13 @@ across panels. Defaults to <code>"holm"</code>, the first value in
 quarter-squares of equal area.</p></dd>
 
 
+<dt id="arg-counts">counts<a class="anchor" aria-label="anchor" href="#arg-counts"></a></dt>
+<dd><p>Placement of cell counts: <code>"auto"</code> (the default) moves counts
+outside when the drawing approaches them; <code>"inside"</code> always uses the inside
+corners, even if overlapped; <code>"outside"</code> always uses the outside corners;
+<code>"none"</code> hides the counts.</p></dd>
+
+
 <dt id="arg-palette">palette<a class="anchor" aria-label="anchor" href="#arg-palette"></a></dt>
 <dd><p>Character vector of at least six valid colours in the
 semantic order used by <code><a href="fourfold_palette.html">fourfold_palette()</a></code>.</p></dd>
@@ -194,10 +202,17 @@ intervals themselves are not adjusted.</p>
 same area as the corresponding quarter-circle (side
 \(r\sqrt{\pi}/2\) for radius \(r\)), so the two
 shapes display a table with identical areas. Confidence rings
-become nested square outlines. Cell counts stay inside the frame corners
-unless a square, confidence outline, or direction tick in any panel of the
-layer would reach them, as is always the case with <code>std = "ind.max"</code>; the
-counts in every panel are then placed just outside the frame corners.</p>
+become nested square outlines.</p>
+<p>With <code>counts = "auto"</code>, cell counts stay inside the frame corners unless
+a sector, either confidence outline, or a direction tick comes close to the
+count text. Both shapes use the largest drawing extent across the layer; circles
+also account for the width of the layer's count labels. Counts then move
+just outside the frame corners. Clearance is measured at draw time, so
+placement can differ between panels of different physical sizes.
+Use <code>counts = "inside"</code> or <code>"outside"</code> to force the placement, or <code>"none"</code>
+to hide counts without affecting any statistics. Outside counts can collide
+with category labels or neighbouring panels at small sizes; use larger
+panels, more panel spacing, smaller text, or <code>counts = "inside"</code>.</p>
 <p>The six semantic fill colours are supplied by <code>palette</code>; they are not mapped
 through a ggplot2 fill scale. Typography and layout defaults are controlled
 by <code><a href="theme_fourfold.html">theme_fourfold()</a></code>.</p>
