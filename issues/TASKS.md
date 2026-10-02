@@ -890,6 +890,9 @@ As these items are resolved, check them off as [X] and record the fix and verifi
   - `"inside"` and `"outside"` force placement; `"none"` omits count text. All modes
     preserve statistical data and reversal-aware justification. Current drawing
     extent and typography are unchanged. Outside crowding at small sizes is documented.
+    Reserving extra room for outside counts was considered and dropped (GK,
+    2026-10-01): text only crowds, without overlapping, in small plots, and wider
+    room shrinks every display without separating the counts from the labels.
   - 2,913 test assertions pass (no failures/warnings/skips). Planted omissions of
     the lower CI bound, circle checking, and the counts choice cause 2, 87, and
     180 failures respectively. Both development verification scripts pass.
@@ -941,12 +944,6 @@ As these items are resolved, check them off as [X] and record the fix and verifi
   Files: `R/geom-fourfold.R`, `man/geom_fourfold.Rd`,
   `tests/testthat/test-geom-fourfold.R`, `dev/square-counts.R`,
   `dev/counts-verification.R`.
-
-- [ ] **Reserve room for counts outside the frame** — later follow-up agreed by GK
-  on 2026-10-01. Enlarge the drawing extent or panel padding when counts are outside
-  to reduce collisions with category labels and neighbouring panels at small sizes.
-  This will shrink the display at a fixed plot size; the current counts change
-  deliberately preserves the existing extent.
 
 - [ ] **Square tick direction** — the diagonal direction ticks are what usually force square
   counts outside. Consider an alternative for squares (e.g. shorter ticks, or ticks drawn
@@ -1224,27 +1221,62 @@ development verification script remains broken as noted above.
 
 ## Diagnostic follow-ups (missing-value and coordinate-system reviews)
 
-- [ ] Very small devices (e.g. Titanic `facet_grid(margins = TRUE)` with
+- [x] Very small devices (e.g. Titanic `facet_grid(margins = TRUE)` with
   `shape = "square"`, `std = "ind.max"` at 1.5 × 4 in) stop with "Viewport has zero
   dimension(s)" from `convertHeight()` in `makeContent.fourfold_counts()` (also at
   2c098be; found by the coordinate-system reviewers). A small RStudio plot pane could hit
   it.
+  Fixed on 2026-10-01: `makeContent.fourfold_counts()` returns early with no children
+  when the panel has zero width or height, where native units cannot be measured; the
+  category labels still draw, collapsed with the panel, as `geom_text()` does. Covered
+  by "a plot too small for its layout is drawn without counts".
 - [x] With `std = "ind.max"` and circles, the largest count could overlap its own arc
   (UCB Dept A, "512"). Fixed with the counts argument on 2026-10-01; see its
   implementation and verification record above.
-- [ ] `layer(geom = GeomFourfold, stat = StatFourfold)` without parameters fails in the
+- [x] `layer(geom = GeomFourfold, stat = StatFourfold)` without parameters fails in the
   stat (`conf_level > 0 && extended` with NULLs). Give defaults or document that
   `geom_fourfold()` is the supported constructor.
-- [ ] Two `geom_fourfold()` layers in one plot draw the first layer twice and never the
+  Fixed on 2026-10-01: `StatFourfold$setup_params()` fills in the defaults of
+  `geom_fourfold()` for NULL parameters, and `GeomFourfold$draw_panel()` has matching
+  defaults for `palette`, `ticks`, and `extended`. Covered by "a layer built from the
+  geom and stat has the defaults of geom_fourfold()". The defaults now live in one
+  internal list, `.fourfold_defaults`, checked against `geom_fourfold()` by a test, and
+  `StatFourfold` is exported and documented with `GeomFourfold`, as ggmosaic exports its
+  Stats (GK, 2026-10-01).
+- [x] Two `geom_fourfold()` layers in one plot draw the first layer twice and never the
   second: every panel's display is a gTree named `"fourfold-panel"`, and grid draws a
   gTree's children by looking up their names, so both lookups find the first layer's
   display (also at b8b9149; found while verifying the counts follow-up). Give the
   display a unique name, e.g. `grid::grobName(prefix = "fourfold-panel")`, and check
   the tests that look it up.
+  Fixed on 2026-10-01: `GeomFourfold$draw_panel()` names the display
+  `grid::grobName(prefix = "fourfold-panel")`; the tests that look it up use
+  `grep = TRUE` and still pass. Covered by "two fourfold layers in one panel are both
+  drawn".
 
-- [ ] Distinguish values excluded by discrete scale limits from actual missing values
+- [x] Distinguish values excluded by discrete scale limits from actual missing values
   in the "missing fourfold values" warning (pre-existing behavior).
-- [ ] Consider identifying facets by labels in warnings instead of internal panel
+  Not distinguished; the warning is reworded on 2026-10-01 to ggplot2's "missing values
+  or values outside the scale range", since after scale mapping both are NA and cannot
+  be told apart reliably. The Missing values section says limits-excluded values are
+  removed the same way. Covered by "values outside a discrete scale's limits are removed
+  like missing values".
+- [x] Consider identifying facets by labels in warnings instead of internal panel
   numbers (pre-existing behavior).
-- [ ] Recheck the existing SAS reference URL in `vignettes/refs.bib:62`; the
+  Closed without change (GK, 2026-10-01): ggplot2's own warnings do not name panels.
+- [x] Recheck the existing SAS reference URL in `vignettes/refs.bib:62`; the
   network-enabled CRAN check on 2026-10-01 reported a lookup failure for it.
+  Fixed on 2026-10-01: the `url` field of `Friendly:94c` is removed, as it redirects to
+  a broken address.
+- *Verification of the 2026-10-01 fixes above* (code by Sonnet subagents, Claude as
+  project manager; two independent Opus reviews approved, their findings addressed):
+  2,986 test expectations pass with no failures, warnings, or skips, and the new tests
+  fail on 94f93e3. Against 94f93e3, the 576-case grid (UCB, Titanic with and without
+  margins, both shapes, six `std`/inference settings, all `counts` values, four
+  coordinate systems) has identical layer data, and its 1,152 ragg PNGs (9 × 6 and
+  4 × 3 in) are byte-identical; 11 missing-value and limits cases differ only in the
+  reworded warning, as do 72 of `dev/counts-verification.R`'s 720 cases (all 720
+  identical after mapping the wording). Plots that used to stop now draw: widths of
+  1.6-1.8 in for Titanic margins, single panels down to 0.05 in. `R CMD check
+  --as-cran`: 1 NOTE (new submission only; the SAS URL failure is gone). No new
+  spelling flags.

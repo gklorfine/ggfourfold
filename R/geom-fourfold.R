@@ -22,6 +22,14 @@ fourfold_palette <- function() {
   )
 }
 
+# The defaults of geom_fourfold(), resolved, for direct use of the ggproto
+# objects with ggplot2::layer().
+.fourfold_defaults <- list(
+  std = "margins", margin = c(1, 2), conf_level = 0.95, extended = TRUE,
+  ticks = 0.15, p_adjust_method = "holm", shape = "circle", counts = "auto",
+  palette = fourfold_palette(), na.rm = FALSE
+)
+
 .fourfold_pt <- 72.27 / 25.4
 
 # Side of a quarter-square with the area of a unit quarter-circle.
@@ -45,10 +53,9 @@ fourfold_palette <- function() {
 # endpoint coordinate. Only finite radii of nonblank panels contribute.
 .fourfold_counts_reach <- function(
     data, shape = NULL, extended = NULL, ticks = NULL) {
-  # Defaults match geom_fourfold() for direct use of GeomFourfold.
-  if (is.null(shape)) shape <- "circle"
-  if (is.null(extended)) extended <- TRUE
-  if (is.null(ticks)) ticks <- 0.15
+  if (is.null(shape)) shape <- .fourfold_defaults$shape
+  if (is.null(extended)) extended <- .fourfold_defaults$extended
+  if (is.null(ticks)) ticks <- .fourfold_defaults$ticks
   data <- data[!is.na(data$odds_ratio), , drop = FALSE]
   radii <- c(data$radius, data$conf_low_radius, data$conf_high_radius)
   multiplier <- if (shape == "square") .fourfold_square_side else 1
@@ -437,7 +444,10 @@ fourfold_palette <- function() {
     if (!na.rm) {
       warning(
         sprintf(
-          "Removed %d row%s containing missing fourfold values in panel %s%s.",
+          paste0(
+            "Removed %d row%s containing missing values or values outside the ",
+            "scale range in fourfold panel %s%s."
+          ),
           sum(incomplete), if (sum(incomplete) == 1L) "" else "s", panel,
           if (all(incomplete)) ", leaving it empty" else ""
         ),
@@ -644,6 +654,9 @@ fourfold_palette <- function() {
   do.call(rbind, result)
 }
 
+#' @rdname geom_fourfold
+#' @name geom_fourfold
+#' @export
 StatFourfold <- ggplot2::ggproto(
   "StatFourfold", ggplot2::Stat,
   required_aes = c("x", "y"),
@@ -652,6 +665,16 @@ StatFourfold <- ggplot2::ggproto(
     "na.rm", "std", "margin", "conf_level", "extended",
     "p_adjust_method"
   ),
+  setup_params = function(data, params) {
+    # Defaults match geom_fourfold() for direct use with ggplot2::layer().
+    for (name in c("std", "margin", "conf_level", "extended",
+                   "p_adjust_method", "na.rm")) {
+      if (is.null(params[[name]])) {
+        params[[name]] <- .fourfold_defaults[[name]]
+      }
+    }
+    params
+  },
   compute_layer = function(self, data, params, layout) {
     .fourfold_compute_layer(
       data = data,
@@ -760,6 +783,12 @@ makeContent.fourfold_counts <- function(x) {
   panel_height <- grid::convertHeight(
     grid::unit(1, "npc"), "points", valueOnly = TRUE
   )
+  # A plot too small for its layout squeezes its panels to nothing, where
+  # native units cannot be measured, so the counts are left out (the labels
+  # still draw, collapsed with the panel).
+  if (panel_width <= 0 || panel_height <= 0) {
+    return(grid::setChildren(x, grid::gList()))
+  }
   gp <- grid::gpar(
     col = x$colour,
     fontfamily = x$family,
@@ -890,7 +919,7 @@ makeContent.fourfold_counts <- function(x) {
 
 #' @rdname geom_fourfold
 #' @name geom_fourfold
-#' @format A `GeomFourfold` ggproto object.
+#' @format `StatFourfold` and `GeomFourfold` are ggproto objects.
 #' @importFrom ggplot2 aes draw_key_blank from_theme Geom ggproto
 #' @importFrom grid gList gpar gTree polygonGrob
 #' @importFrom grid rectGrob segmentsGrob unit viewport
@@ -948,10 +977,13 @@ GeomFourfold <- ggplot2::ggproto(
       default_aes = default_aes, theme = theme, ...
     )
   },
+  # Defaults match geom_fourfold() for direct use with ggplot2::layer().
   draw_panel = function(
-      data, panel_params, coord, palette, ticks, extended,
-      shape = "circle", counts = "auto", counts_reach = NULL,
-      counts_tick_reach = NULL, counts_labels = NULL, na.rm = FALSE) {
+      data, panel_params, coord, palette = .fourfold_defaults$palette,
+      ticks = .fourfold_defaults$ticks, extended = .fourfold_defaults$extended,
+      shape = .fourfold_defaults$shape, counts = .fourfold_defaults$counts,
+      counts_reach = NULL, counts_tick_reach = NULL, counts_labels = NULL,
+      na.rm = FALSE) {
     .fourfold_check_coord(coord)
     data <- data[order(data$cell), , drop = FALSE]
     colour <- data$colour[1]
@@ -1101,7 +1133,9 @@ GeomFourfold <- ggplot2::ggproto(
     grid::gTree(
       children = do.call(grid::gList, grobs),
       vp = grid::viewport(xscale = xscale, yscale = yscale, clip = "off"),
-      name = "fourfold-panel"
+      # Unique, as grid draws a gTree's children by name: two fourfold layers
+      # in one panel would otherwise both draw the first.
+      name = grid::grobName(prefix = "fourfold-panel")
     )
   }
 )
@@ -1214,8 +1248,10 @@ GeomFourfold <- ggplot2::ggproto(
 #' Common additions such as [ggplot2::coord_fixed()] and
 #' [ggplot2::coord_equal()] also replace the default, and draw the first `y`
 #' level at the bottom unless reversed. Any `reverse` setting is drawn
-#' correctly. Used directly with [ggplot2::layer()], `GeomFourfold` adds no
-#' coordinate system and follows the one the plot has.
+#' correctly. `GeomFourfold` and `StatFourfold` are the ggproto objects behind
+#' `geom_fourfold()`. Used directly with [ggplot2::layer()], they take the
+#' defaults of `geom_fourfold()`, and `GeomFourfold` adds no coordinate system
+#' and follows the one the plot has.
 #'
 #' The coordinate system must be Cartesian, such as [ggplot2::coord_cartesian()]
 #' or [ggplot2::coord_fixed()]. [ggplot2::coord_flip()] is an error: swap the
@@ -1310,12 +1346,14 @@ GeomFourfold <- ggplot2::ggproto(
 #'
 #' @section Missing values:
 #' A row with a missing `x` or `y` cannot be placed in the table and is
-#' removed; a panel with no rows left is left empty. A row with a missing
-#' `weight` but known `x` and `y` is different: its cell's count, and so the
-#' panel's table, is unknown. Counting it as zero would change the odds ratio,
-#' so its whole panel is left empty instead. (`vcd::fourfold()` likewise draws
-#' no table with a missing count; it stops with an error.) A cell with no rows
-#' at all is still a zero count.
+#' removed; a panel with no rows left is left empty. Values that the `limits`
+#' of a discrete scale exclude become missing and are removed the same way,
+#' with the same warning. A row with a missing `weight` but known `x` and `y`
+#' is different: its cell's count, and so the panel's table, is unknown.
+#' Counting it as zero would change the odds ratio, so its whole panel is left
+#' empty instead. (`vcd::fourfold()` likewise draws no table with a missing
+#' count; it stops with an error.) A cell with no rows at all is still a zero
+#' count.
 #'
 #' An empty panel has no frame, counts, or labels, so it cannot be mistaken
 #' for a panel whose counts are all zero, and it looks the same as a facet

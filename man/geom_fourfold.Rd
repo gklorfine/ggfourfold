@@ -2,12 +2,15 @@
 % Please edit documentation in R/geom-fourfold.R
 \name{geom_fourfold}
 \alias{geom_fourfold}
+\alias{StatFourfold}
 \alias{GeomFourfold}
 \title{Fourfold displays for 2-by-2 tables}
 \format{
-A \code{GeomFourfold} ggproto object.
+\code{StatFourfold} and \code{GeomFourfold} are ggproto objects.
 }
 \usage{
+StatFourfold
+
 GeomFourfold
 
 geom_fourfold(
@@ -199,8 +202,10 @@ ellipses wherever the panel is not square.
 Common additions such as \code{\link[ggplot2:coord_fixed]{ggplot2::coord_fixed()}} and
 \code{\link[ggplot2:coord_equal]{ggplot2::coord_equal()}} also replace the default, and draw the first \code{y}
 level at the bottom unless reversed. Any \code{reverse} setting is drawn
-correctly. Used directly with \code{\link[ggplot2:layer]{ggplot2::layer()}}, \code{GeomFourfold} adds no
-coordinate system and follows the one the plot has.
+correctly. \code{GeomFourfold} and \code{StatFourfold} are the ggproto objects behind
+\code{geom_fourfold()}. Used directly with \code{\link[ggplot2:layer]{ggplot2::layer()}}, they take the
+defaults of \code{geom_fourfold()}, and \code{GeomFourfold} adds no coordinate system
+and follows the one the plot has.
 
 The coordinate system must be Cartesian, such as \code{\link[ggplot2:coord_cartesian]{ggplot2::coord_cartesian()}}
 or \code{\link[ggplot2:coord_fixed]{ggplot2::coord_fixed()}}. \code{\link[ggplot2:coord_flip]{ggplot2::coord_flip()}} is an error: swap the
@@ -302,12 +307,14 @@ meant to be zero.
 \section{Missing values}{
 
 A row with a missing \code{x} or \code{y} cannot be placed in the table and is
-removed; a panel with no rows left is left empty. A row with a missing
-\code{weight} but known \code{x} and \code{y} is different: its cell's count, and so the
-panel's table, is unknown. Counting it as zero would change the odds ratio,
-so its whole panel is left empty instead. (\code{vcd::fourfold()} likewise draws
-no table with a missing count; it stops with an error.) A cell with no rows
-at all is still a zero count.
+removed; a panel with no rows left is left empty. Values that the \code{limits}
+of a discrete scale exclude become missing and are removed the same way,
+with the same warning. A row with a missing \code{weight} but known \code{x} and \code{y}
+is different: its cell's count, and so the panel's table, is unknown.
+Counting it as zero would change the odds ratio, so its whole panel is left
+empty instead. (\code{vcd::fourfold()} likewise draws no table with a missing
+count; it stops with an error.) A cell with no rows at all is still a zero
+count.
 
 An empty panel has no frame, counts, or labels, so it cannot be mistaken
 for a panel whose counts are all zero, and it looks the same as a facet

@@ -110,6 +110,12 @@ if (mode == "compare") {
     b <- baseline[[id]]; n <- current[[id]]
     b$data <- b$data[setdiff(names(b$data), metadata)]
     n$data <- n$data[setdiff(names(n$data), metadata)]
+    # Baselines made before the removed-rows warning was reworded use the old text.
+    b$warnings <- sub(
+      "^(Removed [0-9]+ rows?) containing missing fourfold values in panel ",
+      "\\1 containing missing values or values outside the scale range in fourfold panel ",
+      b$warnings
+    )
     if (!identical(b, n)) failures <- c(failures, id)
   }
   report <- c(paste(length(baseline), "statistical cases compared; all columns except", paste(metadata, collapse = ", ")),

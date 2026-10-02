@@ -848,8 +848,13 @@ test_that("rows with a missing x or y are removed, as with na.rm in ggplot2", {
     panel <- if (is.na(row$Gender)) 1 else 2
     expect_warning(
       built <- ggplot2::layer_data(missing_plot(with_missing)),
-      sprintf("^Removed 1 row containing missing fourfold values in panel %d\\.$",
-              panel)
+      sprintf(
+        paste0(
+          "^Removed 1 row containing missing values or values outside the ",
+          "scale range in fourfold panel %d\\.$"
+        ),
+        panel
+      )
     )
     same_values(built, without)
     expect_no_warning(
@@ -885,6 +890,40 @@ test_that("rows with a missing x or y are removed, as with na.rm in ggplot2", {
     ggplot2::layer_data(individual_plot(with_missing)),
     ggplot2::layer_data(individual_plot(individual[-missing, ]))
   )
+})
+
+test_that("values outside a discrete scale's limits are removed like missing values", {
+  data <- data.frame(
+    x = c("a", "a", "b", "b", "c", "c"), y = c("u", "v", "u", "v", "u", "v"),
+    w = c(5, 2, 3, 9, 4, 4), stringsAsFactors = FALSE
+  )
+  # Rows with x (or y) "c" lie outside the limits of the scale of that axis.
+  limited_plot <- function(data, axis, na.rm = FALSE, limits = TRUE) {
+    mapping <- if (axis == "x") ggplot2::aes(x, y, weight = w) else
+      ggplot2::aes(y, x, weight = w)
+    scale <- if (axis == "x") ggplot2::scale_x_discrete else
+      ggplot2::scale_y_discrete
+    ggplot2::ggplot(data, mapping) +
+      geom_fourfold(na.rm = na.rm) +
+      if (limits) scale(limits = c("a", "b"))
+  }
+  for (axis in c("x", "y")) {
+    without <- ggplot2::layer_data(
+      limited_plot(data[1:4, ], axis, limits = FALSE)
+    )
+    expect_warning(
+      built <- ggplot2::layer_data(limited_plot(data, axis)),
+      paste0(
+        "^Removed 2 rows containing missing values or values outside the ",
+        "scale range in fourfold panel 1\\.$"
+      )
+    )
+    same_values(built, without)
+    expect_no_warning(
+      built <- ggplot2::layer_data(limited_plot(data, axis, na.rm = TRUE))
+    )
+    same_values(built, without)
+  }
 })
 
 test_that("labels skip the missing-value category", {
@@ -933,7 +972,10 @@ test_that("a missing value is never drawn as a category with free scales", {
   with_missing$Gender[ucb$Dept == "C"] <- NA
   expect_warning(
     built <- ggplot2::layer_data(missing_plot(with_missing, facet = free)),
-    "Removed 4 rows containing missing fourfold values in panel 3, leaving it empty."
+    paste0(
+      "Removed 4 rows containing missing values or values outside the scale ",
+      "range in fourfold panel 3, leaving it empty."
+    )
   )
   expect_false(3 %in% built$PANEL)
   expect_equal(nrow(built), 20)
@@ -1875,4 +1917,128 @@ test_that("circle count widths and reach are shared across facets", {
   expect_length(counts, 6)
   expect_true(all(vapply(counts, function(x) x$outside, logical(1))))
   expect_length(unique(vapply(counts, function(x) x$count_limit, numeric(1))), 1)
+})
+
+# The forced fourfold-counts grobs of a plot printed on a null device of the
+# given size in inches.
+counts_printed <- function(plot, width, height) {
+  grDevices::pdf(NULL, width = width, height = height)
+  on.exit(grDevices::dev.off())
+  print(plot)
+  grid::grid.force()
+  grid::grid.get("fourfold-counts", global = TRUE)
+}
+
+test_that("a plot too small for its layout is drawn without counts", {
+  for (setting in list(list(), list(shape = "square", std = "ind.max"))) {
+    plot <- ggplot2::ggplot(
+      as.data.frame(Titanic), ggplot2::aes(Sex, Survived, weight = Freq)
+    ) +
+      do.call(geom_fourfold, setting) +
+      ggplot2::facet_grid(Age ~ Class, margins = TRUE) +
+      theme_fourfold()
+    # The panels have no size, so their counts have nothing to be placed in.
+    expect_no_error(small <- counts_printed(plot, width = 1.5, height = 4))
+    expect_length(small, 15)
+    expect_true(all(vapply(small, function(x) length(x$children), 1L) == 0L))
+    normal <- counts_printed(plot, width = 9, height = 6)
+    expect_length(normal, 15)
+    expect_true(all(vapply(normal, function(x) length(x$children), 1L) == 4L))
+  }
+})
+
+test_that("two fourfold layers in one panel are both drawn", {
+  plot <- ggplot2::ggplot(fourfold_data, ggplot2::aes(x, y, weight = w)) +
+    geom_fourfold(std = "ind.max") +
+    geom_fourfold(shape = "square", conf_level = 0)
+  gtable <- drawn_gtable(plot)
+  panel <- gtable$grobs[[which(gtable$layout$name == "panel")]]
+  displays <- grid::getGrob(panel, "fourfold-panel", grep = TRUE, global = TRUE)
+  expect_length(displays, 2)
+  names <- vapply(displays, function(x) x$name, character(1))
+  expect_true(all(startsWith(names, "fourfold-panel")))
+  expect_length(unique(names), 2)
+  # The first layer draws circle sectors, the second square sectors.
+  vertices <- vapply(displays, function(x) {
+    length(grid::getGrob(x, "fourfold-sector-1")$x)
+  }, 1L)
+  expect_identical(vertices, c(301L, 4L))
+  # Each layer draws its own display, not a copy of the first.
+  expect_identical(
+    vapply(displays, function(x) !is.null(grid::getGrob(x, "fourfold-conf_low_radius-1")), TRUE),
+    c(TRUE, FALSE)
+  )
+})
+
+test_that("the shared defaults are those geom_fourfold() resolves to", {
+  layer <- geom_fourfold()[[1]]
+  resolved <- c(layer$stat_params, layer$geom_params)
+  expect_true(all(names(.fourfold_defaults) %in% names(resolved)))
+  for (name in names(resolved)) {
+    expect_identical(resolved[[name]], .fourfold_defaults[[name]], info = name)
+  }
+})
+
+test_that("a layer built from the geom and stat has the defaults of geom_fourfold()", {
+  expect_true(inherits(StatFourfold, "Stat"))
+  ucb <- ggplot2::ggplot(
+    as.data.frame(UCBAdmissions), ggplot2::aes(Gender, Admit, weight = Freq)
+  ) +
+    ggplot2::facet_wrap(ggplot2::vars(Dept))
+  from_layer <- function(...) {
+    ggplot2::layer(
+      geom = GeomFourfold, stat = StatFourfold, position = "identity", ...
+    )
+  }
+  expect_identical(
+    ggplot2::layer_data(ucb + from_layer()),
+    ggplot2::layer_data(ucb + geom_fourfold())
+  )
+  # Parameters given to layer() override the defaults.
+  expect_identical(
+    ggplot2::layer_data(ucb + from_layer(params = list(std = "ind.max"))),
+    ggplot2::layer_data(ucb + geom_fourfold(std = "ind.max"))
+  )
+  expect_false(identical(
+    ggplot2::layer_data(ucb + from_layer(params = list(std = "ind.max"))),
+    ggplot2::layer_data(ucb + from_layer())
+  ))
+
+  # It draws the same display as geom_fourfold(), panel by panel: the fill and
+  # outline of the sectors, and the direction ticks (not the grob names).
+  displays <- function(layer) {
+    gtable <- drawn_gtable(
+      ucb + layer + ggplot2::coord_cartesian(reverse = "y", ratio = 1) +
+        theme_fourfold()
+    )
+    lapply(gtable$grobs[grepl("^panel", gtable$layout$name)], function(panel) {
+      display <- grid::getGrob(panel, "fourfold-panel", grep = TRUE)
+      sectors <- lapply(1:4, function(i) {
+        sector <- grid::getGrob(display, paste0("fourfold-sector-", i))
+        list(fill = sector$gp$fill, x = as.numeric(sector$x),
+             y = as.numeric(sector$y))
+      })
+      ticks <- grid::getGrob(display, "fourfold-direction-ticks")
+      list(sectors = sectors, ticks = lapply(
+        ticks[c("x0", "y0", "x1", "y1")], as.numeric
+      ))
+    })
+  }
+  expect_length(displays(from_layer()), 6)
+  expect_identical(displays(from_layer()), displays(geom_fourfold()[[1]]))
+
+  # It is drawn, and its counts are placed, as those of geom_fourfold().
+  drawn_counts <- function(layer) {
+    counts <- counts_printed(
+      ucb + layer + ggplot2::coord_cartesian(reverse = "y", ratio = 1) +
+        theme_fourfold(),
+      width = 7, height = 5
+    )
+    list(
+      outside = vapply(counts, function(x) x$outside, logical(1)),
+      labels = lapply(counts, function(x) x$labels)
+    )
+  }
+  expect_length(drawn_counts(from_layer())$outside, 6)
+  expect_identical(drawn_counts(from_layer()), drawn_counts(geom_fourfold()[[1]]))
 })

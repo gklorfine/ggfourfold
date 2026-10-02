@@ -1,5 +1,12 @@
 # Handoff — 2026-10-01
 
+## Status (Claude, 2026-10-01, later): diagnostic follow-ups fixed and pushed
+
+Fixed five Diagnostic follow-ups in `issues/TASKS.md` (tiny-device error, two fourfold
+layers, bare `layer()` defaults via `.fourfold_defaults` with `StatFourfold` exported,
+warning wording for out-of-limits values, dead SAS URL); closed the facet-labels item.
+Code by Sonnet subagents, two Opus reviews approved. Weekly quota was 12% at commit.
+
 ## Status (Claude, 2026-10-01): counts change committed and pushed to main
 
 GK's three follow-ups are done: layer-wide count values now come from

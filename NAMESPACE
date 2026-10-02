@@ -3,6 +3,7 @@
 S3method(grid::makeContent,fourfold_counts)
 S3method(grid::makeContent,fourfold_responsive_text)
 export(GeomFourfold)
+export(StatFourfold)
 export(fourfold_palette)
 export(geom_fourfold)
 export(theme_fourfold)
