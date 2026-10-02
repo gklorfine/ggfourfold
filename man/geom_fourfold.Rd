@@ -21,6 +21,7 @@ geom_fourfold(
   ticks = 0.15,
   p_adjust_method = stats::p.adjust.methods,
   shape = c("circle", "square"),
+  counts = c("auto", "inside", "outside", "none"),
   palette = fourfold_palette(),
   na.rm = FALSE,
   show.legend = FALSE,
@@ -62,6 +63,11 @@ across panels. Defaults to \code{"holm"}, the first value in
 \item{shape}{Shape of the cell sectors: \code{"circle"} (the default, as in
 \code{vcd::fourfold()}) draws quarter-circles; \code{"square"} draws
 quarter-squares of equal area.}
+
+\item{counts}{Placement of cell counts: \code{"auto"} (the default) moves counts
+outside when the drawing approaches them; \code{"inside"} always uses the inside
+corners, even if overlapped; \code{"outside"} always uses the outside corners;
+\code{"none"} hides the counts.}
 
 \item{palette}{Character vector of at least six valid colours in the
 semantic order used by \code{fourfold_palette()}.}
@@ -119,10 +125,18 @@ With \code{shape = "square"}, each cell is drawn as a quarter-square with the
 same area as the corresponding quarter-circle (side
 \eqn{r\sqrt{\pi}/2}{r * sqrt(pi) / 2} for radius \eqn{r}), so the two
 shapes display a table with identical areas. Confidence rings
-become nested square outlines. Cell counts stay inside the frame corners
-unless a square, confidence outline, or direction tick in any panel of the
-layer would reach them, as is always the case with \code{std = "ind.max"}; the
-counts in every panel are then placed just outside the frame corners.
+become nested square outlines.
+
+With \code{counts = "auto"}, cell counts stay inside the frame corners unless
+a sector, either confidence outline, or a direction tick comes close to the
+count text. Both shapes use the largest drawing extent across the layer; circles
+also account for the width of the layer's count labels. Counts then move
+just outside the frame corners. Clearance is measured at draw time, so
+placement can differ between panels of different physical sizes.
+Use \code{counts = "inside"} or \code{"outside"} to force the placement, or \code{"none"}
+to hide counts without affecting any statistics. Outside counts can collide
+with category labels or neighbouring panels at small sizes; use larger
+panels, more panel spacing, smaller text, or \code{counts = "inside"}.
 
 The six semantic fill colours are supplied by \code{palette}; they are not mapped
 through a ggplot2 fill scale. Typography and layout defaults are controlled

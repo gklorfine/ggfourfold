@@ -1541,7 +1541,8 @@ test_that("counts are placed inward in every orientation, outward outside", {
       outside <- setting == "outside"
       expect_identical(counts$outside, outside, info = info)
       expect_gt(counts$count_limit, 0)
-      expect_lte(counts$count_limit, 0.8)
+      limit <- if (counts$shape == "square") 0.8 else sqrt(2) * 0.88
+      expect_lte(counts$count_limit, limit)
 
       centre_x <- to_npc(0, shown$vp$xscale)
       centre_y <- to_npc(0, shown$vp$yscale)
@@ -1642,4 +1643,236 @@ test_that("the count limit does not depend on the orientation on small panels", 
       ggplot2::facet_wrap(ggplot2::vars(Dept)) + theme_fourfold(),
     2.5
   )$outside))
+})
+
+# Count placement --------------------------------------------------------------
+
+test_that("auto counts clear both confidence bounds and circular arcs", {
+  negative <- matrix(c(2, 5, 5, 2), 2)
+  plot <- table_plot(negative, shape = "square", ticks = 0) + theme_fourfold()
+  counts <- drawn_plot(plot, counts = TRUE)$counts
+  expect_true(counts$outside)
+  expect_gt(counts$reach, 0.8)
+  expect_false(drawn_plot(
+    table_plot(negative, shape = "square", ticks = 0, conf_level = 0) +
+      theme_fourfold(), counts = TRUE
+  )$counts$outside)
+  expect_true(drawn_plot(
+    cell_plot(fourfold = list(std = "ind.max", ticks = 0)) + theme_fourfold(),
+    counts = TRUE
+  )$counts$outside)
+  expect_false(drawn_plot(cell_plot() + theme_fourfold(), counts = TRUE)$counts$outside)
+})
+
+test_that("count options change only text placement in every orientation", {
+  for (shape in c("circle", "square")) {
+    for (orientation in names(orientations)) {
+      reference <- NULL
+      for (mode in c("auto", "inside", "outside", "none")) {
+        info <- paste(shape, orientation, mode)
+        plot <- cell_plot(orientations[[orientation]]$coord,
+          fourfold = list(shape = shape, std = "ind.max", counts = mode)) +
+          theme_fourfold()
+        data <- ggplot2::layer_data(plot)
+        if (is.null(reference)) reference <- data
+        expect_identical(data, reference, info = info)
+        shown <- drawn_plot(plot, counts = TRUE)
+        counts <- shown$counts
+        if (mode == "none") {
+          expect_null(counts, info = info)
+          expect_null(grid::getGrob(shown$panel, "fourfold-count-", grep = TRUE), info = info)
+          next
+        }
+        outside <- mode != "inside"
+        expect_identical(counts$outside, outside, info = info)
+        for (text in counts$children) {
+          expect_equal(abs(as.numeric(text$x)), if (outside) 1.02 else 0.88, info = info)
+          expect_equal(abs(as.numeric(text$y)), if (outside) 1.02 else 0.88, info = info)
+          left <- to_npc(as.numeric(text$x), shown$vp$xscale) < to_npc(0, shown$vp$xscale)
+          bottom <- to_npc(as.numeric(text$y), shown$vp$yscale) < to_npc(0, shown$vp$yscale)
+          expect_equal(text$hjust, if (outside) as.numeric(left) else as.numeric(!left), info = info)
+          expect_equal(text$vjust, if (outside) as.numeric(bottom) else as.numeric(!bottom), info = info)
+        }
+      }
+    }
+  }
+  for (invalid in list("unknown", NA_character_, c("inside", "outside"), 1)) {
+    expect_error(
+      geom_fourfold(counts = invalid),
+      '`counts` must be one of "auto", "inside", "outside", or "none"',
+      fixed = TRUE
+    )
+  }
+  expect_identical(geom_fourfold(counts = "ins")[[1]]$geom_params$counts, "inside")
+})
+
+test_that("an invalid choice names its argument", {
+  expect_error(
+    geom_fourfold(std = "max"),
+    '`std` must be one of "margins", "ind.max", or "all.max"',
+    fixed = TRUE
+  )
+  expect_error(
+    geom_fourfold(shape = "x"),
+    '`shape` must be one of "circle" or "square"',
+    fixed = TRUE
+  )
+  expect_error(
+    geom_fourfold(p_adjust_method = "sidak"),
+    paste0(
+      '`p_adjust_method` must be one of "holm", "hochberg", "hommel", ',
+      '"bonferroni", "BH", "BY", "fdr", or "none"'
+    ),
+    fixed = TRUE
+  )
+  expect_error(
+    geom_fourfold(counts = "both"),
+    '`counts` must be one of "auto", "inside", "outside", or "none"',
+    fixed = TRUE
+  )
+  expect_error(geom_fourfold(shape = c("square", "circle")), "`shape` must be")
+  expect_error(geom_fourfold(std = 1), "`std` must be")
+})
+
+# The parameters GeomFourfold$setup_params() computes for a built plot.
+counts_params <- function(plot) {
+  params <- ggplot2::ggplot_build(plot)$plot$layers[[1]]$computed_geom_params
+  params[c("counts_reach", "counts_tick_reach", "counts_labels")]
+}
+
+test_that("the layer-wide count values are parameters, not layer data", {
+  plot <- table_plot(matrix(c(2, 5, 5, 2), 2), shape = "square")
+  data <- ggplot2::layer_data(plot)
+  expect_false(any(c("counts_reach", "counts_tick_reach", "counts_labels") %in%
+                     names(data)))
+  params <- counts_params(plot)
+  expect_identical(
+    params,
+    .fourfold_counts_params(data, shape = "square", extended = TRUE, ticks = 0.15)
+  )
+  expect_identical(params$counts_labels, c("2", "5"))
+  counts <- drawn_plot(plot + theme_fourfold(), counts = TRUE)$counts
+  expect_identical(counts$reach, params$counts_reach)
+  expect_identical(counts$tick_reach, params$counts_tick_reach)
+  expect_identical(counts$measure_labels, params$counts_labels)
+  # They are computed for every layer, not taken from the layer's arguments.
+  expect_identical(
+    counts_params(table_plot(
+      matrix(c(2, 5, 5, 2), 2), shape = "square", counts_reach = -Inf,
+      counts_tick_reach = -Inf, counts_labels = "1"
+    )),
+    params
+  )
+})
+
+test_that("blank and empty panels contribute no outline or tick reach", {
+  for (shape in c("circle", "square")) {
+    blank <- table_plot(matrix(0, 2, 2), shape = shape, ticks = 10)
+    expect_identical(
+      counts_params(blank),
+      list(counts_reach = -Inf, counts_tick_reach = -Inf,
+           counts_labels = character())
+    )
+    expect_false(drawn_plot(blank + theme_fourfold(), counts = TRUE)$counts$outside)
+    data <- ggplot2::layer_data(blank)
+    expect_identical(unname(.fourfold_counts_reach(data[FALSE, ], shape)), c(-Inf, -Inf))
+
+    # A blank panel leaves the layer's values as they are without it.
+    ucb <- as.data.frame(UCBAdmissions)
+    with_blank <- rbind(ucb, transform(ucb[ucb$Dept == "A", ], Dept = "G", Freq = 0))
+    ucb_counts <- function(data) {
+      counts_params(
+        ggplot2::ggplot(data, ggplot2::aes(Gender, Admit, weight = Freq)) +
+          geom_fourfold(shape = shape, ticks = 10) +
+          ggplot2::facet_wrap(ggplot2::vars(Dept))
+      )
+    }
+    expect_identical(ucb_counts(with_blank), ucb_counts(ucb))
+  }
+})
+
+test_that("a panel without the layer-wide count values is placed on its own", {
+  # A subclass whose setup_params() leaves them out, so that draw_panel() uses
+  # its defaults: the panel with the largest count reaches its counts, the
+  # others do not.
+  Plain <- ggplot2::ggproto(
+    NULL, GeomFourfold, setup_params = function(data, params) params
+  )
+  plot_with <- function(geom) {
+    ggplot2::ggplot(
+      data.frame(
+        x = factor(rep(c("a", "a", "b", "b"), 2)),
+        y = factor(rep(c("u", "v"), 4)),
+        g = rep(1:2, each = 4),
+        w = c(90, 5, 8, 95, 2, 3, 4, 5)
+      ),
+      ggplot2::aes(x, y, weight = w)
+    ) +
+      ggplot2::layer(
+        geom = geom, stat = StatFourfold, position = "identity",
+        params = list(
+          std = "all.max", margin = c(1, 2), conf_level = 0.95,
+          extended = TRUE, ticks = 0, p_adjust_method = "holm",
+          palette = fourfold_palette(), shape = "circle", counts = "auto",
+          na.rm = FALSE
+        )
+      ) +
+      ggplot2::facet_wrap(ggplot2::vars(g)) +
+      ggplot2::coord_cartesian(reverse = "y", ratio = 1) +
+      theme_fourfold()
+  }
+  placed <- function(plot) {
+    grDevices::pdf(NULL, width = 7, height = 4)
+    on.exit(grDevices::dev.off())
+    print(plot)
+    grid::grid.force()
+    vapply(grid::grid.get("fourfold-counts", global = TRUE),
+           function(x) x$outside, logical(1))
+  }
+  expect_identical(placed(plot_with(GeomFourfold)), c(TRUE, TRUE))
+  expect_identical(placed(plot_with(Plain)), c(TRUE, FALSE))
+})
+
+test_that("circle clearance measures width and distinguishes diagonal ticks", {
+  # Measure actual text on a fixed physical viewport; no plot layout involved.
+  grDevices::pdf(NULL, width = 7, height = 7)
+  grid::pushViewport(grid::viewport(xscale = c(-1.3, 1.3), yscale = c(-1.3, 1.3)))
+  on.exit({
+    grid::popViewport()
+    grDevices::dev.off()
+  })
+  draw_counts <- function(label, reach, tick = -Inf) {
+    makeContent.fourfold_counts(grid::gTree(
+      labels = rep(label, 4), measure_labels = label,
+      reach = reach, tick_reach = tick, shape = "circle", counts = "auto",
+      relative_size = 0.066, minimum_size = 10, colour = "black", family = "",
+      name = "fourfold-counts", cl = "fourfold_counts"
+    ))
+  }
+  narrow <- draw_counts("1", 0.95)
+  wide <- draw_counts("123456", 0.95)
+  expect_false(narrow$outside)
+  expect_true(wide$outside)
+  expect_lt(wide$count_limit, narrow$count_limit)
+  # A diagonal endpoint at 0.70 misses the height of the box, even though a
+  # circle passing through that endpoint reaches the wide box's inner corner.
+  expect_false(draw_counts("123456", 0, 0.70)$outside)
+  expect_true(draw_counts("123456", sqrt(2) * 0.70)$outside)
+  expect_true(draw_counts("123456", 0, 0.9)$outside)
+})
+
+test_that("circle count widths and reach are shared across facets", {
+  data <- as.data.frame(UCBAdmissions)
+  data$Freq[data$Dept == "B"] <- 1
+  plot <- ggplot2::ggplot(data, ggplot2::aes(Gender, Admit, weight = Freq)) +
+    geom_fourfold(std = "ind.max", ticks = 0) +
+    ggplot2::facet_wrap(ggplot2::vars(Dept)) + theme_fourfold()
+  grDevices::pdf(NULL, width = 7, height = 5)
+  on.exit(grDevices::dev.off())
+  print(plot)
+  grid::grid.force()
+  counts <- grid::grid.get("fourfold-counts", global = TRUE)
+  expect_length(counts, 6)
+  expect_true(all(vapply(counts, function(x) x$outside, logical(1))))
+  expect_length(unique(vapply(counts, function(x) x$count_limit, numeric(1))), 1)
 })

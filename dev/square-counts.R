@@ -3,7 +3,7 @@
 # Counts stay inside the frame corners unless a square, confidence outline, or
 # direction tick in any panel of the layer reaches them; then the counts in
 # every panel move just outside the frame corners. The layer-wide reach is
-# computed in GeomFourfold$setup_data() (.fourfold_counts_reach()); the limit
+# computed in GeomFourfold$setup_params() (.fourfold_counts_reach()); the limit
 # it is compared with is 0.80, lowered at draw time to (0.88 - text height)
 # when the measured count text extends further (makeContent.fourfold_counts()).
 # The text is responsive to panel size, so the decision can depend on the size
@@ -52,11 +52,11 @@ plots <- list(
     geom_fourfold(shape = "square") +
     labs(title = "Strong association: counts outside") +
     theme_fourfold(),
-  # reference: circles never move their counts
+  # Circles also move outside when their arcs reach the measured count box.
   circle_ind_max = ggplot(ucb, aes(x = Gender, y = Admit, weight = Freq)) +
     geom_fourfold(std = "ind.max") +
     facet_wrap(vars(Dept), ncol = 3, labeller = label_both) +
-    labs(title = "Circles, std = \"ind.max\": counts inside") +
+    labs(title = "Circles, std = \"ind.max\": counts outside") +
     theme_fourfold()
 )
 
@@ -72,6 +72,7 @@ count_placement <- function(p, width = 7, height = 5) {
   outside <- vapply(counts, function(g) g$outside, logical(1))
   data.frame(
     reach = round(counts[[1]]$reach, 3),
+    tick_reach = round(counts[[1]]$tick_reach, 3),
     fontsize = round(counts[[1]]$children[[1]]$gp$fontsize, 1),
     limit = round(counts[[1]]$count_limit, 3),
     counts = if (all(outside)) "outside" else if (!any(outside)) "inside" else "mixed"

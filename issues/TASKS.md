@@ -646,7 +646,7 @@ As these items are resolved, check them off as [X] and record the fix and verifi
     Reviewed the relevant extrachecks guidance (documentation, examples, suggested
     dependencies, and DESCRIPTION). `DISPLAY= R CMD check --as-cran` completed with
     0 errors, 0 warnings, and 1 NOTE: new submission and the existing SAS reference
-    URL lookup failure in the vignette. Log: `/private/tmp/ggfourfold-codex-check/ggfourfold.Rcheck/00check.log`.
+    URL lookup failure in the vignette (temporary log, not kept).
   - *Final independent Codex review* (requested by GK): no actionable findings.
     The reviewer independently passed 24 exact equivalence cases across both axes,
     fixed/free scales, and three standardizations; checked a duplicated missing-count
@@ -769,10 +769,11 @@ As these items are resolved, check them off as [X] and record the fix and verifi
       heavier mechanism (S7 component class, provenance check, per-vertex transforms,
       physical-unit diagnostics). A ggplot2-conventions review by a Claude subagent,
       reproduced by Claude, simplified it; the plan's History section lists each change.
-  - *Found during planning, separate from this item*: `.fourfold_counts_reach()` ignores
+  - *Found during planning; fixed by the counts item below (2026-10-01)*:
+    `.fourfold_counts_reach()` previously ignored
     `conf_low_radius` (for `c(2, 5, 5, 2)`, squares, `ticks = 0`: reach 0.749 versus a
     true 0.835 and a count limit of 0.80); whether counts go outside can differ between
-    panels of different physical sizes, contrary to the docs.
+    panels of different physical sizes (now documented).
   - *Implemented* (2026-10-01, uncommitted; Claude as project manager, code by Sonnet
     subagents, per `dev/coordinate-system-plan.md`):
     - `geom_fourfold()` returns `list(layer, coord_cartesian(reverse = "y", ratio = 1,
@@ -878,19 +879,74 @@ As these items are resolved, check them off as [X] and record the fix and verifi
   Files: `R/geom-fourfold.R`, `README.Rmd`, `DESCRIPTION`, `vignettes/refs.bib`,
   `dev/square-counts.R`.
 
-- [ ] **Add a `counts = c("auto", "inside", "outside")` argument** — expose the count
-  placement for both shapes. `"auto"` (the default) keeps the current per-layer rule
-  (`.fourfold_counts_reach()` compared with the measured limit in
-  `makeContent.fourfold_counts()`; pass the choice through to that grob): inside unless a square/outline/tick in any panel reaches the
-  corner counts, then outside in every panel (always inside for circles). `"inside"` and
-  `"outside"` force the placement, e.g. to keep squares visually close to vcd or to match
-  layouts across separate plots. Consider whether `"outside"` needs more panel padding than
-  the current ±1.3 viewport at small sizes: in the 3.5 × 2.5 in case of
-  `dev/square-counts.R`, outside counts collide with the outer category labels and the
-  neighbouring panel's counts (inside they would overlap the squares), so small displays
-  may need more panel spacing or smaller count text. (The limit is now 0.80 by default,
-  lowered to reflect the measured count text height at draw time.)
-  Files: `R/geom-fourfold.R`, `dev/square-counts.R`.
+- [x] **Add `counts = c("auto", "inside", "outside", "none")` and fix count reach**
+  (implemented 2026-10-01; GPT-6.1 Sol implementation/verification, independent
+  GPT-6 Astra review; follow-up changes and commit by Claude):
+  - `"auto"` includes both confidence bounds for squares and checks circles against
+    measured count width and height. Circle boxes have 0.04 clearance towards the
+    centre on each axis; diagonal ticks use their actual endpoint coordinates.
+    Circle labels and drawing reach are shared across the layer, excluding blank
+    panels. Different physical panel sizes can still give different decisions.
+  - `"inside"` and `"outside"` force placement; `"none"` omits count text. All modes
+    preserve statistical data and reversal-aware justification. Current drawing
+    extent and typography are unchanged. Outside crowding at small sizes is documented.
+  - 2,913 test assertions pass (no failures/warnings/skips). Planted omissions of
+    the lower CI bound, circle checking, and the counts choice cause 2, 87, and
+    180 failures respectively. Both development verification scripts pass.
+  - Against HEAD b8b9149, 720 cases have identical statistical columns, warnings,
+    and numerical areas; 20 additional dataset/shape cases have identical full
+    layer data across all four choices. Only drawing metadata changes:
+    `counts_reach` now stores outline reach; new `counts_tick_reach` and
+    `counts_labels` carry diagonal reach and shared label measurements.
+  - 52 default image comparisons: 32 pixel-identical, 20 move counts outside
+    (18 circle cases, 2 lower-CI square cases). Every changed pair and all 24
+    explicit-mode/orientation images inspected by the project manager. Clearance
+    can move counts before literal overlap (the strong-circle case); layer-wide
+    aggregation also deliberately moves non-overlapping cells together. Removing
+    count grobs makes all 20 changed pairs pixel-identical; all 8 forced-inside
+    shape/orientation images exactly reproduce the old inside placement.
+  - Independent Sol ggplot2 API/docs audit: no actionable findings.
+  - Independent Astra review: no correctness/API findings after 320 geometry
+    checks and 16 randomized four-facet statistical comparisons. Its P3 wording
+    suggestion was applied: documentation says drawings "come close" to counts.
+  - `R CMD check --as-cran` with `env -u DISPLAY`: 0 errors, 0 warnings, 1 NOTE
+    (new submission and the existing SAS vignette-reference URL lookup failure).
+    No new spelling flags; relevant extrachecks guidance reviewed (documentation,
+    examples, dependencies, DESCRIPTION, URLs). The final check after the wording
+    refinement has the same result (temporary logs, not kept).
+  - Reproduction: `dev/counts-verification.R`. The detailed logs, rendered
+    comparisons, image manifest, mutation runner, and independent review were
+    temporary logs, not kept. Plan: `dev/counts-plan.md`.
+  - *Follow-up* (Claude, 2026-10-01, requested by GK):
+    - The layer-wide count values are no longer layer-data columns.
+      `GeomFourfold$setup_params()`, which sees the whole layer's data, computes
+      `counts_reach`, `counts_tick_reach`, and `counts_labels` (blank panels
+      excluded) and passes them to `draw_panel()` as parameters; without them, as
+      when `draw_panel()` is called directly, a panel is placed on its own. The
+      layer data now have the columns of b8b9149 less `counts_reach`.
+    - An invalid choice names its argument, e.g. `` `counts` must be one of "auto",
+      "inside", "outside", or "none" `` (likewise `std`, `shape`, and
+      `p_adjust_method`), instead of R's "'arg' should be one of".
+    - 2,826 test expectations pass (no failures/warnings/skips): 15 new; 102 fewer
+      because `same_values()` compares layer data column by column and the three
+      columns are gone. Both development scripts pass (720 cases identical to
+      b8b9149 apart from those columns). Against the version above, 1,152 ragg PNGs
+      (576 cases: UCB, Titanic with and without margins, both shapes, six `std`/
+      inference settings, all four `counts`, four coordinate systems; 9 × 6 and
+      4 × 3 in) are byte-identical and all 8,352 drawn count grobs place their
+      counts identically; 8 edge cases (empty and blank layers, two layers, direct
+      `layer()`, `drop = FALSE`, missing values) render byte-identically. Against
+      b8b9149, all 17,856 shared layer-data columns of the 576 cases are
+      `identical()`. Spelling unchanged; R CMD check not rerun (GK).
+  Files: `R/geom-fourfold.R`, `man/geom_fourfold.Rd`,
+  `tests/testthat/test-geom-fourfold.R`, `dev/square-counts.R`,
+  `dev/counts-verification.R`.
+
+- [ ] **Reserve room for counts outside the frame** — later follow-up agreed by GK
+  on 2026-10-01. Enlarge the drawing extent or panel padding when counts are outside
+  to reduce collisions with category labels and neighbouring panels at small sizes.
+  This will shrink the display at a fixed plot size; the current counts change
+  deliberately preserves the existing extent.
 
 - [ ] **Square tick direction** — the diagonal direction ticks are what usually force square
   counts outside. Consider an alternative for squares (e.g. shorter ticks, or ticks drawn
@@ -1173,12 +1229,18 @@ development verification script remains broken as noted above.
   dimension(s)" from `convertHeight()` in `makeContent.fourfold_counts()` (also at
   2c098be; found by the coordinate-system reviewers). A small RStudio plot pane could hit
   it.
-- [ ] With `std = "ind.max"` and circles, the largest count can overlap its own arc:
-  `.fourfold_counts_reach()` treats circles as never reaching the counts (UCB Dept A,
-  "512"). Related to the `conf_low_radius` reach item above.
+- [x] With `std = "ind.max"` and circles, the largest count could overlap its own arc
+  (UCB Dept A, "512"). Fixed with the counts argument on 2026-10-01; see its
+  implementation and verification record above.
 - [ ] `layer(geom = GeomFourfold, stat = StatFourfold)` without parameters fails in the
   stat (`conf_level > 0 && extended` with NULLs). Give defaults or document that
   `geom_fourfold()` is the supported constructor.
+- [ ] Two `geom_fourfold()` layers in one plot draw the first layer twice and never the
+  second: every panel's display is a gTree named `"fourfold-panel"`, and grid draws a
+  gTree's children by looking up their names, so both lookups find the first layer's
+  display (also at b8b9149; found while verifying the counts follow-up). Give the
+  display a unique name, e.g. `grid::grobName(prefix = "fourfold-panel")`, and check
+  the tests that look it up.
 
 - [ ] Distinguish values excluded by discrete scale limits from actual missing values
   in the "missing fourfold values" warning (pre-existing behavior).
