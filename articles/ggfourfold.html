@@ -63,7 +63,10 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Fourfold Displays for 'ggplot2'</h1>
+                        <h4 data-toc-skip class="author">Michael
+Friendly and Gavin Klorfine</h4>
             
+            <h4 data-toc-skip class="date">2026-10-03</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/gklorfine/ggfourfold/blob/main/vignettes/ggfourfold.Rmd" class="external-link"><code>vignettes/ggfourfold.Rmd</code></a></small>
       <div class="d-none name"><code>ggfourfold.Rmd</code></div>
@@ -335,10 +338,152 @@ cell, but their overlap is not a test of <span class="math inline">\(H_0\)</span
 <p>With several strata, each panel’s rings show that stratum’s own
 interval at <code>conf_level</code>. They are not adjusted for multiple
 comparisons, as is also the case in <code><a href="https://rdrr.io/pkg/vcd/man/fourfold.html" class="external-link">vcd::fourfold()</a></code>. Only
-the p-values that decide which panels are drawn in the more intense
-colours are adjusted (Holm’s method, by default). A stratum whose rings
-only just separate can therefore still be drawn in the paler colours.
-Set <code>conf_level = 0</code> to omit the rings.</p>
+the <em>p</em>-values that decide which panels are drawn in the more
+intense colours are adjusted (Holm’s method, by default). A stratum
+whose rings only just separate can therefore still be drawn in the paler
+colours. Set <code>conf_level = 0</code> to omit the rings.</p>
+</div>
+</div>
+<div class="section level2">
+<h2 id="customizing-the-display">Customizing the display<a class="anchor" aria-label="anchor" href="#customizing-the-display"></a>
+</h2>
+<div class="section level3">
+<h3 id="square-cells">Square cells<a class="anchor" aria-label="anchor" href="#square-cells"></a>
+</h3>
+<p><code>ggfourfold</code> allows for four squares to be drawn instead
+of quarter-circles via the <code>shape</code> argument of
+<code><a href="../reference/geom_fourfold.html">geom_fourfold()</a></code>. Squares are drawn with area equal to the
+quarter-circle they replace (side <span class="math inline">\(r\sqrt{\pi}/2\)</span> for radius <span class="math inline">\(r\)</span>), and confidence rings become square
+outlines that are read in the same way.</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">berkeley</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="../reference/geom_fourfold.html">geom_fourfold</a></span><span class="op">(</span>shape <span class="op">=</span> <span class="st">"square"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/facet_wrap.html" class="external-link">facet_wrap</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/vars.html" class="external-link">vars</a></span><span class="op">(</span><span class="va">Dept</span><span class="op">)</span>, ncol <span class="op">=</span> <span class="fl">3</span>, labeller <span class="op">=</span> <span class="va">label_both</span><span class="op">)</span></span></code></pre></div>
+<p><img src="ggfourfold_files/figure-html/berkeley-square-1.png" class="r-plt" alt="" width="672"></p>
+</div>
+<div class="section level3">
+<h3 id="cell-counts">Cell counts<a class="anchor" aria-label="anchor" href="#cell-counts"></a>
+</h3>
+<p>By default, raw cell counts are pictured in the inside corners of
+each display’s frame; however, if the drawing of quarter-circles (or
+squares) comes close to overlapping these counts, they are displayed
+just outside the frame of each display.</p>
+<p>To fix the placement, supply <code>counts = "inside"</code> or
+<code>counts = "outside"</code> to <code><a href="../reference/geom_fourfold.html">geom_fourfold()</a></code>.
+<code>counts = "none"</code> hides them, while the default, automatic
+placement uses <code>counts = "auto"</code>.</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">berkeley</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="../reference/geom_fourfold.html">geom_fourfold</a></span><span class="op">(</span>shape <span class="op">=</span> <span class="st">"square"</span>, counts <span class="op">=</span> <span class="st">"inside"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/facet_wrap.html" class="external-link">facet_wrap</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/vars.html" class="external-link">vars</a></span><span class="op">(</span><span class="va">Dept</span><span class="op">)</span>, ncol <span class="op">=</span> <span class="fl">3</span>, labeller <span class="op">=</span> <span class="va">label_both</span><span class="op">)</span></span></code></pre></div>
+<p><img src="ggfourfold_files/figure-html/berkeley-square-inside-1.png" class="r-plt" alt="" width="672"></p>
+</div>
+<div class="section level3">
+<h3 id="colours">Colours<a class="anchor" aria-label="anchor" href="#colours"></a>
+</h3>
+<p>Displays are <em>extended</em> by default: each stratum is shaded by
+the significance of its association, as in the Berkeley examples above,
+and direction ticks are drawn. If <code>extended = FALSE</code> is
+supplied to <code><a href="../reference/geom_fourfold.html">geom_fourfold()</a></code>, every panel is shaded alike,
+with the larger diagonal being darker. Significance is not shown and the
+direction ticks are omitted, giving a simpler display.</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">berkeley</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="../reference/geom_fourfold.html">geom_fourfold</a></span><span class="op">(</span>extended <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/facet_wrap.html" class="external-link">facet_wrap</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/vars.html" class="external-link">vars</a></span><span class="op">(</span><span class="va">Dept</span><span class="op">)</span>, ncol <span class="op">=</span> <span class="fl">3</span>, labeller <span class="op">=</span> <span class="va">label_both</span><span class="op">)</span></span></code></pre></div>
+<p><img src="ggfourfold_files/figure-html/berkeley-simple-1.png" class="r-plt" alt="" width="672"></p>
+<p>Since colours carry the display’s meaning, they are drawn directly
+through the <code>geom</code> rather than mapped through a fill scale.
+<code><a href="https://ggplot2.tidyverse.org/reference/scale_manual.html" class="external-link">scale_fill_manual()</a></code> and similar functions therefore have no
+effect. Supply them through the <code>palette</code> argument instead,
+as a vector of six colours in the same order used by
+<code><a href="../reference/fourfold_palette.html">fourfold_palette()</a></code>.</p>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/fourfold_palette.html">fourfold_palette</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] "#99CCFF" "#6699CC" "#FFA0A0" "#A0A0FF" "#FF0000" "#000080"</span></span></code></pre></div>
+<p>The six colours form three pairs:</p>
+<ul>
+<li>Colours 1–2 are used when <code>extended = FALSE</code>
+</li>
+<li>Colours 3–4 are used for a stratum whose association is not
+significant</li>
+<li>Colours 5–6 are used for a stratum whose association is significant
+after adjustment</li>
+</ul>
+<p>Within each pair, the first colour fills the diagonal with
+<em>fewer</em> cases than expected under independence and the second
+fills the diagonal with <em>more</em>.</p>
+<p>For example, we can construct a palette based on the Okabe-Ito
+colours <span class="citation">(Okabe &amp; Ito, 2008)</span>, which
+remain distinguishable for readers with common forms of colour-deficient
+vision. Lightened orange and sky blue mark strata whose association is
+not significant, while vermillion and blue mark those whose association
+is significant.</p>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">okabe_ito</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
+<span>  <span class="st">"#56B4E9"</span>, <span class="st">"#0072B2"</span>, <span class="co"># extended = FALSE: sky blue, blue</span></span>
+<span>  <span class="st">"#F2CF7F"</span>, <span class="st">"#AAD9F3"</span>, <span class="co"># not significant: orange, sky blue (lightened)</span></span>
+<span>  <span class="st">"#D55E00"</span>, <span class="st">"#0072B2"</span>  <span class="co"># significant: vermillion, blue</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">berkeley</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="../reference/geom_fourfold.html">geom_fourfold</a></span><span class="op">(</span>palette <span class="op">=</span> <span class="va">okabe_ito</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/facet_wrap.html" class="external-link">facet_wrap</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/vars.html" class="external-link">vars</a></span><span class="op">(</span><span class="va">Dept</span><span class="op">)</span>, ncol <span class="op">=</span> <span class="fl">3</span>, labeller <span class="op">=</span> <span class="va">label_both</span><span class="op">)</span></span></code></pre></div>
+<p><img src="ggfourfold_files/figure-html/berkeley-okabe-ito-1.png" class="r-plt" alt="" width="672"></p>
+<p>This palette is also built into <code>ggfourfold</code>, so the same
+display can be drawn with
+<code>fourfold_palette("okabe-ito")</code>.</p>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">berkeley</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="../reference/geom_fourfold.html">geom_fourfold</a></span><span class="op">(</span>palette <span class="op">=</span> <span class="fu"><a href="../reference/fourfold_palette.html">fourfold_palette</a></span><span class="op">(</span><span class="st">"okabe-ito"</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/facet_wrap.html" class="external-link">facet_wrap</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/vars.html" class="external-link">vars</a></span><span class="op">(</span><span class="va">Dept</span><span class="op">)</span>, ncol <span class="op">=</span> <span class="fl">3</span>, labeller <span class="op">=</span> <span class="va">label_both</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="working-with-ggplot2">Working with ‘ggplot2’<a class="anchor" aria-label="anchor" href="#working-with-ggplot2"></a>
+</h3>
+<p>A fourfold display is an ordinary ggplot, so the usual tools for
+finishing a figure all apply. Below, <code><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">ggplot2::labs()</a></code> adds a
+title that states the finding and adds a caption giving the source of
+the data. Additionally, the facet labeller adds the number of applicants
+to each panel, which makes the departments easy to compare without
+needing to add up their cell counts.</p>
+<p>The text drawn by <code><a href="../reference/geom_fourfold.html">geom_fourfold()</a></code> itself, such as the
+category labels and cell counts, follows the <code>base_size</code> and
+<code>base_family</code> of <code><a href="../reference/theme_fourfold.html">theme_fourfold()</a></code>, meaning that
+a single argument changes the font of the whole figure. If more control
+is needed, other theme settings can be passed through the
+<code>...</code> of <code><a href="../reference/theme_fourfold.html">theme_fourfold()</a></code> or added with
+<code><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">ggplot2::theme()</a></code> as usual.</p>
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">applicants</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/marginSums.html" class="external-link">margin.table</a></span><span class="op">(</span><span class="va">UCBAdmissions</span>, <span class="fl">3</span><span class="op">)</span></span>
+<span><span class="va">dept_labels</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"%s (n = %d)"</span>, <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">applicants</span><span class="op">)</span>, <span class="va">applicants</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">dept_labels</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">applicants</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">ucb</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">Admit</span>, y <span class="op">=</span> <span class="va">Gender</span>, weight <span class="op">=</span> <span class="va">Freq</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="../reference/geom_fourfold.html">geom_fourfold</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/facet_wrap.html" class="external-link">facet_wrap</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/vars.html" class="external-link">vars</a></span><span class="op">(</span><span class="va">Dept</span><span class="op">)</span>, ncol <span class="op">=</span> <span class="fl">3</span>, labeller <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labeller.html" class="external-link">labeller</a></span><span class="op">(</span>Dept <span class="op">=</span> <span class="va">dept_labels</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span></span>
+<span>    title <span class="op">=</span> <span class="st">"UC Berkeley Admissions, 1973"</span>,</span>
+<span>    subtitle <span class="op">=</span> <span class="st">"Only department A shows a significant association"</span>,</span>
+<span>    caption <span class="op">=</span> <span class="st">"Data from Bickel et al. (1975)"</span></span>
+<span>  <span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="../reference/theme_fourfold.html">theme_fourfold</a></span><span class="op">(</span>base_family <span class="op">=</span> <span class="st">"serif"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span></span>
+<span>    plot.title.position <span class="op">=</span> <span class="st">"plot"</span>,</span>
+<span>    plot.title <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">element_text</a></span><span class="op">(</span>hjust <span class="op">=</span> <span class="fl">0</span><span class="op">)</span>,</span>
+<span>    plot.subtitle <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">element_text</a></span><span class="op">(</span></span>
+<span>      hjust <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>      colour <span class="op">=</span> <span class="st">"grey30"</span>,</span>
+<span>      margin <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">margin</a></span><span class="op">(</span>b <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span>
+<span>    <span class="op">)</span>,</span>
+<span>    plot.caption <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">element_text</a></span><span class="op">(</span></span>
+<span>      hjust <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>      colour <span class="op">=</span> <span class="st">"grey30"</span>,</span>
+<span>      size <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">rel</a></span><span class="op">(</span><span class="fl">0.8</span><span class="op">)</span>,</span>
+<span>      margin <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">margin</a></span><span class="op">(</span>t <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span>
+<span>    <span class="op">)</span></span>
+<span>  <span class="op">)</span></span></code></pre></div>
+<p><img src="ggfourfold_files/figure-html/berkeley-finished-1.png" class="r-plt" alt="" width="672"></p>
 </div>
 </div>
 <div class="section level2 unnumbered">
@@ -374,7 +519,12 @@ and count data</em>. Chapman &amp; Hall/CRC. <a href="http://ddar.datavis.ca" cl
 <div id="ref-Nightingale:1858" class="csl-entry">
 Nightingale, F. (1858). <em>Notes on matters affecting the health,
 efficiency, and hospital administration of the <span>British</span>
-army</em>. Harrison; Sons. <a href="https://archive.org/details/b20387118" class="external-link">https://archive.org/details/b20387118</a>
+army</em>. <span>Harrison and Sons</span>. <a href="https://archive.org/details/b20387118" class="external-link">https://archive.org/details/b20387118</a>
+</div>
+<div id="ref-OkabeIto:2008" class="csl-entry">
+Okabe, M., &amp; Ito, K. (2008). <em><span>Color Universal Design</span>
+(<span>CUD</span>): How to make figures and presentations that are
+friendly to colorblind people</em>. <a href="https://jfly.uni-koeln.de/color/" class="external-link">https://jfly.uni-koeln.de/color/</a>
 </div>
 </div>
 </div>

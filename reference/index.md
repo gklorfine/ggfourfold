@@ -3,7 +3,7 @@
 ## All functions
 
 - [`fourfold_palette()`](https://gavinklorfine.com/ggfourfold/reference/fourfold_palette.md)
-  : Default palette for fourfold displays
+  : Palettes for fourfold displays
 - [`StatFourfold`](https://gavinklorfine.com/ggfourfold/reference/geom_fourfold.md)
   [`GeomFourfold`](https://gavinklorfine.com/ggfourfold/reference/geom_fourfold.md)
   [`geom_fourfold()`](https://gavinklorfine.com/ggfourfold/reference/geom_fourfold.md)

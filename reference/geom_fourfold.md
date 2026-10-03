@@ -105,7 +105,9 @@ geom_fourfold(
 
   Character vector of at least six valid colours in the semantic order
   used by
-  [`fourfold_palette()`](https://gavinklorfine.com/ggfourfold/reference/fourfold_palette.md).
+  [`fourfold_palette()`](https://gavinklorfine.com/ggfourfold/reference/fourfold_palette.md),
+  which also provides built-in palettes such as
+  `fourfold_palette("okabe-ito")`.
 
 - na.rm:
 
@@ -415,13 +417,20 @@ for `y`) removes that place.
 
 ## References
 
-Friendly, M. (1994). *A fourfold display for 2 by 2 by k tables*
+Friendly, M. (1994a). *A fourfold display for 2 by 2 by k tables*
 (Technical Report No. 217). York University, Psychology Department.
 <http://datavis.ca/papers/4fold/4fold.pdf>
+
+Friendly, M. (1994b). SAS/IML graphics for fourfold displays.
+*Observations*, *3*(4), 47–56.
 
 Friendly, M., & Meyer, D. (2016). *Discrete Data Analysis with R:
 Visualization and Modeling Techniques for Categorical and Count Data*
 (Section 4.4). Chapman & Hall/CRC. <http://ddar.datavis.ca>
+
+Meyer, D., Zeileis, A., Hornik, K., & Friendly, M. (2026). *vcd:
+Visualizing Categorical Data* (R package).
+[doi:10.32614/CRAN.package.vcd](https://doi.org/10.32614/CRAN.package.vcd)
 
 ## See also
 

@@ -259,10 +259,185 @@ With several strata, each panel’s rings show that stratum’s own interval
 at `conf_level`. They are not adjusted for multiple comparisons, as is
 also the case in
 [`vcd::fourfold()`](https://rdrr.io/pkg/vcd/man/fourfold.html). Only the
-p-values that decide which panels are drawn in the more intense colours
-are adjusted (Holm’s method, by default). A stratum whose rings only
-just separate can therefore still be drawn in the paler colours. Set
-`conf_level = 0` to omit the rings.
+*p*-values that decide which panels are drawn in the more intense
+colours are adjusted (Holm’s method, by default). A stratum whose rings
+only just separate can therefore still be drawn in the paler colours.
+Set `conf_level = 0` to omit the rings.
+
+## Customizing the display
+
+### Square cells
+
+`ggfourfold` allows for four squares to be drawn instead of
+quarter-circles via the `shape` argument of
+[`geom_fourfold()`](https://gavinklorfine.com/ggfourfold/reference/geom_fourfold.md).
+Squares are drawn with area equal to the quarter-circle they replace
+(side \\r\sqrt{\pi}/2\\ for radius \\r\\), and confidence rings become
+square outlines that are read in the same way.
+
+``` r
+
+berkeley +
+  geom_fourfold(shape = "square") +
+  facet_wrap(vars(Dept), ncol = 3, labeller = label_both)
+```
+
+![](ggfourfold_files/figure-html/berkeley-square-1.png)
+
+### Cell counts
+
+By default, raw cell counts are pictured in the inside corners of each
+display’s frame; however, if the drawing of quarter-circles (or squares)
+comes close to overlapping these counts, they are displayed just outside
+the frame of each display.
+
+To fix the placement, supply `counts = "inside"` or `counts = "outside"`
+to
+[`geom_fourfold()`](https://gavinklorfine.com/ggfourfold/reference/geom_fourfold.md).
+`counts = "none"` hides them, while the default, automatic placement
+uses `counts = "auto"`.
+
+``` r
+
+berkeley +
+  geom_fourfold(shape = "square", counts = "inside") +
+  facet_wrap(vars(Dept), ncol = 3, labeller = label_both)
+```
+
+![](ggfourfold_files/figure-html/berkeley-square-inside-1.png)
+
+### Colours
+
+Displays are *extended* by default: each stratum is shaded by the
+significance of its association, as in the Berkeley examples above, and
+direction ticks are drawn. If `extended = FALSE` is supplied to
+[`geom_fourfold()`](https://gavinklorfine.com/ggfourfold/reference/geom_fourfold.md),
+every panel is shaded alike, with the larger diagonal being darker.
+Significance is not shown and the direction ticks are omitted, giving a
+simpler display.
+
+``` r
+
+berkeley +
+  geom_fourfold(extended = FALSE) +
+  facet_wrap(vars(Dept), ncol = 3, labeller = label_both)
+```
+
+![](ggfourfold_files/figure-html/berkeley-simple-1.png)
+
+Since colours carry the display’s meaning, they are drawn directly
+through the `geom` rather than mapped through a fill scale.
+[`scale_fill_manual()`](https://ggplot2.tidyverse.org/reference/scale_manual.html)
+and similar functions therefore have no effect. Supply them through the
+`palette` argument instead, as a vector of six colours in the same order
+used by
+[`fourfold_palette()`](https://gavinklorfine.com/ggfourfold/reference/fourfold_palette.md).
+
+``` r
+
+fourfold_palette()
+#> [1] "#99CCFF" "#6699CC" "#FFA0A0" "#A0A0FF" "#FF0000" "#000080"
+```
+
+The six colours form three pairs:
+
+- Colours 1–2 are used when `extended = FALSE`
+- Colours 3–4 are used for a stratum whose association is not
+  significant
+- Colours 5–6 are used for a stratum whose association is significant
+  after adjustment
+
+Within each pair, the first colour fills the diagonal with *fewer* cases
+than expected under independence and the second fills the diagonal with
+*more*.
+
+For example, we can construct a palette based on the Okabe-Ito colours
+(Okabe & Ito, 2008), which remain distinguishable for readers with
+common forms of colour-deficient vision. Lightened orange and sky blue
+mark strata whose association is not significant, while vermillion and
+blue mark those whose association is significant.
+
+``` r
+
+okabe_ito <- c(
+  "#56B4E9", "#0072B2", # extended = FALSE: sky blue, blue
+  "#F2CF7F", "#AAD9F3", # not significant: orange, sky blue (lightened)
+  "#D55E00", "#0072B2"  # significant: vermillion, blue
+)
+
+berkeley +
+  geom_fourfold(palette = okabe_ito) +
+  facet_wrap(vars(Dept), ncol = 3, labeller = label_both)
+```
+
+![](ggfourfold_files/figure-html/berkeley-okabe-ito-1.png)
+
+This palette is also built into `ggfourfold`, so the same display can be
+drawn with `fourfold_palette("okabe-ito")`.
+
+``` r
+
+berkeley +
+  geom_fourfold(palette = fourfold_palette("okabe-ito")) +
+  facet_wrap(vars(Dept), ncol = 3, labeller = label_both)
+```
+
+### Working with ‘ggplot2’
+
+A fourfold display is an ordinary ggplot, so the usual tools for
+finishing a figure all apply. Below,
+[`ggplot2::labs()`](https://ggplot2.tidyverse.org/reference/labs.html)
+adds a title that states the finding and adds a caption giving the
+source of the data. Additionally, the facet labeller adds the number of
+applicants to each panel, which makes the departments easy to compare
+without needing to add up their cell counts.
+
+The text drawn by
+[`geom_fourfold()`](https://gavinklorfine.com/ggfourfold/reference/geom_fourfold.md)
+itself, such as the category labels and cell counts, follows the
+`base_size` and `base_family` of
+[`theme_fourfold()`](https://gavinklorfine.com/ggfourfold/reference/theme_fourfold.md),
+meaning that a single argument changes the font of the whole figure. If
+more control is needed, other theme settings can be passed through the
+`...` of
+[`theme_fourfold()`](https://gavinklorfine.com/ggfourfold/reference/theme_fourfold.md)
+or added with
+[`ggplot2::theme()`](https://ggplot2.tidyverse.org/reference/theme.html)
+as usual.
+
+``` r
+
+applicants <- margin.table(UCBAdmissions, 3)
+dept_labels <- sprintf("%s (n = %d)", names(applicants), applicants)
+names(dept_labels) <- names(applicants)
+
+ggplot(ucb, aes(x = Admit, y = Gender, weight = Freq)) +
+  geom_fourfold() +
+  facet_wrap(vars(Dept), ncol = 3, labeller = labeller(Dept = dept_labels)) +
+  labs(
+    title = "UC Berkeley Admissions, 1973",
+    subtitle = "Only department A shows a significant association",
+    caption = "Data from Bickel et al. (1975)"
+  ) +
+  theme_fourfold(base_family = "serif") +
+  theme(
+    plot.title.position = "plot",
+    plot.title = element_text(hjust = 0),
+    plot.subtitle = element_text(
+      hjust = 0,
+      colour = "grey30",
+      margin = margin(b = 10)
+    ),
+    plot.caption = element_text(
+      hjust = 1,
+      colour = "grey30",
+      size = rel(0.8),
+      margin = margin(t = 10)
+    )
+  )
+```
+
+![](ggfourfold_files/figure-html/berkeley-finished-1.png)
 
 ## References
 
@@ -287,5 +462,9 @@ Visualization and modeling techniques for categorical and count data*.
 Chapman & Hall/CRC. <http://ddar.datavis.ca>
 
 Nightingale, F. (1858). *Notes on matters affecting the health,
-efficiency, and hospital administration of the British army*. Harrison;
-Sons. <https://archive.org/details/b20387118>
+efficiency, and hospital administration of the British army*. Harrison
+and Sons. <https://archive.org/details/b20387118>
+
+Okabe, M., & Ito, K. (2008). *Color Universal Design (CUD): How to make
+figures and presentations that are friendly to colorblind people*.
+<https://jfly.uni-koeln.de/color/>
