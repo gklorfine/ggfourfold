@@ -153,7 +153,7 @@ lowering the overall female rate of admission.
 
 ### Square displays
 
-Quarter-squares can be drawn instead of quarter-circles with
+Four squares can be drawn instead of quarter-circles with
 `shape = "square"`. Each square has the same area as the quarter-circle
 it replaces, so both shapes display a table with identical areas.
 Squares and their diagonal direction ticks can reach the corners of the
