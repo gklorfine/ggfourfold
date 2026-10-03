@@ -73,7 +73,8 @@ corners, even if overlapped; \code{"outside"} always uses the outside corners;
 \code{"none"} hides the counts.}
 
 \item{palette}{Character vector of at least six valid colours in the
-semantic order used by \code{fourfold_palette()}.}
+semantic order used by \code{\link[=fourfold_palette]{fourfold_palette()}}, which also provides
+built-in palettes such as \code{fourfold_palette("okabe-ito")}.}
 
 \item{na.rm}{If \code{FALSE}, the default, rows with a missing \code{x} or \code{y} are
 removed, and panels with a missing \code{weight} are left empty, with a
@@ -372,13 +373,20 @@ ggplot2::ggplot(
 
 }
 \references{
-Friendly, M. (1994). \emph{A fourfold display for 2 by 2 by k tables}
+Friendly, M. (1994a). \emph{A fourfold display for 2 by 2 by k tables}
 (Technical Report No. 217). York University, Psychology Department.
 \url{http://datavis.ca/papers/4fold/4fold.pdf}
+
+Friendly, M. (1994b). SAS/IML graphics for fourfold displays.
+\emph{Observations}, \emph{3}(4), 47--56.
 
 Friendly, M., & Meyer, D. (2016). \emph{Discrete Data Analysis with R:
 Visualization and Modeling Techniques for Categorical and Count Data}
 (Section 4.4). Chapman & Hall/CRC. \url{http://ddar.datavis.ca}
+
+Meyer, D., Zeileis, A., Hornik, K., & Friendly, M. (2026). \emph{vcd:
+Visualizing Categorical Data} (R package).
+\doi{10.32614/CRAN.package.vcd}
 }
 \seealso{
 \code{\link[=theme_fourfold]{theme_fourfold()}}, \code{\link[=fourfold_palette]{fourfold_palette()}},

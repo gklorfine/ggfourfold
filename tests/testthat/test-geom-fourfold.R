@@ -1748,6 +1748,58 @@ test_that("count options change only text placement in every orientation", {
   expect_identical(geom_fourfold(counts = "ins")[[1]]$geom_params$counts, "inside")
 })
 
+test_that("fourfold_palette() returns the named palettes", {
+  vcd <- c("#99CCFF", "#6699CC", "#FFA0A0", "#A0A0FF", "#FF0000", "#000080")
+  okabe_ito <- c("#56B4E9", "#0072B2", "#F2CF7F", "#AAD9F3", "#D55E00", "#0072B2")
+  expect_identical(fourfold_palette(), vcd)
+  expect_identical(fourfold_palette("vcd"), vcd)
+  expect_identical(fourfold_palette("okabe-ito"), okabe_ito)
+  expect_identical(fourfold_palette("okabe"), okabe_ito)
+  expect_identical(.fourfold_defaults$palette, vcd)
+  expect_identical(formals(geom_fourfold)$palette, quote(fourfold_palette()))
+  # The non-significant pair is the Okabe-Ito orange and sky blue mixed
+  # about halfway with white.
+  halfway <- (grDevices::col2rgb(c("#E69F00", "#56B4E9")) + 255) / 2
+  expect_true(all(abs(grDevices::col2rgb(okabe_ito[3:4]) - halfway) <= 1))
+  for (invalid in list("viridis", NA_character_, c("vcd", "okabe-ito", "x"), 1)) {
+    expect_error(
+      fourfold_palette(invalid),
+      '`palette` must be one of "vcd" or "okabe-ito"',
+      fixed = TRUE
+    )
+  }
+})
+
+test_that("an Okabe-Ito display keeps the layer data and fills by palette index", {
+  ucb <- as.data.frame(UCBAdmissions)
+  plot <- function(palette) {
+    ggplot2::ggplot(ucb, ggplot2::aes(x = Admit, y = Gender, weight = Freq)) +
+      geom_fourfold(palette = palette) +
+      ggplot2::facet_wrap(ggplot2::vars(Dept))
+  }
+  default <- ggplot2::layer_data(plot(fourfold_palette()))
+  okabe_ito <- ggplot2::layer_data(plot(fourfold_palette("okabe-ito")))
+  expect_identical(okabe_ito, default)
+  sector_fills <- function(palette) {
+    panels <- ggplot2::layer_grob(plot(palette))
+    vapply(panels, function(panel) {
+      sectors <- grid::getGrob(
+        panel, "fourfold-sector", grep = TRUE, global = TRUE
+      )
+      fills <- vapply(sectors, function(sector) sector$gp$fill, character(1))
+      paste(toupper(substr(fills, 1, 7)), collapse = " ")
+    }, character(1))
+  }
+  palette <- fourfold_palette("okabe-ito")
+  expected <- vapply(split(okabe_ito$palette_index, okabe_ito$PANEL), function(index) {
+    paste(palette[index], collapse = " ")
+  }, character(1))
+  expect_identical(unname(sector_fills(palette)), unname(expected))
+  # Department A is significant, so it alone uses the third pair.
+  expect_identical(okabe_ito$palette_index[okabe_ito$PANEL == 1], c(5L, 6L, 6L, 5L))
+  expect_true(all(okabe_ito$palette_index[okabe_ito$PANEL != 1] %in% 3:4))
+})
+
 test_that("an invalid choice names its argument", {
   expect_error(
     geom_fourfold(std = "max"),
