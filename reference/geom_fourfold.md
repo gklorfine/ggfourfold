@@ -34,7 +34,7 @@ geom_fourfold(
   Set of aesthetic mappings created by
   [`ggplot2::aes()`](https://ggplot2.tidyverse.org/reference/aes.html).
   If supplied and `inherit.aes = TRUE`, these are combined with the
-  plot's default mappings.
+  plot's default mappings. Defaults to `NULL`.
 
 - data:
 
@@ -49,30 +49,35 @@ geom_fourfold(
 
 - std:
 
-  Standardization method. `"margins"` fixes the selected margins,
-  `"ind.max"` divides each panel by its largest cell, and `"all.max"`
-  divides every panel by the largest cell in the complete layer.
+  `"margins"` (the default) draws a standardized display, equating the
+  margins chosen by `margin` while preserving the odds ratio.
+  `"ind.max"` and `"all.max"` draw unstandardized displays of the raw
+  counts, scaled by the largest cell in each panel or in the whole
+  layer.
 
 - margin:
 
   Integer vector selecting the table margins when `std = "margins"`. Use
-  `c(1, 2)` for both margins, `1` for the `y` (row) margin, or `2` for
-  the `x` (column) margin, as in
+  `c(1, 2)` (the default) for both margins, `1` for the `y` (row)
+  margin, or `2` for the `x` (column) margin, as in
   [`vcd::fourfold()`](https://rdrr.io/pkg/vcd/man/fourfold.html).
 
 - conf_level:
 
-  Confidence level in `[0, 1)`. Set to `0` to suppress confidence rings.
+  Confidence level in `[0, 1)`. Defaults to `0.95`; set to `0` to
+  suppress confidence rings and significance shading.
 
 - extended:
 
-  If `TRUE`, use adjusted p-values to emphasize association and draw
-  direction ticks.
+  If `FALSE`, omit the direction ticks, which mark the diagonal with
+  more cases than expected under independence, and fill cells with the
+  first two `palette` colours instead of shading by significance.
+  Defaults to `TRUE`.
 
 - ticks:
 
-  Non-negative length of the association direction ticks in the geom's
-  normalized panel coordinates.
+  Length of the direction ticks (see `extended`), where `1` is the
+  largest possible sector radius. Defaults to `0.15`; `0` hides them.
 
 - p_adjust_method:
 
@@ -98,8 +103,12 @@ geom_fourfold(
 
   Character vector of at least six valid colours in the semantic order
   used by
+  [`fourfold_palette()`](https://gavinklorfine.com/ggfourfold/reference/fourfold_palette.md).
+  Defaults to
   [`fourfold_palette()`](https://gavinklorfine.com/ggfourfold/reference/fourfold_palette.md),
-  which also provides built-in palettes such as
+  the colours of
+  [`vcd::fourfold()`](https://rdrr.io/pkg/vcd/man/fourfold.html); see
+  that page for other built-in palettes such as
   `fourfold_palette("okabe-ito")`.
 
 - na.rm:
@@ -117,7 +126,7 @@ geom_fourfold(
 - inherit.aes:
 
   If `FALSE`, override rather than combine with the plot's default
-  aesthetic mappings.
+  aesthetic mappings. Defaults to `TRUE`.
 
 ## Value
 

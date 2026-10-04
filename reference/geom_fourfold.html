@@ -80,7 +80,7 @@ and strength of association.</p>
 <dl><dt id="arg-mapping">mapping<a class="anchor" aria-label="anchor" href="#arg-mapping"></a></dt>
 <dd><p>Set of aesthetic mappings created by <code><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">ggplot2::aes()</a></code>. If
 supplied and <code>inherit.aes = TRUE</code>, these are combined with the plot's
-default mappings.</p></dd>
+default mappings. Defaults to <code>NULL</code>.</p></dd>
 
 
 <dt id="arg-data">data<a class="anchor" aria-label="anchor" href="#arg-data"></a></dt>
@@ -94,30 +94,34 @@ aesthetics such as <code>colour</code> or <code>linewidth</code>.</p></dd>
 
 
 <dt id="arg-std">std<a class="anchor" aria-label="anchor" href="#arg-std"></a></dt>
-<dd><p>Standardization method. <code>"margins"</code> fixes the selected margins,
-<code>"ind.max"</code> divides each panel by its largest cell, and <code>"all.max"</code>
-divides every panel by the largest cell in the complete layer.</p></dd>
+<dd><p><code>"margins"</code> (the default) draws a standardized display, equating
+the margins chosen by <code>margin</code> while preserving the odds ratio.
+<code>"ind.max"</code> and <code>"all.max"</code> draw unstandardized displays of the raw
+counts, scaled by the largest cell in each panel or in the whole layer.</p></dd>
 
 
 <dt id="arg-margin">margin<a class="anchor" aria-label="anchor" href="#arg-margin"></a></dt>
 <dd><p>Integer vector selecting the table margins when
-<code>std = "margins"</code>. Use <code>c(1, 2)</code> for both margins, <code>1</code> for the <code>y</code> (row)
-margin, or <code>2</code> for the <code>x</code> (column) margin, as in <code><a href="https://rdrr.io/pkg/vcd/man/fourfold.html" class="external-link">vcd::fourfold()</a></code>.</p></dd>
+<code>std = "margins"</code>. Use <code>c(1, 2)</code> (the default) for both margins, <code>1</code> for
+the <code>y</code> (row) margin, or <code>2</code> for the <code>x</code> (column) margin, as in
+<code><a href="https://rdrr.io/pkg/vcd/man/fourfold.html" class="external-link">vcd::fourfold()</a></code>.</p></dd>
 
 
 <dt id="arg-conf-level">conf_level<a class="anchor" aria-label="anchor" href="#arg-conf-level"></a></dt>
-<dd><p>Confidence level in <code>[0, 1)</code>. Set to <code>0</code> to suppress
-confidence rings.</p></dd>
+<dd><p>Confidence level in <code>[0, 1)</code>. Defaults to <code>0.95</code>; set to
+<code>0</code> to suppress confidence rings and significance shading.</p></dd>
 
 
 <dt id="arg-extended">extended<a class="anchor" aria-label="anchor" href="#arg-extended"></a></dt>
-<dd><p>If <code>TRUE</code>, use adjusted p-values to emphasize association
-and draw direction ticks.</p></dd>
+<dd><p>If <code>FALSE</code>, omit the direction ticks, which mark the
+diagonal with more cases than expected under independence, and fill cells
+with the first two <code>palette</code> colours instead of shading by significance.
+Defaults to <code>TRUE</code>.</p></dd>
 
 
 <dt id="arg-ticks">ticks<a class="anchor" aria-label="anchor" href="#arg-ticks"></a></dt>
-<dd><p>Non-negative length of the association direction ticks in the
-geom's normalized panel coordinates.</p></dd>
+<dd><p>Length of the direction ticks (see <code>extended</code>), where <code>1</code> is
+the largest possible sector radius. Defaults to <code>0.15</code>; <code>0</code> hides them.</p></dd>
 
 
 <dt id="arg-p-adjust-method">p_adjust_method<a class="anchor" aria-label="anchor" href="#arg-p-adjust-method"></a></dt>
@@ -141,8 +145,9 @@ corners, even if overlapped; <code>"outside"</code> always uses the outside corn
 
 <dt id="arg-palette">palette<a class="anchor" aria-label="anchor" href="#arg-palette"></a></dt>
 <dd><p>Character vector of at least six valid colours in the
-semantic order used by <code><a href="fourfold_palette.html">fourfold_palette()</a></code>, which also provides
-built-in palettes such as <code>fourfold_palette("okabe-ito")</code>.</p></dd>
+semantic order used by <code><a href="fourfold_palette.html">fourfold_palette()</a></code>. Defaults to
+<code><a href="fourfold_palette.html">fourfold_palette()</a></code>, the colours of <code><a href="https://rdrr.io/pkg/vcd/man/fourfold.html" class="external-link">vcd::fourfold()</a></code>; see that page for
+other built-in palettes such as <code>fourfold_palette("okabe-ito")</code>.</p></dd>
 
 
 <dt id="arg-na-rm">na.rm<a class="anchor" aria-label="anchor" href="#arg-na-rm"></a></dt>
@@ -159,7 +164,7 @@ mapped aesthetic.</p></dd>
 
 <dt id="arg-inherit-aes">inherit.aes<a class="anchor" aria-label="anchor" href="#arg-inherit-aes"></a></dt>
 <dd><p>If <code>FALSE</code>, override rather than combine with the plot's
-default aesthetic mappings.</p></dd>
+default aesthetic mappings. Defaults to <code>TRUE</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">
