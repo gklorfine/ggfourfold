@@ -26,6 +26,12 @@ knitr::opts_chunk$set(
 [![Docs](https://img.shields.io/badge/pkgdown%20site-blue)](https://gavinklorfine.com/ggfourfold/)
 <!-- badges: end -->
 
+<!--
+[![r-universe](https://gklorfine.r-universe.dev/ggfourfold/badges/version)](https://gklorfine.r-universe.dev/ggfourfold)
+[![CRAN_Status_Badge](http://www.r-pkg.org/badges/version/ggfourfold)](https://CRAN.R-project.org/package=ggfourfold)
+[![Downloads](http://cranlogs.r-pkg.org/badges/grand-total/ggfourfold)](https://cran.r-project.org/package=ggfourfold)
+-->
+
 # ggfourfold <img src="man/figures/logo.png" align="right" height="200px" /><br><sub>Fourfold Displays for 'ggplot2'</sub>
 
 ***Package is a work in progress. Functionality may not work as intended.***
