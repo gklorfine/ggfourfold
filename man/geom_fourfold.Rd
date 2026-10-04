@@ -40,8 +40,8 @@ aesthetics such as \code{colour} or \code{linewidth}.}
 divides every panel by the largest cell in the complete layer.}
 
 \item{margin}{Integer vector selecting the table margins when
-\code{std = "margins"}. Use \code{c(1, 2)} for both margins, \code{1} for the \code{y} margin,
-or \code{2} for the \code{x} margin.}
+\code{std = "margins"}. Use \code{c(1, 2)} for both margins, \code{1} for the \code{y} (row)
+margin, or \code{2} for the \code{x} (column) margin, as in \code{\link[vcd:fourfold]{vcd::fourfold()}}.}
 
 \item{conf_level}{Confidence level in \verb{[0, 1)}. Set to \code{0} to suppress
 confidence rings.}

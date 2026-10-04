@@ -1371,8 +1371,8 @@ GeomFourfold <- ggplot2::ggproto(
 #'   `"ind.max"` divides each panel by its largest cell, and `"all.max"`
 #'   divides every panel by the largest cell in the complete layer.
 #' @param margin Integer vector selecting the table margins when
-#'   `std = "margins"`. Use `c(1, 2)` for both margins, `1` for the `y` margin,
-#'   or `2` for the `x` margin.
+#'   `std = "margins"`. Use `c(1, 2)` for both margins, `1` for the `y` (row)
+#'   margin, or `2` for the `x` (column) margin, as in [vcd::fourfold()].
 #' @param conf_level Confidence level in `[0, 1)`. Set to `0` to suppress
 #'   confidence rings.
 #' @param extended If `TRUE`, use adjusted p-values to emphasize association
