@@ -56,8 +56,9 @@ geom_fourfold(
 - margin:
 
   Integer vector selecting the table margins when `std = "margins"`. Use
-  `c(1, 2)` for both margins, `1` for the `y` margin, or `2` for the `x`
-  margin.
+  `c(1, 2)` for both margins, `1` for the `y` (row) margin, or `2` for
+  the `x` (column) margin, as in
+  [`vcd::fourfold()`](https://rdrr.io/pkg/vcd/man/fourfold.html).
 
 - conf_level:
 
