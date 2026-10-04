@@ -8,10 +8,6 @@ direction and strength of association.
 ## Usage
 
 ``` r
-StatFourfold
-
-GeomFourfold
-
 geom_fourfold(
   mapping = NULL,
   data = NULL,
@@ -30,10 +26,6 @@ geom_fourfold(
   inherit.aes = TRUE
 )
 ```
-
-## Format
-
-`StatFourfold` and `GeomFourfold` are ggproto objects.
 
 ## Arguments
 
