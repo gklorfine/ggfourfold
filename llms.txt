@@ -1,19 +1,23 @@
 # ggfourfold _(Fourfold Displays for ‘ggplot2’)
 
-***Package is a work in progress. Functionality may not work as
-intended.***
-
 A `ggplot2` extension that provides a geom and theme for creating
 fourfold displays. Inspired by the `fourfold` SAS macro (Friendly, 2000)
 and `vcd` R package (Meyer et al., 2026).
 
 ## Installation
 
-Install the latest version of `ggfourfold` from GitHub with:
+The current development version (0.5.1) of `ggfourfold` can be installed
+from [R-universe](https://gklorfine.r-universe.dev/ggfourfold) or
+directly from the [GitHub
+repository](https://github.com/gklorfine/ggfourfold) with:
 
 ``` r
 
-# install.packages("pak")
+# == R-universe ==
+install.packages("ggfourfold", repos = "https://gklorfine.r-universe.dev")
+
+# == GitHub ==
+#install.packages("pak")
 pak::pak("gklorfine/ggfourfold")
 ```
 
