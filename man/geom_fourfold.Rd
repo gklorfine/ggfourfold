@@ -5,14 +5,7 @@
 \alias{StatFourfold}
 \alias{GeomFourfold}
 \title{Fourfold displays for 2-by-2 tables}
-\format{
-\code{StatFourfold} and \code{GeomFourfold} are ggproto objects.
-}
 \usage{
-StatFourfold
-
-GeomFourfold
-
 geom_fourfold(
   mapping = NULL,
   data = NULL,

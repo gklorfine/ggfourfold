@@ -635,6 +635,8 @@ NULL
 
 #' @rdname geom_fourfold
 #' @name geom_fourfold
+#' @format NULL
+#' @usage NULL
 #' @export
 StatFourfold <- ggplot2::ggproto(
   "StatFourfold", ggplot2::Stat,
@@ -898,7 +900,8 @@ makeContent.fourfold_counts <- function(x) {
 
 #' @rdname geom_fourfold
 #' @name geom_fourfold
-#' @format `StatFourfold` and `GeomFourfold` are ggproto objects.
+#' @format NULL
+#' @usage NULL
 #' @importFrom ggplot2 aes draw_key_blank from_theme Geom ggproto
 #' @importFrom grid gList gpar gTree polygonGrob
 #' @importFrom grid rectGrob segmentsGrob unit viewport
