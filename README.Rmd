@@ -19,7 +19,7 @@ knitr::opts_chunk$set(
   fig.path = "man/figures/README-"
 )
 
-dev_version <- getNamespaceVersion("ggmosaic2")
+dev_version <- getNamespaceVersion("ggfourfold")
 ```
 
 <!-- badges: start -->
