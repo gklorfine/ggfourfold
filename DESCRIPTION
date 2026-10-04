@@ -42,3 +42,7 @@ Config/roxygen2/version: 8.1.0
 VignetteBuilder: knitr
 URL: https://gavinklorfine.com/ggfourfold/, https://github.com/gklorfine/ggfourfold
 BugReports: https://github.com/gklorfine/ggfourfold/issues
+Collate: 
+    'fourfold-palette.R'
+    'geom-fourfold.R'
+    'theme-fourfold.R'
