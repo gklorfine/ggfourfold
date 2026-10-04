@@ -27,7 +27,7 @@ geom_fourfold(
 \arguments{
 \item{mapping}{Set of aesthetic mappings created by \code{\link[ggplot2:aes]{ggplot2::aes()}}. If
 supplied and \code{inherit.aes = TRUE}, these are combined with the plot's
-default mappings.}
+default mappings. Defaults to \code{NULL}.}
 
 \item{data}{The data to display in this layer. If \code{NULL}, the default, the
 data are inherited from the plot.}
@@ -35,22 +35,26 @@ data are inherited from the plot.}
 \item{...}{Other arguments passed to \code{\link[ggplot2:layer]{ggplot2::layer()}}, typically fixed
 aesthetics such as \code{colour} or \code{linewidth}.}
 
-\item{std}{Standardization method. \code{"margins"} fixes the selected margins,
-\code{"ind.max"} divides each panel by its largest cell, and \code{"all.max"}
-divides every panel by the largest cell in the complete layer.}
+\item{std}{\code{"margins"} (the default) draws a standardized display, equating
+the margins chosen by \code{margin} while preserving the odds ratio.
+\code{"ind.max"} and \code{"all.max"} draw unstandardized displays of the raw
+counts, scaled by the largest cell in each panel or in the whole layer.}
 
 \item{margin}{Integer vector selecting the table margins when
-\code{std = "margins"}. Use \code{c(1, 2)} for both margins, \code{1} for the \code{y} (row)
-margin, or \code{2} for the \code{x} (column) margin, as in \code{\link[vcd:fourfold]{vcd::fourfold()}}.}
+\code{std = "margins"}. Use \code{c(1, 2)} (the default) for both margins, \code{1} for
+the \code{y} (row) margin, or \code{2} for the \code{x} (column) margin, as in
+\code{\link[vcd:fourfold]{vcd::fourfold()}}.}
 
-\item{conf_level}{Confidence level in \verb{[0, 1)}. Set to \code{0} to suppress
-confidence rings.}
+\item{conf_level}{Confidence level in \verb{[0, 1)}. Defaults to \code{0.95}; set to
+\code{0} to suppress confidence rings and significance shading.}
 
-\item{extended}{If \code{TRUE}, use adjusted p-values to emphasize association
-and draw direction ticks.}
+\item{extended}{If \code{FALSE}, omit the direction ticks, which mark the
+diagonal with more cases than expected under independence, and fill cells
+with the first two \code{palette} colours instead of shading by significance.
+Defaults to \code{TRUE}.}
 
-\item{ticks}{Non-negative length of the association direction ticks in the
-geom's normalized panel coordinates.}
+\item{ticks}{Length of the direction ticks (see \code{extended}), where \code{1} is
+the largest possible sector radius. Defaults to \code{0.15}; \code{0} hides them.}
 
 \item{p_adjust_method}{Method passed to \code{\link[stats:p.adjust]{stats::p.adjust()}} for adjustment
 across panels. Defaults to \code{"holm"}, the first value in
@@ -66,8 +70,9 @@ corners, even if overlapped; \code{"outside"} always uses the outside corners;
 \code{"none"} hides the counts.}
 
 \item{palette}{Character vector of at least six valid colours in the
-semantic order used by \code{\link[=fourfold_palette]{fourfold_palette()}}, which also provides
-built-in palettes such as \code{fourfold_palette("okabe-ito")}.}
+semantic order used by \code{\link[=fourfold_palette]{fourfold_palette()}}. Defaults to
+\code{fourfold_palette()}, the colours of \code{vcd::fourfold()}; see that page for
+other built-in palettes such as \code{fourfold_palette("okabe-ito")}.}
 
 \item{na.rm}{If \code{FALSE}, the default, rows with a missing \code{x} or \code{y} are
 removed, and panels with a missing \code{weight} are left empty, with a
@@ -78,7 +83,7 @@ in legends. The default is \code{FALSE} because the semantic fills are not a
 mapped aesthetic.}
 
 \item{inherit.aes}{If \code{FALSE}, override rather than combine with the plot's
-default aesthetic mappings.}
+default aesthetic mappings. Defaults to \code{TRUE}.}
 }
 \value{
 A list of a ggplot2 layer and a default coordinate system,

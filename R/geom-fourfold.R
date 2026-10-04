@@ -1362,23 +1362,27 @@ GeomFourfold <- ggplot2::ggproto(
 #'
 #' @param mapping Set of aesthetic mappings created by [ggplot2::aes()]. If
 #'   supplied and `inherit.aes = TRUE`, these are combined with the plot's
-#'   default mappings.
+#'   default mappings. Defaults to `NULL`.
 #' @param data The data to display in this layer. If `NULL`, the default, the
 #'   data are inherited from the plot.
 #' @param ... Other arguments passed to [ggplot2::layer()], typically fixed
 #'   aesthetics such as `colour` or `linewidth`.
-#' @param std Standardization method. `"margins"` fixes the selected margins,
-#'   `"ind.max"` divides each panel by its largest cell, and `"all.max"`
-#'   divides every panel by the largest cell in the complete layer.
+#' @param std `"margins"` (the default) draws a standardized display, equating
+#'   the margins chosen by `margin` while preserving the odds ratio.
+#'   `"ind.max"` and `"all.max"` draw unstandardized displays of the raw
+#'   counts, scaled by the largest cell in each panel or in the whole layer.
 #' @param margin Integer vector selecting the table margins when
-#'   `std = "margins"`. Use `c(1, 2)` for both margins, `1` for the `y` (row)
-#'   margin, or `2` for the `x` (column) margin, as in [vcd::fourfold()].
-#' @param conf_level Confidence level in `[0, 1)`. Set to `0` to suppress
-#'   confidence rings.
-#' @param extended If `TRUE`, use adjusted p-values to emphasize association
-#'   and draw direction ticks.
-#' @param ticks Non-negative length of the association direction ticks in the
-#'   geom's normalized panel coordinates.
+#'   `std = "margins"`. Use `c(1, 2)` (the default) for both margins, `1` for
+#'   the `y` (row) margin, or `2` for the `x` (column) margin, as in
+#'   [vcd::fourfold()].
+#' @param conf_level Confidence level in `[0, 1)`. Defaults to `0.95`; set to
+#'   `0` to suppress confidence rings and significance shading.
+#' @param extended If `FALSE`, omit the direction ticks, which mark the
+#'   diagonal with more cases than expected under independence, and fill cells
+#'   with the first two `palette` colours instead of shading by significance.
+#'   Defaults to `TRUE`.
+#' @param ticks Length of the direction ticks (see `extended`), where `1` is
+#'   the largest possible sector radius. Defaults to `0.15`; `0` hides them.
 #' @param p_adjust_method Method passed to [stats::p.adjust()] for adjustment
 #'   across panels. Defaults to `"holm"`, the first value in
 #'   [stats::p.adjust.methods].
@@ -1390,8 +1394,9 @@ GeomFourfold <- ggplot2::ggproto(
 #'   corners, even if overlapped; `"outside"` always uses the outside corners;
 #'   `"none"` hides the counts.
 #' @param palette Character vector of at least six valid colours in the
-#'   semantic order used by [fourfold_palette()], which also provides
-#'   built-in palettes such as `fourfold_palette("okabe-ito")`.
+#'   semantic order used by [fourfold_palette()]. Defaults to
+#'   `fourfold_palette()`, the colours of `vcd::fourfold()`; see that page for
+#'   other built-in palettes such as `fourfold_palette("okabe-ito")`.
 #' @param na.rm If `FALSE`, the default, rows with a missing `x` or `y` are
 #'   removed, and panels with a missing `weight` are left empty, with a
 #'   warning. If `TRUE`, this is done silently. See the Missing values section.
@@ -1399,7 +1404,7 @@ GeomFourfold <- ggplot2::ggproto(
 #'   in legends. The default is `FALSE` because the semantic fills are not a
 #'   mapped aesthetic.
 #' @param inherit.aes If `FALSE`, override rather than combine with the plot's
-#'   default aesthetic mappings.
+#'   default aesthetic mappings. Defaults to `TRUE`.
 #'
 #' @return A list of a ggplot2 layer and a default coordinate system,
 #'   `coord_cartesian(reverse = "y", ratio = 1)`, which can be added to a
