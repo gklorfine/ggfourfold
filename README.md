@@ -5,15 +5,18 @@
 
 [![Lifecycle:
 experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
+[![r-universe](https://gklorfine.r-universe.dev/ggfourfold/badges/version)](https://gklorfine.r-universe.dev/ggfourfold)
 [![Last
 Commit](https://img.shields.io/github/last-commit/gklorfine/ggfourfold)](https://github.com/gklorfine/ggfourfold)
 [![Docs](https://img.shields.io/badge/pkgdown%20site-blue)](https://gavinklorfine.com/ggfourfold/)
 <!-- badges: end -->
 
-# ggfourfold <img src="man/figures/logo.png" align="right" height="200px" /><br><sub>Fourfold Displays for ‘ggplot2’</sub>
+<!--
+[![CRAN_Status_Badge](http://www.r-pkg.org/badges/version/ggfourfold)](https://CRAN.R-project.org/package=ggfourfold)
+[![Downloads](http://cranlogs.r-pkg.org/badges/grand-total/ggfourfold)](https://cran.r-project.org/package=ggfourfold)
+-->
 
-***Package is a work in progress. Functionality may not work as
-intended.***
+# ggfourfold <img src="man/figures/logo.png" align="right" height="200px" /><br><sub>Fourfold Displays for ‘ggplot2’</sub>
 
 A `ggplot2` extension that provides a geom and theme for creating
 fourfold displays. Inspired by the `fourfold` SAS macro (Friendly, 2000)
@@ -21,10 +24,17 @@ and `vcd` R package (Meyer et al., 2026).
 
 ## Installation
 
-Install the latest version of `ggfourfold` from GitHub with:
+The current development version (0.5.1) of `ggfourfold` can be installed
+from [R-universe](https://gklorfine.r-universe.dev/ggfourfold) or
+directly from the [GitHub
+repository](https://github.com/gklorfine/ggfourfold) with:
 
 ``` r
-# install.packages("pak")
+# == R-universe ==
+install.packages("ggfourfold", repos = "https://gklorfine.r-universe.dev")
+
+# == GitHub ==
+#install.packages("pak")
 pak::pak("gklorfine/ggfourfold")
 ```
 

@@ -18,32 +18,36 @@ knitr::opts_chunk$set(
   fig.height = 4,
   fig.path = "man/figures/README-"
 )
+
+dev_version <- getNamespaceVersion("ggmosaic2")
 ```
 
 <!-- badges: start -->
 [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
+[![r-universe](https://gklorfine.r-universe.dev/ggfourfold/badges/version)](https://gklorfine.r-universe.dev/ggfourfold)
 [![Last Commit](https://img.shields.io/github/last-commit/gklorfine/ggfourfold)](https://github.com/gklorfine/ggfourfold)
 [![Docs](https://img.shields.io/badge/pkgdown%20site-blue)](https://gavinklorfine.com/ggfourfold/)
 <!-- badges: end -->
 
 <!--
-[![r-universe](https://gklorfine.r-universe.dev/ggfourfold/badges/version)](https://gklorfine.r-universe.dev/ggfourfold)
 [![CRAN_Status_Badge](http://www.r-pkg.org/badges/version/ggfourfold)](https://CRAN.R-project.org/package=ggfourfold)
 [![Downloads](http://cranlogs.r-pkg.org/badges/grand-total/ggfourfold)](https://cran.r-project.org/package=ggfourfold)
 -->
 
 # ggfourfold <img src="man/figures/logo.png" align="right" height="200px" /><br><sub>Fourfold Displays for 'ggplot2'</sub>
 
-***Package is a work in progress. Functionality may not work as intended.***
-
 A `ggplot2` extension that provides a geom and theme for creating fourfold displays. Inspired by the `fourfold` SAS macro [@vcd:Friendly:2000] and `vcd` R package [@vcd:package].
 
 ## Installation
 
-Install the latest version of `ggfourfold` from GitHub with:
+The current development version (`r dev_version`) of `ggfourfold` can be installed from [R-universe](https://gklorfine.r-universe.dev/ggfourfold) or directly from the [GitHub repository](https://github.com/gklorfine/ggfourfold) with:
 
 ```{r inst_ggfourfold, eval=FALSE}
-# install.packages("pak")
+# == R-universe ==
+install.packages("ggfourfold", repos = "https://gklorfine.r-universe.dev")
+
+# == GitHub ==
+#install.packages("pak")
 pak::pak("gklorfine/ggfourfold")
 ```
 
