@@ -656,6 +656,236 @@ As these items are resolved, check them off as [X] and record the fix and verifi
   `.fourfold_compute_layer()`), `man/geom_fourfold.Rd`,
   `tests/testthat/test-geom-fourfold.R`.
 
+- [X] **Pre-CRAN input, label, and `alpha` fixes** (2026-10-08; source: pre-CRAN
+  verification by three agents; approved by GK) — seven small fixes:
+  1. **`extended` validation.** `extended = "yes"`, `1`, and `"TRUE"` passed and were silently
+     turned into `FALSE` by `isTRUE()`. `.fourfold_validate_params()` now requires a single
+     non-missing logical: "extended must be TRUE or FALSE".
+  2. **Count labels.** Counts were labeled with `as.character()`, so `10/3` printed as
+     "3.33333333333333". New `.fourfold_format_count()` is used both for the drawn labels and
+     for the layer-wide measured labels (`.fourfold_counts_params()`), so the two always
+     agree. *Final rule (GK's decision of 2026-10-08, below; it supersedes the first version,
+     "never scientific notation, whole numbers in full"):* a whole-number count is labeled by
+     `as.character()`, exactly as `vcd::fourfold()` labels `c(tab)`, so a double 1e5 is
+     "1e+05", 1e15 is "1e+15", 2147483647 is "2147483647", and 0 and `-0` are "0". For counts of integer weights, or of
+     unweighted rows, vcd's table would be an integer table, which `as.character()` prints in
+     full, so there a whole count that fits in an integer is labeled "100000" (see the integer
+     decision below, which supersedes an earlier note here that integer counts never occur).
+     Any other count is rounded: each is formatted on its own with
+     `format(x, digits = 3, scientific = FALSE, trim = TRUE, drop0trailing = TRUE)`, to three
+     significant digits, or to a whole number when that is larger ("3.33", "0.5", "0.000333";
+     "123456.789" and "12345.6" print as "123457" and "12346"; "99999.5" as "100000").
+     Documented in `@param counts`.
+     - **Decision (GK, 2026-10-08):** keep vcd's labels for whole numbers, and keep only the
+       rounding of non-integer weights and the noise fix of the review round below. The first
+       version printed every count without scientific notation ("100000" for 1e5); GK chose
+       to match vcd instead, so this supersedes the "never scientific notation" rule.
+     - **Decision (GK, 2026-10-08), integer tables:** counts are also labeled as vcd labels
+       the corresponding table, whose type depends on the input: an integer table (from
+       `table()`, `xtabs()` without weights, `as.data.frame(table(...))$Freq`) gives
+       "100000", a double table (such as `UCBAdmissions`) "1e+05". ggfourfold sums inside
+       ggplot2, so its counts are always doubles; the labels now follow the weights'
+       type (below).
+  3. **Missing `x` or `y`.** `StatFourfold` replaces `compute_layer()` and so skipped
+     ggplot2's required-aesthetics check; a missing `x` or `y` failed with "attempt to apply
+     non-function" in `scale$is_discrete()`. New `.fourfold_check_required()` at the top of
+     `compute_layer()` stops with "geom_fourfold() requires the `x` and `y` aesthetics;
+     missing: `x`" (also `` `y` `` and `` `x` and `y` ``). ggplot2's own checker is internal
+     (`ggplot2:::check_required_aesthetics()`), so the package has its own. A layer without
+     rows never reaches the stat, so it is still drawn blank.
+  4. **`margin = "1"`** passed `margin %in% c(1, 2)` through coercion and failed later in
+     `sweep()`. The check now also requires `is.numeric(margin)` and no `NA`: "incorrect
+     margin specification" for `"1"`, `TRUE`, `NA`, `c(1, 1)`, `1.5`, and the like.
+  5. **Non-numeric `weight`.** A character weight gave "must be finite and non-negative",
+     which misled (the values looked fine). `.fourfold_panel_table()` now checks first:
+     "fourfold weights in panel 1 must be numeric". *Choice:* only numeric (integer or
+     double) weights are accepted, as in `stat_count()` (under ggplot2 4.0.3,
+     `geom_bar(aes(weight = x))` fails with a "Computation failed in `stat_count()`" warning
+     and "'x' must be numeric" for character, factor, and logical weights alike).
+     `stat_bin()` and `stat_sum()` do coerce logical weights, to 1 and 0, but character and
+     factor weights fail everywhere. Logical weights, which the package used to add as 1/0,
+     are now an error. A
+     weight that is entirely `NA`, whatever its type (a bare `NA` is logical), still counts
+     as a missing weight.
+  6. **`alpha` applies to the cell fills only**, like ggplot2's filled geoms (`geom_rect()`,
+     `geom_polygon()`, `geom_boxplot()`, which pass `fill_alpha(fill, alpha)` to the fill and
+     leave `colour` alone). Sector fills use `ggplot2::fill_alpha()`; the sector outlines,
+     confidence rings (still transparent inside; `scales::alpha("transparent", a)` would
+     have turned them into a translucent white fill), direction ticks, axes, axis ticks,
+     frame, category labels, and counts are not affected by `alpha` (a color with its own alpha,
+     such as `colour = "#00000080"`, keeps it). The `alpha` argument was removed from
+     the segment and text helpers. Because nothing used `scales::alpha()` any more, `scales`
+     was dropped from `Imports` in `DESCRIPTION` (it would otherwise be an unused-import
+     NOTE; ggplot2 still depends on it). Docs: the paragraph on fixed arguments (Aesthetics
+     section) says `alpha` sets the transparency of the cell fills only, and "The layer's
+     `alpha` applies to the ticks." was removed from `@param tick.colour,tick.color`.
+     This supersedes "The layer `alpha` still applies" in the coloured-ticks item above.
+  7. **`@return`** of `geom_fourfold()` now says that `GeomFourfold` and `StatFourfold` are the
+     ggproto objects behind it, for use with `ggplot2::layer()`.
+  - *Tests* (`tests/testthat/test-geom-fourfold.R`): new blocks for each error (`extended`,
+    `margin`, weights of every type, missing `x`/`y`/both/no mapping/`inherit.aes = FALSE`/a
+    layer-supplied aesthetic/direct `layer()` use, 0-row layers with and without
+    aesthetics), the formatter's edge cases, drawn and measured count labels (single panel,
+    and a faceted layer with a blank panel), and `alpha` (fill alpha, all other grobs
+    `identical()` to the same plot without `alpha`, four `alpha` settings, `alpha = 0` and
+    `1`, statistics unchanged). The old assertions that expected `alpha` on the ticks and on
+    the frame were replaced or adjusted. `scales::alpha()` is no longer used in the tests either.
+  - *Verification (first round; see the review round below for the final numbers):*
+    `devtools::test()`: 3,465 expectations in 93 `test_that()` blocks, 0
+    failures, errors, warnings, or skips (3,213 before these fixes), about 31 s while an
+    `R CMD check` ran alongside. `devtools::document()` clean. `R CMD check --as-cran` of the
+    built tarball (`env -u DISPLAY`, `_R_CHECK_CRAN_INCOMING_=false`): Status OK, 0 errors, 0
+    warnings, 0 notes. Against the working tree before these fixes, 112 cases (the UCB grid
+    of both shapes, three `std`, `conf_level` 0 and 0.95, `extended`, four `counts`; Titanic
+    with `margins = TRUE`; a single 2 x 2; a zero cell; reversed coordinates; `facet_grid`;
+    `ticks = 0`; okabe-ito; `linewidth = 1`): all 112 `layer_data()` `identical()`, the
+    counts placement of all 224 renders (9 x 6 and 4 x 3 in) identical, and all 224 ragg
+    PNGs byte-identical, so nothing changes without `alpha` or unusual counts. Fourteen
+    cases that should change were rendered old and new side by side: with `alpha` (circles,
+    squares, `std = "ind.max"`, `alpha = 0`) only the fills fade, and `alpha = 0` now leaves
+    the rings, ticks, axes, frame, labels, and counts visible; with counts such as 1e5 or
+    non-integer weights only the label text changes (in this first round; for whole numbers
+    like 1e5 that was reversed by GK's decision in item 2) (statistics identical, placement
+    unchanged in all 14). Every new error message was spot-checked by running the bad input.
+  - *Review round (independent review of these fixes, 2026-10-08):*
+    - Rounding noise made huge labels: `0.1 + 0.2 - 0.3` printed "0.0000000000000000555" and
+      `1e-300` a label of about 300 characters that ran off the device and, with
+      `counts = "auto"`, pushed every panel's counts outside. New
+      `.fourfold_count_labels()` shows a count as "0" when it is noise next to its panel's
+      other counts, and both the drawn labels and the layer-wide measured labels (built per
+      panel in `.fourfold_counts_params()`) use it, so they still agree. (See the next
+      review round for the exact rule.) A panel whose counts are all small (all near 1e-7)
+      keeps them; an all-zero panel is "0". `.fourfold_format_count()` itself stays
+      elementwise. Denormal non-integers, for which `format()` ignores
+      `scientific = FALSE` and prints "4.94e-324", are written out in fixed notation.
+      *Not changed:* a panel whose counts are all tiny (all near 1e-300) still draws very
+      long labels, an absurd input; `counts = "auto"` places such labels outside as for any
+      wide label.
+    - Corrected claims: the weights comment and the entry above now say the check matches
+      `stat_count()` (a warning under ggplot2 4.0.3, not an error) and that `stat_bin()` and
+      `stat_sum()` coerce logicals; `vcd::fourfold()` prints 1e5 as "1e+05" (so "as vcd does"
+      was wrong for the first version, which is why GK's decision above followed);
+      "three significant digits" is "to three significant digits, or to a whole number when
+      that is larger" (comment and `@param counts`).
+    - Docs: `@return` no longer repeats "(see the Coordinate systems section)"; the `alpha`
+      docs say the other elements "are not affected by `alpha`", since a color with its own
+      alpha is not opaque; `@param extended` says a single `TRUE` or `FALSE`; `@param margin`
+      says "Numeric vector"; the mapping error puts the argument names in backticks ("set
+      `colour`, `linewidth`, and `alpha` as fixed arguments"; the existing tests match only
+      the start of that message, and one test now checks the new wording).
+    - Tests: 2 new blocks (noise, all-small, all-zero, denormal, faceted panels with
+      noise, small, and large counts, with drawn and measured labels per panel; the
+      backticked mapping error) and an extra formatter case.
+  - *Second review round (2026-10-08, after GK's decision above):*
+    - The first noise fix rounded a whole panel with `zapsmall()`, which changed genuine
+      non-integer weights next to a large count: `c(1e7, 99999.5, 1, 2)` gave "1e+05",
+      `c(5e6, 2.5, 3.5, 1)` gave "2" and "4", `c(1e6, 10/3, 1, 1)` gave "3.3". Now
+      `.fourfold_count_labels()` uses `zapsmall(count, digits = 15L)` only to detect noise:
+      a count that it zaps to 0 (and that is not 0) is shown as "0", and no other count is
+      changed before `.fourfold_format_count()`. The digits are fixed so the labels do not
+      depend on `options(digits)`. *Why 15:* a first version used 7, as `zapsmall()`
+      defaults, which also zeroed genuine small weights (0.4 beside 1e8, 0.5 beside 1e7).
+      GK approved zeroing floating-point noise only, and a double carries about 15.9
+      significant digits, so at 15 only what floating-point arithmetic loses is zapped:
+      roughly counts below 1e-15 times the panel's largest. `0.1 + 0.2 - 0.3` beside 10 to 30,
+      `1e-300` beside 5, and denormals still become "0"; genuine weights down to about 1e-15 of
+      the panel's largest keep their labels (1e-12 beside 1e3 is "0.000000000001", 1e-13 is
+      "0"). Labels, first noise fix to now: `c(1e7, 99999.5, 1, 2)` "1e+07", "1e+05", "1", "2"
+      to "1e+07", "100000", "1", "2" ("99999.5" rounds to "100000" by the rounding rule);
+      `c(5e6, 2.5, 3.5, 1)` "2", "4" to "2.5", "3.5"; `c(1e8, 0.4, 3.7, 5)` "0", "4", "5" to
+      "0.4", "3.7", "5"; `c(1e7, 0.5, 1, 1)` "0.5" kept; `c(1e6, 10/3, 1, 1)` "3.3" to "3.33".
+    - Wording: `@param counts` says whole-number counts are labeled with `as.character()`, as
+      `vcd::fourfold()` labels them, and that only a count that is rounding noise next to the
+      panel's other counts is shown as 0; the `.fourfold_format_count()` and
+      `.fourfold_count_labels()` comments match; the redundant `as.character()` around the
+      unlisted labels in `.fourfold_counts_params()` is gone. Whole numbers in
+      integer-typed data are not treated differently yet (vcd labels an integer 1e5 as
+      "100000", ours "1e+05"); GK is deciding that separately.
+    - Tests: 1 new block (the examples above, 0.4 beside 1e8 and 0.5 beside 1e7 kept,
+      the 1e-15 boundary, noise, `1e-300` and denormals still "0", labels under
+      `options(digits = 1)` and `22`, and a drawn plot); the UCB Dept B multiplier in the
+      faceted label test is 1000.123, whose products are never ties at the rounding.
+  - *Third round: labels of integer tables (GK, 2026-10-08).* When the layer's weights are
+    integer-typed (`is.integer()`), or there is no `weight` aesthetic and rows are counted,
+    each whole-number count that fits in `.Machine$integer.max` is labeled
+    `as.character(as.integer(count))` ("100000"), as vcd labels an integer table; a larger
+    count (vcd's integer table would overflow) is labeled `as.character(count)`. Double
+    weights keep the rule above (whole numbers by `as.character()`, "1e+05"; rounding of
+    non-integers; noise to 0). Logical weights are rejected.
+    - *Design:* the `count` column stays double and nothing in the statistics changes (the
+      statistics must not become integer-typed: vcd itself overflows on cell products). The
+      stat adds a logical layer-data column `integer_count` (constant in a layer; right after
+      `count`) computed in `.fourfold_compute_layer()` before the missing weight is filled
+      with 1; `.fourfold_format_count()` and `.fourfold_count_labels()` take an `integer`
+      argument, and both the drawn labels (`draw_panel()`) and the layer-wide measured labels
+      (`.fourfold_counts_params()`, which reads the flag from the layer's data) pass it, so
+      they agree. *Why a column:* the stat and the geom are separate ggproto objects and
+      ggplot2 passes only data (not stat parameters or attributes) from one to the other, so a
+      data column is the way to carry it; it is per layer, so a plot with an integer-weighted
+      and a double-weighted layer labels each as its own. Without the column (direct
+      `layer()` use with another stat, or `draw_panel()` called alone) the default is the
+      double rule. Cost: `layer_data()` has one more column, so comparisons of whole
+      `layer_data()` against earlier trees differ by it (one existing test, comparing
+      integer and double weights, drops it; all statistical columns are unchanged).
+    - *Docs:* `@param counts` says counts are labeled as `vcd::fourfold()` labels the
+      corresponding table with `as.character()`: counts of integer weights or unweighted rows
+      in full, whole-number counts of double weights as R prints them (1e5 as "1e+05"), other
+      counts rounded, noise 0. Code comments updated.
+    - *Tests:* one new block: double vs integer weights (1e5 and 2e6 cells), integer
+      `count` is double-typed and the statistics are equal, a count beyond the integer range
+      (including an integer sum that exceeds it), unweighted rows (100,000 rows in one cell),
+      two layers in one plot (one integer, one double), a faceted layer with a blank panel
+      and a panel left empty by a missing weight, direct `layer()` use of `GeomFourfold` and
+      `StatFourfold` with the flag and with the column removed (double rule).
+  - *Final review nits (2026-10-08):* `.fourfold_count_labels()` assigns 0 to noise only if
+    some count is noise, so an integer `count` without the flag (direct `layer()` with
+    `stat = "identity"`) stays integer and is labeled "100000", as vcd and
+    `.fourfold_format_count(100000L)` do; `@param counts` says integer counts are in full
+    "when they fit in an integer" (sums above `.Machine$integer.max`, e.g. 3e9, use the double
+    rule, "3e+09"); and a whole number is never shown as 0, since `zapsmall()` rounds to at
+    least 0 decimals, so above a panel maximum of about 1e15 only non-whole counts below 0.5
+    are zapped. Tests added for each.
+  - *Final verification:* `devtools::test()`: 3,573 expectations in 97 blocks, 0 failures,
+    errors, warnings, or skips; `devtools::document()` clean; `R CMD check --as-cran`
+    (`env -u DISPLAY`, `_R_CHECK_CRAN_INCOMING_=false`) Status OK, 0 errors, 0 warnings, 0
+    notes; spelling flags 30 (unchanged). *vcd comparison* (grid.text labels of
+    `vcd::fourfold()` on 2 x 2 x 1 tables with 1e5, 2e6, 1000, 300 and 20000 cells): integer
+    table "100000", "2000000", "1000", "300", "20000"; the same table as doubles "1e+05",
+    "2e+06", "1000", "300", "20000"; ours from integer weights, double weights, and a layer
+    of 100,000 unweighted rows (labels "100000", "512", "0", "20") equal vcd's for the
+    corresponding type in every case. (An integer table with cells 2e6, 7, 100000 and 1234567
+    overflows in vcd's own integer arithmetic, `NA` in `if (d > 1)`, so it was not used.)
+    *Double input:* labels byte-identical to the tree before these fixes for UCB (six panels)
+    and 406 double tables (300 random and 100 from a pool of round values, 91 with "e+"
+    labels). *Integer input* (the same 406 tables as integer weights): of 1,624 labels, 142
+    differ from that tree, all of them whole round numbers that it printed in scientific
+    notation and that are now in full (1e+05 26, 2e+05 27, 5e+05 34, 1e+06 26, 1e+07 29);
+    the others are identical. The 112-case default grid (all double weights, so every flag
+    is FALSE): all 112 `layer_data()` identical apart from the new column, counts placement
+    identical in 224 of 224 renders, and all 224 ragg PNGs byte-identical to the tree before
+    this third round. (Earlier rounds compared the grid with the tree before all these
+    fixes: also byte-identical.)
+  Files: `R/geom-fourfold.R`, `DESCRIPTION`, `NAMESPACE` (the `scales` import), `man/geom_fourfold.Rd`,
+  `tests/testthat/test-geom-fourfold.R`, `issues/TASKS.md`.
+
+- [X] **Convert prose to US spelling** (2026-10-08; GK asked for all prose in US spelling;
+  `DESCRIPTION` has `Language: en-US`) — only spelling changed.
+  - *Changed:* 91 tokens in 6 files: `R/fourfold-palette.R` 8, `R/geom-fourfold.R` 27,
+    `vignettes/ggfourfold.Rmd` 14, `tests/testthat/test-geom-fourfold.R` 15,
+    `man/fourfold_palette.Rd` 8, `man/geom_fourfold.Rd` 19. Pairs: colour→color 39,
+    colours→colors 33, Colours→Colors 4, centre→center 8, centred→centered 2,
+    neighbouring→neighboring 4, favour→favor 1. The vignette heading "Colours"→"Colors"
+    changes its anchor (`#colours`→`#colors`); nothing links to the old one.
+  - *Deliberately unchanged:* argument and identifier names (`colour`, `tick.colour`,
+    `tick_colour`), color strings ("grey30") and `theme_grey()`, bib entries and published
+    titles, "vermillion" (the Okabe-Ito color name), "labeller", and `issues/`, `dev/`,
+    `NEWS.md`, `HANDOFF.md`.
+  - *Verification:* a word-level diff shows only these pairs, confirmed independently by the
+    reviewer (normalizing UK to US makes the tree before the pass and the new files
+    byte-identical); R parse tokens are identical apart from 8 string literals; 22 renders
+    are byte-identical with identical `layer_data()`; tests pass (3,465 expectations at that
+    point); `R CMD check --as-cran` 0 errors, 0 warnings, 0 notes; spelling flags 37→30.
+
 ## Development scripts
 
 - [X] **Repair stale source paths and the missing verification reference** (fixed
@@ -748,7 +978,7 @@ As these items are resolved, check them off as [X] and record the fix and verifi
     `coord_flip()`; (b) hide the position axes and force square panels; (c) a dedicated
     `coord_fourfold()`. Claude recommended (a) and (b). GK preferred a real fix, since an
     annotation landing in the wrong cell is worse than an unsupported operation.
-  - *Plan* (agreed by GK, 2026-10-01; not implemented): `dev/coordinate-system-plan.md`.
+  - *Plan* (agreed by GK, 2026-10-01; not implemented): `dev/old/coordinate-system-plan.md`.
     Draw in ggplot2's coordinates, following `geom_sf()`:
     - `geom_fourfold()` returns `list(layer, coord_cartesian(reverse = "y", ratio = 1,
       default = TRUE))`; plot syntax is unchanged, but the return value is a list, not
@@ -775,7 +1005,7 @@ As these items are resolved, check them off as [X] and record the fix and verifi
     true 0.835 and a count limit of 0.80); whether counts go outside can differ between
     panels of different physical sizes (now documented).
   - *Implemented* (2026-10-01, uncommitted; Claude as project manager, code by Sonnet
-    subagents, per `dev/coordinate-system-plan.md`):
+    subagents, per `dev/old/coordinate-system-plan.md`):
     - `geom_fourfold()` returns `list(layer, coord_cartesian(reverse = "y", ratio = 1,
       default = TRUE))`.
     - `GeomFourfold$setup_data()` adds `xmin`/`xmax`/`ymin`/`ymax` = 0.2/2.8;
@@ -875,13 +1105,13 @@ As these items are resolved, check them off as [X] and record the fix and verifi
     Friendly (1994, TR 217) in `geom_fourfold()`; README gained a square example and the
     citation (entry added to `vignettes/refs.bib`). Also added the missing
     `Roxygen: list(markdown = TRUE)` to `DESCRIPTION`, which fixed raw markdown in all `.Rd`.
-  - Visual check: `dev/square-counts.R` (source in RStudio, or
-    `Rscript dev/square-counts.R [output-dir]` to write PNGs). It draws each case and
+  - Visual check: `dev/old/square-counts.R` (source in RStudio, or
+    `Rscript dev/old/square-counts.R [output-dir]` to write PNGs). It draws each case and
     prints the reach, count font size, measured limit, and resulting placement, including
     a small-device (3.5 × 2.5 in) case where the measured text height alone moves the
     counts outside.
   Files: `R/geom-fourfold.R`, `README.Rmd`, `DESCRIPTION`, `vignettes/refs.bib`,
-  `dev/square-counts.R`.
+  `dev/old/square-counts.R`.
 
 - [x] **Add `counts = c("auto", "inside", "outside", "none")` and fix count reach**
   (implemented 2026-10-01; GPT-6.1 Sol implementation/verification, independent
@@ -923,7 +1153,7 @@ As these items are resolved, check them off as [X] and record the fix and verifi
     refinement has the same result (temporary logs, not kept).
   - Reproduction: `dev/counts-verification.R`. The detailed logs, rendered
     comparisons, image manifest, mutation runner, and independent review were
-    temporary logs, not kept. Plan: `dev/counts-plan.md`.
+    temporary logs, not kept. Plan: `dev/old/counts-plan.md`.
   - *Follow-up* (Claude, 2026-10-01, requested by GK):
     - The layer-wide count values are no longer layer-data columns.
       `GeomFourfold$setup_params()`, which sees the whole layer's data, computes
@@ -946,16 +1176,17 @@ As these items are resolved, check them off as [X] and record the fix and verifi
       b8b9149, all 17,856 shared layer-data columns of the 576 cases are
       `identical()`. Spelling unchanged; R CMD check not rerun (GK).
   Files: `R/geom-fourfold.R`, `man/geom_fourfold.Rd`,
-  `tests/testthat/test-geom-fourfold.R`, `dev/square-counts.R`,
+  `tests/testthat/test-geom-fourfold.R`, `dev/old/square-counts.R`,
   `dev/counts-verification.R`.
 
-- [ ] **Square tick direction** — the diagonal direction ticks are what usually force square
+- [X] **Square tick direction** (done 2026-10-07; see the coloured-ticks item below) —
+  the diagonal direction ticks are what usually force square
   counts outside. Consider an alternative for squares (e.g. shorter ticks, or ticks drawn
   along the outer edges) so that typical `std = "margins"` displays can keep counts inside.
-  - **Swatches for MF (2026-10-01): [`dev/tick-swatches.pdf`](../dev/tick-swatches.pdf)**
-    (PNG copy alongside; source `dev/tick-swatches.R`). Every option tried, as a labelled
+  - **Swatches for MF (2026-10-01): [`dev/old/tick-swatches.pdf`](../dev/old/tick-swatches.pdf)**
+    (PNG copy alongside; source `dev/old/tick-swatches.R`). Every option tried, as a labelled
     card on UCB Dept A (significant) and Dept C (not significant); square options are
-    S0–S15. Reply with codes. Working sheets: `dev/tick-mockup.R`.
+    S0–S15. Reply with codes. Working sheets: `dev/old/tick-mockup.R`.
   - Findings from the mock-ups:
     - *Shorter diagonal* (S3): barely visible, and still crowds the counts.
     - *Diagonal half inside the square* (S4): with total length 0.15, `counts = "auto"`
@@ -981,7 +1212,8 @@ As these items are resolved, check them off as [X] and record the fix and verifi
     thicker tick can come closer to the counts than the check assumes (S4 nearly touches
     313, 89, and 391). Account for line width if ticks get thicker.
 
-- [ ] **Proposal: coloured direction ticks, and a way to style them** (MF, 2026-09-27) —
+- [X] **Proposal: coloured direction ticks, and a way to style them** (MF, 2026-09-27;
+  done 2026-10-07) —
   the diagonal ticks are currently thin black lines drawn with the frame's line width, and
   they are easy to miss, especially against the navy fill of a significant panel. MF
   suggested colouring them. A mock-up (recolouring the tick grobs of the UCB Dept A–C
@@ -1025,7 +1257,7 @@ As these items are resolved, check them off as [X] and record the fix and verifi
     `arrow()` in `geom_segment()`: tidy and self-documenting, but one more exported
     function, and less conventional than the dotted form for simple styling.
 
-  *Swatches for MF (2026-10-01):* [`dev/tick-swatches.pdf`](../dev/tick-swatches.pdf),
+  *Swatches for MF (2026-10-01):* [`dev/old/tick-swatches.pdf`](../dev/old/tick-swatches.pdf),
   circle options C0–C6 (current, black/navy/fill/green at 2.5x, navy longer, half inside
   the circle); square options S0–S15 under the item above. Findings:
   - Thickness is what makes ticks visible. At 2.5x, black (C1) and navy (C2) look almost
@@ -1041,6 +1273,341 @@ As these items are resolved, check them off as [X] and record the fix and verifi
   Related: the "Square tick direction" item above. Decision for GK.
   Files: `R/geom-fourfold.R` (`draw_panel()` tick segments, `geom_fourfold()` arguments and
   validation, docs), README/vignette figures.
+
+  - **Decision (GK, 2026-10-07): C2 (circles) and S2 (squares)** from the swatch sheet: the
+    existing diagonal ticks (`ticks = 0.15`, same position), in `palette[6]` at 2.5x the
+    layer's line width, with butt line ends. Diagonal ticks stay for both shapes; the
+    horizontal-edge options (S7-S12) were not adopted.
+  - **Implemented (Claude, 2026-10-07):**
+    - Defaults: direction ticks are drawn in the sixth colour of `palette` (navy `#000080`
+      in the vcd palette; `fourfold_palette("okabe-ito")` and custom palettes carry it
+      along, and a palette may have more than six entries), at 2.5x the
+      layer's `linewidth` (0.7 mm with `theme_fourfold()`, 1.25 mm with ggplot2's default
+      0.5 mm), `lineend = "butt"`. The layer `alpha` still applies. Axes, frame, outlines,
+      and rings are unchanged.
+    - New arguments after `ticks`, flat dotted as in `geom_boxplot()`'s `whisker.*`:
+      `tick.colour`, `tick.color` (as ggplot2: `tick.color` is used if both are given), and
+      `tick.linewidth` (mm; `NULL` = 2.5x `linewidth`). No `tick.linetype`. `ticks` (length;
+      `0` hides) is unchanged. Validated in `.fourfold_validate_params()`: a single colour
+      (anything `col2rgb()` accepts, so also a palette index or `NA`; `NA`/`"transparent"`
+      draws nothing) and a single finite non-negative number, with errors "tick.colour must
+      be a single valid colour" (naming `tick.color` if that spelling was given) and
+      "tick.linewidth must be a single non-negative number". Layer parameters for direct
+      `ggplot2::layer()` use are `tick_colour` and `tick_linewidth` (in `extra_params`,
+      `.fourfold_defaults`, and the defaults of `draw_panel()`; `NULL` is the default; not
+      validated there, as for `ticks`; documented in the Coordinate systems section).
+    - `counts = "auto"` now accounts for the tick's line width. The counts gTree carries
+      `tick_lwd` (grid `lwd`; `0` when the layer draws no ticks);
+      `makeContent.fourfold_counts()` adds the extent of the tick's flat end to
+      `tick_reach` before comparing. With `a` and `b` the native units per inch on x and y
+      (absolute values, so reversed scales work) and `h` = lwd / 96 / 2 inch, the corners of
+      a butt end lie `h * (a^2, b^2) / sqrt(a^2 + b^2)` from the endpoint in native units
+      (the end is perpendicular to the tick on the page, which is not 45 degrees when `a`
+      and `b` differ), and the larger of the two is used; for `a = b` it is `h * a / sqrt(2)`.
+      (A first version used `h * max(a, b) / sqrt(2)`, 21% low at 2:1 and 27% low at 4:1.)
+      The value compared is recorded on the drawn grob as `tick_edge`. The width is added in every
+      panel of a layer with ticks, blank panels included, so that the facets still place their
+      counts alike; an entirely blank layer has no tick reach, so nothing changes.
+    - Docs: `@param tick.colour,tick.color` and `tick.linewidth`; `ticks`, `extended`,
+      `palette`, the `counts = "auto"` paragraph, a new paragraph on the ticks (including the
+      `tick.colour = "black", tick.linewidth = 0.28` look of `vcd::fourfold()`, which draws
+      its ticks black with `gpar(lwd = 1)` and round ends: 1/96 inch, about 0.26 mm on the
+      page, or 0.35 in ggplot2 `linewidth` units, 1 / `.pt`), and an example; `fourfold_palette()` notes
+      that entry 6 colours the ticks. README figures regenerated (`devtools::build_readme()`;
+      `README.md` text unchanged). `NEWS.md` not changed: the package is unreleased, so this
+      is part of the first release. README and vignette prose stayed accurate.
+    - `dev/old/tick-swatches.R` has a note that its cards were drawn against the pre-change ticks.
+  - **Counts placement (UCB):** no change. For UCB (six departments, `facet_wrap`), both
+    shapes, `std` = margins, ind.max, all.max, at 7 x 5, 9 x 6 and 4 x 3 in
+    (`theme_fourfold()`), the outside/inside decisions of all 18 settings are identical to
+    before (the widths add only 0.007-0.018 to a tick endpoint: for example 0.667 -> 0.676
+    for circles with margins at 7 x 5 in, 0.809 -> 0.818 for squares; unchanged by the exact
+    width correction, which equals the first version for these square panels). A wider sweep
+    of 240 cases (UCB and Titanic by class, `theme_fourfold()` and `theme_grey()`, both
+    shapes, three `std`, widths 3-12 in) also placed every counts grob identically. With the
+    layer's `linewidth` at 0.28, 0.5 or 1 mm (2.5x ticks of 0.7 to 2.5 mm), both shapes, at
+    7 x 5, 9 x 6, 4 x 3, 7 x 7 and 10 x 5 in, all 30 cases place as before. At
+    `linewidth = 2` (5 mm ticks) the circles' counts move outside at 7 x 5, 7 x 7 and
+    10 x 5 in (not 9 x 6), as the rule intends; squares were outside already.
+  - **Verification (Claude, 2026-10-07):**
+    - `devtools::test()`: 3,213 expectations (3,001 at a3990a9), 0 failures, warnings, or
+      skips; 13 new `test_that()` blocks, in 27.5 s in all. The two count-placement
+      tests that searched linearly now bisect: 12.8 s -> 1.0 s and 2.9 s -> 0.07 s.
+      Mutating the line-width term out of `makeContent.fourfold_counts()`, or the exact
+      extent back to `max(a, b) / sqrt(2)`, fails the new counts tests.
+      `devtools::document()` clean. `R CMD check --as-cran` (`env -u DISPLAY`,
+      `_R_CHECK_CRAN_INCOMING_=false`), rerun after the review fixes: Status OK, 0 errors,
+      0 warnings, 0 notes. Spelling: 36 flagged words, the same as at a3990a9.
+    - Against a3990a9, 112 cases (UCB: both shapes, three `std`, `conf_level` 0 and 0.95,
+      `extended` TRUE/FALSE, four `counts` = 96; Titanic with `facet_grid(margins = TRUE)`,
+      a single 2 x 2, a table with a zero cell, `coord_cartesian(reverse = "xy")`,
+      `facet_grid`, `ticks = 0`, okabe-ito, `linewidth = 1`, each for both shapes): all 112
+      `layer_data()` are `identical()` (3,472 columns). The count grobs of all 224 renders
+      (9 x 6 and 4 x 3 in) place identically. Of the 224 ragg PNGs, 100 are byte-identical (the
+      `extended = FALSE` and `ticks = 0` cases, which draw no ticks) and 124 differ; with the
+      `fourfold-direction-ticks` grob removed in both versions all 224 are byte-identical, so
+      the only differences are the ticks' colour, width, and line ends.
+      `dev/counts-verification.R stats` (720 cases) compared with a3990a9: 0 failures;
+      `dev/old/square-counts.R` runs and places counts as before (outside for squares with
+      ticks, inside with `ticks = 0` at 7 x 5 in).
+    - Edge cases, rendered and inspected (blank panel in a 7-panel layer, a zero cell, odds
+      ratio exactly 1, an `NA` weight with `na.rm = TRUE`, a 3.5 x 2.5 in device, a 1 x 1 in
+      device, `linewidth = 0`, `alpha = 0.3`, `tick.colour = NA` and `"transparent"`, named
+      colours and an eight-colour `palette`, `tick.linewidth` 0 and 50): no errors or
+      warnings; the blank panel draws no tick (6 of 7); the `NA` weight panel is left empty;
+      placement of the 16 default-argument cases equals a3990a9's; `linewidth = 0` renders
+      byte-identically to a3990a9. A very wide tick (`tick.linewidth = 50`) moves all
+      counts outside.
+  - Contact sheet: a temporary scratch image, not kept (old vs new, circles and squares, okabe-ito,
+    black override); the new ticks match swatches C2 and S2 in `dev/old/tick-swatches.png`.
+  Files: `R/geom-fourfold.R`, `R/fourfold-palette.R`, `man/geom_fourfold.Rd`,
+  `man/fourfold_palette.Rd`, `man/figures/README-*.png`,
+  `tests/testthat/test-geom-fourfold.R`, `dev/old/tick-swatches.R`, `issues/TASKS.md`.
+
+- [x] **Direction line instead of two ticks** (done 2026-10-08; supersedes the C2/S2 ticks
+  above). **Decision (MF and GK, 2026-10-08): swatches LC2 (circles) and LS2 (squares)** from
+  `dev/old/tick-line-swatches.png`, replacing C2/S2: one straight line through the center of the
+  display along the diagonal the association favors, white, 2.5x the layer's line width, with
+  a black outline of 1x the layer's line width on each side and across the ends.
+  - **Implemented (Claude, 2026-10-08):**
+    - Drawing: `draw_panel()` builds the line with `.fourfold_direction_line()`: a black
+      butt-ended segment from end point to end point (width white + 2 outlines, in the
+      layer's `colour`), then the white butt-ended segment on top, shortened at each end by
+      one outline width (a physical length, `outline_lwd / 96 / sqrt(2)` inches on each axis,
+      the 45-degree diagonal). Exact when native units are square (the default `ratio = 1`);
+      with units that differ (a replaced coordinate system, or a theme's `aspect.ratio`), the
+      diagonal is not at 45 degrees on the page and the shortening is approximate (the counts
+      still measure the black end exactly). *Superseded the same day by the band below, which
+      is exact.* A reversed scale moves the shortening the right way (the signs of the
+      viewport scales are used). Same construction for both shapes. Same favored diagonal and
+      cells as the ticks, including odds ratio exactly 1 and the zero-cell rule. Grob name
+      kept: `fourfold-direction-ticks` is now a gTree holding `fourfold-direction-outline`
+      and `fourfold-direction-line`; same z-order (after sectors and rings, before axes, axis
+      ticks, frame). Nothing is drawn for blank panels, `extended = FALSE`, or `ticks = 0`.
+      The white segment is omitted when its width is 0 (`tick.linewidth = 0`, or
+      `linewidth = 0` with the default width), which would otherwise draw a hairline.
+    - API: `ticks` now defaults to `NULL`, meaning a length for each shape: 0.15 for circles
+      (as before) and `0.03 * sqrt(2)` for squares, a stub of 0.03 on each axis past each
+      favored square's outer corner (`.fourfold_default_ticks`, resolved by
+      `.fourfold_tick_length()` in `draw_panel()` and `.fourfold_counts_reach()`; the
+      alternatives were a shape-dependent default in the signature, which cannot know the
+      shape, or a new argument, which the decision did not ask for). A number applies as
+      given to either shape. `.fourfold_defaults$ticks` is `NULL`, and `ticks` accepts
+      `NULL` or a single non-negative number ("ticks must be NULL or a single non-negative
+      number"). `tick.colour`/`tick.color` is the color of the white line, default `"white"`;
+      `tick.linewidth` its width excluding the outline, default 2.5x `linewidth`. The outline
+      uses the layer's `colour` and `linewidth`; no new arguments. The sixth palette color no
+      longer draws anything but the significant fill: the statements that it draws the ticks
+      are removed from `fourfold_palette()`, `palette`, and `tick.colour`. `NA` or
+      `"transparent"` leaves the black line at full width.
+    - `counts = "auto"`: the counts' `tick_lwd` is the full drawn width (white + 2 outlines),
+      so reach is the end point plus the half-width of the black butt end, by the existing
+      exact formula. `.fourfold_counts_reach()` keeps its per-axis end coordinate
+      (`radius * multiplier + ticks / sqrt(2)`), which is the new square end (corner + 0.03
+      per axis) and the circle end (arc + `ticks` along the diagonal) with the new defaults.
+    - Docs: the `@details` paragraph on the ticks is rewritten for the line and says plainly
+      that vcd draws two black ticks and the display differs; the "vcd look" advice and its
+      example are replaced by an example with a longer grey line; `extended`, `ticks`,
+      `tick.colour`, `tick.linewidth`, `palette`, `counts` details, Aesthetics, Zero counts,
+      and the `layer()` paragraph updated; the over-long roxygen line is wrapped.
+      Vignette (direction line in the introduction and the Colors section; the forced
+      `counts = "inside"` example now forces `"outside"`, as inside is the default for
+      those squares) and `README.Rmd` (squares' counts now stay inside there) updated;
+      README rebuilt with `devtools::build_readme()` (four figures regenerated).
+      `NEWS.md` not changed (unreleased).
+    - `dev/old/tick-line-swatches.R` and `dev/old/tick-swatches.R` note that the package now draws
+      LC2/LS2.
+  - **Count placement changes against the 2026-10-07 tree** (UCB and Titanic, both shapes,
+    three `std`, `theme_fourfold()` and `theme_grey()`, 7 x 5, 9 x 6 and 4 x 3 in: 72
+    settings): 3 change, all UCB squares with `std = "margins"`, from outside to inside:
+    `theme_fourfold()` at 7 x 5 and 9 x 6, and `theme_grey()` at 9 x 6. The reason is the
+    shorter line: its reach is 0.733 (corner 0.703 + 0.03) instead of 0.809, so the edge of
+    the outlined line (0.749, 0.746, 0.758) is under the count limit (0.754, 0.761, 0.764);
+    it was 0.816-0.823 before. Squares stay outside at 4 x 3 in, with `theme_grey()` at
+    7 x 5 in (edge 0.764 against a limit of 0.761), and for Titanic (rings reach 0.856).
+    Circles do not change in any of the 36 settings: the line ends where the ticks ended, and
+    although the outlined line is wider (4.5 against 2.5 line widths) its edge moves by only
+    0.006-0.028 and does not cross the limit. In the 112-case grid below, the same 4 cases
+    (9 x 6 in) change: UCB squares with `margins`, `counts = "auto"`, at `conf_level` 0 and
+    0.95, the reversed-coordinates one, and the Okabe-Ito one.
+  - **Verification (Claude, 2026-10-08):**
+    - `devtools::test()`: 3,969 expectations, 106 test blocks, 0 failures, warnings, or
+      skips, in 39 s. The tick tests are rewritten for the line (one line through the center
+      on the favored diagonal for odds ratio above, below, and equal to 1; end points per
+      shape and `std`; white on black; widths; orientations; arguments; `ticks` default and
+      validation; alpha; direct `layer()` use; the counts' full drawn width, by ratio of
+      extents and by bisection; UCB squares inside at 7 x 5, 9 x 6 and 12 x 8 in, circles
+      unchanged). Mutants that fail them: counts using the white width only (3 tests), no
+      shortening of the white line (2 tests), a square default of 0.15 (4 tests).
+      `R CMD check --as-cran` (`env -u DISPLAY`, `_R_CHECK_CRAN_INCOMING_=false`, tarball
+      built outside the repository): Status OK, 0 errors, 0 warnings, 0 notes. Spelling:
+      30 flagged words before and after, none new.
+    - Against the 2026-10-07 tree, the 112 cases (UCB: both shapes, three `std`,
+      `conf_level` 0 and 0.95, `extended`, four `counts` values; Titanic with margins; a
+      single 2 x 2; a zero cell; reversed `xy`; `facet_grid`; `ticks = 0`; okabe-ito;
+      `linewidth = 1`): all 112 `layer_data()` are `identical()`. With the direction grob
+      removed in both versions, 220 of 224 ragg PNGs (9 x 6 and 4 x 3 in) are byte-identical;
+      the 4 that differ are exactly the 4 placement changes above.
+    - Contact sheet (scratch, not kept): new circles and squares for UCB A to F at 9 x 6 in,
+      single panels with odds ratio below, equal to and above 1, reversed `xy`, Okabe-Ito and
+      `tick.colour = "black"` for both shapes, beside the LC2/LS2 cards: they match, including
+      the black cap across each end.
+    - Edge cases, rendered and inspected: a zero cell, a huge odds ratio (5000:1, both
+      `std = "margins"` and `"ind.max"`; the line shows, white on black across the navy
+      squares and circles), a 3.5 x 2.5 in device, `tick.linewidth = 0` (a black line twice
+      the outline), `alpha = 0.3` (the line is unaffected), `linewidth = 0` (nothing is
+      drawn, as for the frame and axes at that width in ragg): no errors or warnings.
+  Files: `R/geom-fourfold.R`, `R/fourfold-palette.R`, `man/geom_fourfold.Rd`,
+  `man/fourfold_palette.Rd`, `man/figures/README-*.png`, `README.Rmd`, `README.md`,
+  `vignettes/ggfourfold.Rmd`, `tests/testthat/test-geom-fourfold.R`, `dev/old/tick-swatches.R`,
+  `dev/old/tick-line-swatches.R`, `issues/TASKS.md`.
+
+- [x] **Diagonal line as an outlined band, with the `diagonal*` arguments** (done 2026-10-08;
+  supersedes the line's `ticks`, `tick.colour`, `tick.color` and `tick.linewidth` arguments
+  above, which are removed with no aliases: the package is unreleased). Follows an
+  independent review of the line (no blockers) and decisions by GK.
+  - **Decisions (GK, 2026-10-08):**
+    - New arguments, in the place of the old ones: `diagonal = TRUE` (draw the line or not;
+      `extended = FALSE` still hides it), `diagonal.length = NULL` (how far each end extends
+      past its favored sector, along the diagonal for both shapes; `NULL` is the shape's
+      default), `diagonal.fill = "white"` (the interior, as `fill` in ggplot2: `NA` or
+      `"transparent"` gives a hollow band) and `diagonal.width = NULL` (the interior's
+      width, border excluded; `NULL` is 2.5x `linewidth`). The border is the layer's
+      `colour` and `linewidth`; `alpha` does not affect it. Names rejected: `diag.line` (its
+      `diag.line.length` is ambiguous between part and property), `diag` (a base R
+      function), `direction`; `linewidth` is not used because in ggplot2 it is the border's
+      stroke. Layer parameters for `layer()`: `diagonal`, `diagonal_length`,
+      `diagonal_fill`, `diagonal_width`. vcd's `ticks` corresponds to `diagonal.length`.
+    - Squares' stub is 0.02 per axis (`0.02 * sqrt(2)`, about 0.0283, along the diagonal),
+      not 0.03; circles stay at 0.15. Claude's call, GK did not object: an explicit
+      `diagonal.length` is along the diagonal past the sector for both shapes. A length of 0
+      still draws the line (ending at the sectors); only `diagonal = FALSE` omits it.
+    - The line stays on the off-diagonal at odds ratio exactly 1, as in vcd.
+  - **Implemented (Claude, 2026-10-08):**
+    - Drawing: one polygon, like `geom_rect()`: fill `diagonal.fill`, `col` the layer's
+      `colour`, `lwd` the layer's `linewidth`, `linejoin = "mitre"` (square caps), so that
+      `diagonal.fill = NA` is really hollow. Its long edges are `width + border` apart, so
+      that the centered borders leave `width` of interior, and its short edges lie half a
+      border inside the end points, so that the border's outer edge ends at them. The look
+      is the previous one: white interior 2.5x, black border 1x on each side, flat black
+      caps at the end points (by pixels, the circles of UCB at 9 x 6 in and 200 dpi differ
+      from the stacked strokes in no pixel by more than 0.016 of full scale; the squares
+      with the old 0.03 stub, in none).
+    - Exact units: the grob is a gTree of class `fourfold_diagonal` whose polygon is made
+      when drawn (`makeContent.fourfold_diagonal()`): the corners are computed in inches on
+      the page, perpendicular to the line there, so the band, its caps and its border are
+      right whatever the native units per inch on each axis (a theme's `aspect.ratio`, a
+      replaced coordinate system) and under reversed scales. This removes the
+      approximation of the stacked strokes (the review's item on `aspect.ratio` wording is
+      moot; the docs now say it is exact). Grob name: `fourfold-diagonal`, containing
+      `fourfold-diagonal-band` once drawn.
+    - Inversion fix (review item 4): a line no longer than its border (tiny sectors with
+      `std = "all.max"`, `diagonal.length = 0`, very small panels) draws nothing, rather
+      than a reversed rectangle; just above that length the band is as short as it gets.
+    - `diagonal.width = 0` leaves only the borders, which meet: one line in the layer's
+      `colour`, twice `linewidth` wide. With `linewidth = 0`, every line of the display is a
+      hairline (nothing shows in ragg, as for the frame and axes), the default interior has
+      no width, and a given `diagonal.width` is drawn as the interior with a hairline
+      border.
+    - `counts = "auto"`: reach is the band's full outer extent, border included, at the end
+      points: the black outer width `diagonal.width + 2 * linewidth` goes in the counts
+      grob's `tick_lwd`, and `makeContent.fourfold_counts()` is unchanged (the outer edge
+      is flat and square-cornered at the end point, as the old black stroke was). A hollow
+      line takes the same room. The counts grob's internal fields and the layer-wide
+      `counts_tick_reach` keep their names, as `dev/counts-verification.R` and
+      `dev/old/square-counts.R` use them. `.fourfold_counts_reach()`'s last argument is now the
+      length (`ticks` before) and its `extended` argument is whether the line is drawn.
+    - Docs: roxygen for the four arguments, the details paragraph, the `layer()` parameter
+      names, the example (a longer light gray line); vignette (introduction and Colors
+      section, which also names the arguments) and `README.Rmd` prose (squares keep their
+      counts inside here), README rebuilt; `fourfold_palette()` docs did not mention the
+      line. "Light grey" is "light gray". The note at the top of `dev/old/tick-line-swatches.R`
+      no longer names its own file; both swatch scripts say the package now draws the band
+      and that their mock-ups edit a grob that no longer exists.
+  - **Count placement against the tree before this change** (UCB and Titanic, both shapes,
+    three `std`, `theme_fourfold()` and `theme_grey()`, 7 x 5, 9 x 6 and 4 x 3 in: 72
+    settings): 1 changes, UCB squares with `margins`, `theme_grey()` at 7 x 5 in, from
+    outside to inside (gap between the count limit and the line's outer edge -0.0027 ->
+    +0.0073). Gap for UCB squares with `margins` and `theme_fourfold()`: 7 x 5 in 0.0046 ->
+    0.0146 (it was 0.0046 with the 0.03 stub); 9 x 6 in 0.0150 -> 0.0250; 4 x 3 in -0.131 ->
+    -0.121 (outside). `theme_grey()`: 7 x 5 in 0.0073, 9 x 6 in 0.0167, 4 x 3 in -0.148.
+    Titanic squares stay outside (the rings reach 0.856). Circles and the other `std`
+    values do not change. In the 112-case grid below nothing changes.
+  - **Verification (Claude, 2026-10-08):**
+    - `devtools::test()`: 4,148 expectations, 107 test blocks, 0 failures, warnings, or
+      skips (about 40 s; 4,137 and 106 before the review round below). The tick tests are replaced by tests of the new API: validation
+      messages, defaults per shape and an explicit length along the diagonal for both
+      shapes, fill, hollow, width, `diagonal = FALSE`, `extended = FALSE`, blank panels,
+      alpha, direct `layer()` use, the band's geometry on viewports of several shapes and
+      reversed scales (corners, perpendicular caps, end points, widths), no inversion for
+      tiny lines, the counts' full outer extent by ratio of extents and by bisection, and
+      UCB squares inside with a gap of at least 0.01 at 7 x 5, 9 x 6 and 12 x 8 in (the
+      earlier test relied on a 0.0046 gap). No test depends on font metrics except through
+      the bisection, which does not assume a formula. Each of six mutants fails tests: the
+      counts seeing the interior's width only (3 tests), no inset of the short edges (3), a
+      square default of 0.15 (4), no inversion guard (1), a band width that leaves out the
+      border (5), a round instead of a miter join (1).
+    - Against the tree before this change (112 cases: UCB both shapes, three `std`,
+      `conf_level` 0 and 0.95, `extended`, four `counts` values; Titanic with margins; a
+      single 2 x 2; a zero cell; reversed `xy`; `facet_grid`; no line; okabe-ito;
+      `linewidth = 1`): all 112 `layer_data()` are `identical()`, the placement of all
+      224 renders (9 x 6 and 4 x 3 in) is the same, and with the diagonal grob removed in
+      both versions all 224 ragg PNGs are byte-identical. With the line drawn (res 100) the
+      circle renders differ from the old stacked strokes by at most 0.067 of full scale in a
+      pixel (anti-aliasing), and the squares by the 0.03 -> 0.02 stub.
+    - Contact sheet and zooms (scratch, not kept): UCB circles and squares at 9 x 6 and
+      7 x 5 in, `diagonal.fill = NA` (hollow: two black border lines with the sector showing
+      through), `diagonal.width` 0 (one black line) and 5x (a wide white band with a black
+      border and square caps), `diagonal.length = 0`, reversed `xy`, okabe-ito,
+      `aspect.ratio = 2` (caps square on the page), and a tiny stratum under `all.max` with
+      `diagonal.length = 0` (no spikes or inversion). In the README square figure the line's
+      cap near "89" and "313" is clear of the numbers.
+  - **Review round (independent Opus review of the band, no blockers; 2026-10-08):** the
+    review confirmed the polygon geometry, the miter corners, the counts reach, the 112-case
+    identity and the visuals. Applied:
+    - `dev/counts-verification.R` (GK's active script) passed `ticks = 0`, which now only
+      warns ("Ignoring unknown parameters") and draws the line, so its "no line" cases were
+      silently wrong. They are `diagonal = FALSE`, and `make_plot()` turns that into
+      `ticks = 0` for a package from before the diagonal arguments, so older baselines can
+      still be made. `dev/old/square-counts.R` (co-authored by MF) is not edited; it still reads
+      the counts grob's `tick_reach`, which exists. Run against the tree before the band
+      (outputs in scratch): `stats` compares all 720 cases (layer data and warnings) with 0
+      failures; `manifest` gives 76 cases and all 76 `render`s
+      give the same count placement and the same positions of every count label; the 16
+      cases that differ in the recorded `tick_reach` are the squares with the line (0.7326 ->
+      0.7226 for UCB, from the 0.03 -> 0.02 stub); the 42 no-line cases are byte-identical
+      PNGs old (`ticks = 0`) against new (`diagonal = FALSE`).
+    - A targeted error for the removed `ticks`/`tick.*` arguments was added in this round,
+      then removed again at GK's request (2026-10-08). The package is unreleased, so nobody
+      has code using `tick.*`. ggplot2's usual "Ignoring unknown parameters" warning covers a
+      vcd user's `ticks`, and the docs already map vcd's `ticks` to `diagonal.length`/
+      `diagonal`. The docs still say that `diagonal.length = 0` draws the line, unlike vcd's
+      `ticks = 0`.
+    - Wording: "no longer than its border's width" (as the `<=` in the code), the band's
+      ends are perpendicular to the line on the page, "miter join" in prose; over-long lines
+      in the new code are wrapped.
+    - Re-verified: document clean; 4,148 expectations (4,137 after the targeted error and its 11 expectations were removed), 0 failures; `R CMD check --as-cran`
+      Status OK (0 errors, 0 warnings, 0 notes); spelling 30 flagged words before and after,
+      none new; the 112 cases against the tree before the band: all `layer_data()`
+      identical, placement of all 224 renders identical, all 224 PNGs byte-identical with the
+      diagonal grob removed.
+  Files: `R/geom-fourfold.R`, `man/geom_fourfold.Rd`, `NAMESPACE`, `README.Rmd`, `README.md`,
+  `man/figures/README-*.png`, `vignettes/ggfourfold.Rmd`,
+  `tests/testthat/test-geom-fourfold.R`, `dev/old/tick-swatches.R`,
+  `dev/old/tick-line-swatches.R`, `dev/counts-verification.R`, `issues/TASKS.md`, `HANDOFF.md`.
+
+- [X] **Follow-up: a long `diagonal.length` can run through counts placed outside** (found in
+  the review of the band, 2026-10-08; not a fix now). With `counts = "auto"` the counts move
+  outside the frame corners when the line reaches the inside counts, but the outside
+  placement (at 1.02 of the frame's half-width) does not allow for a line that ends past the
+  frame: for example `diagonal.length = 0.3` with squares puts the line's ends past the
+  corners, through the outside counts. The old `ticks` did the same. Options: document
+  it (a long line is the user's choice), or limit the outside counts' placement to what the
+  line leaves free. Decision for GK.
+  - *Decision (GK, 2026-10-08): leave it.* No change. The default lengths can never reach the
+    frame: the worst case per axis is about 0.81 for circles and about 0.91 for squares,
+    against the frame edge at 1. Only an explicit, unusually long length does this, which the
+    user can see and shorten. Capping the line at the frame was considered and not adopted.
 
 ## Inference
 
@@ -1120,7 +1687,7 @@ As these items are resolved, check them off as [X] and record the fix and verifi
      (columns), `weight = Freq`, with strata from the remaining dimensions added as
      `facet_wrap()` (one) or `facet_grid()` (two), plus `theme_fourfold()`. This is closest
      to `vcd::fourfold(UCB)` and is the `ggfourfold()` array wrapper that
-     `dev/fourfold-plan.md` deferred ("may later become a convenience wrapper if real
+     `dev/old/fourfold-plan.md` deferred ("may later become a convenience wrapper if real
      usage warrants it"). The result is an ordinary ggplot, so it can still be extended with
      `+`.
   3. **Register a `fortify.table()` S3 method** so that `ggplot(UCBAdmissions, ...)` works.
