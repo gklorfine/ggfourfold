@@ -1,28 +1,28 @@
 #' Palettes for fourfold displays
 #'
-#' `fourfold_palette()` returns six colours for the `palette` argument of
-#' [geom_fourfold()]. The colours encode the direction and statistical
+#' `fourfold_palette()` returns six colors for the `palette` argument of
+#' [geom_fourfold()]. The colors encode the direction and statistical
 #' strength of association and are drawn directly by the geom rather than
 #' through a fill scale.
 #' Entries 1-2 are used when `extended = FALSE` (or `conf_level = 0`),
 #' entries 3-4 for an extended display without adjusted significance, and
 #' entries 5-6 for an extended display with adjusted significance. Within
-#' each pair, the first colour fills the diagonal with fewer cases than
+#' each pair, the first color fills the diagonal with fewer cases than
 #' expected under independence and the second fills the diagonal with more.
 #'
-#' `"vcd"`, the default, gives the colours of `vcd::fourfold()` (Meyer et
+#' `"vcd"`, the default, gives the colors of `vcd::fourfold()` (Meyer et
 #' al., 2026): light and darker blue, then light red and light blue, then red
 #' and navy.
 #'
-#' `"okabe-ito"` uses the colours of Okabe and Ito (2008), chosen to remain
-#' distinguishable for readers with common forms of colour-vision deficiency:
+#' `"okabe-ito"` uses the colors of Okabe and Ito (2008), chosen to remain
+#' distinguishable for readers with common forms of color-vision deficiency:
 #' sky blue and blue, then orange and sky blue lightened about halfway to
 #' white, then vermillion and blue.
 #'
 #' @param palette Name of the palette: `"vcd"` (the default) or
 #'   `"okabe-ito"`.
 #'
-#' @return A character vector containing six hexadecimal colours.
+#' @return A character vector containing six hexadecimal colors.
 #'
 #' @references
 #' Meyer, D., Zeileis, A., Hornik, K., & Friendly, M. (2026). *vcd:

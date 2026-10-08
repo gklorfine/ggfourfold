@@ -14,7 +14,10 @@ geom_fourfold(
   margin = c(1, 2),
   conf_level = 0.95,
   extended = TRUE,
-  ticks = 0.15,
+  diagonal = TRUE,
+  diagonal.length = NULL,
+  diagonal.fill = "white",
+  diagonal.width = NULL,
   p_adjust_method = stats::p.adjust.methods,
   shape = c("circle", "square"),
   counts = c("auto", "inside", "outside", "none"),
@@ -40,7 +43,7 @@ the margins chosen by \code{margin} while preserving the odds ratio.
 \code{"ind.max"} and \code{"all.max"} draw unstandardized displays of the raw
 counts, scaled by the largest cell in each panel or in the whole layer.}
 
-\item{margin}{Integer vector selecting the table margins when
+\item{margin}{Numeric vector selecting the table margins when
 \code{std = "margins"}. Use \code{c(1, 2)} (the default) for both margins, \code{1} for
 the \code{y} (row) margin, or \code{2} for the \code{x} (column) margin, as in
 \code{\link[vcd:fourfold]{vcd::fourfold()}}.}
@@ -48,13 +51,35 @@ the \code{y} (row) margin, or \code{2} for the \code{x} (column) margin, as in
 \item{conf_level}{Confidence level in \verb{[0, 1)}. Defaults to \code{0.95}; set to
 \code{0} to suppress confidence rings and significance shading.}
 
-\item{extended}{If \code{FALSE}, omit the direction ticks, which mark the
-diagonal with more cases than expected under independence, and fill cells
-with the first two \code{palette} colours instead of shading by significance.
-Defaults to \code{TRUE}.}
+\item{extended}{A single \code{TRUE} or \code{FALSE}. If \code{FALSE}, omit the diagonal
+line, which marks the diagonal with more cases than expected under
+independence, and fill cells with the first two \code{palette} colors instead
+of shading by significance. Defaults to \code{TRUE}.}
 
-\item{ticks}{Length of the direction ticks (see \code{extended}), where \code{1} is
-the largest possible sector radius. Defaults to \code{0.15}; \code{0} hides them.}
+\item{diagonal}{A single \code{TRUE} or \code{FALSE}: draw the diagonal line of an
+extended display (see \code{extended}) or not. Defaults to \code{TRUE}.}
+
+\item{diagonal.length}{How far each end of the diagonal line extends past
+the outline of the sector it marks, measured along the diagonal for both
+shapes (past the arc of a circle, or the outer corner of a square), where
+\code{1} is the largest possible sector radius. If \code{NULL}, the default, it is
+\code{0.15} for circles and \code{0.02 * sqrt(2)} (about \code{0.028}) for squares, which
+is \code{0.02} on each axis; a number applies to either shape as given. With
+\code{0} the line ends at the sectors but is still drawn: use
+\code{diagonal = FALSE} to omit it. Give \code{NULL} or a single non-negative
+number.}
+
+\item{diagonal.fill}{The color of the diagonal line's interior, inside its
+border, which is drawn in the layer's \code{colour}. Defaults to \code{"white"}. As
+\code{fill} in ggplot2, \code{NA} or \code{"transparent"} leaves the line hollow, with its
+border only. Give a single color.}
+
+\item{diagonal.width}{The width of the diagonal line's interior, in mm as
+for \code{linewidth}, not counting its border, which is drawn outside it on each
+side with the layer's \code{colour} and \code{linewidth}. If \code{NULL}, the default, it
+is 2.5 times the layer's \code{linewidth}. Give \code{NULL} or a single non-negative
+number. With \code{0}, the two borders meet and the line is one line in the
+layer's \code{colour}, twice the layer's \code{linewidth} wide.}
 
 \item{p_adjust_method}{Method passed to \code{\link[stats:p.adjust]{stats::p.adjust()}} for adjustment
 across panels. Defaults to \code{"holm"}, the first value in
@@ -67,11 +92,19 @@ quarter-squares of equal area.}
 \item{counts}{Placement of cell counts: \code{"auto"} (the default) moves counts
 outside when the drawing approaches them; \code{"inside"} always uses the inside
 corners, even if overlapped; \code{"outside"} always uses the outside corners;
-\code{"none"} hides the counts.}
+\code{"none"} hides the counts. Counts are labeled as \code{\link[vcd:fourfold]{vcd::fourfold()}} labels
+the corresponding table, with \code{\link[=as.character]{as.character()}}: counts of integer
+weights, or of unweighted rows, in full (\code{100000}) when they fit in an
+integer, and whole-number
+counts of double weights as R prints them, so that \code{1e5} is \code{1e+05}.
+Non-integer counts (weights) are rounded to three significant digits, or
+to a whole number when that is larger. A count that is only rounding noise
+next to a panel's other counts, such as \code{5.6e-17} beside counts in the
+tens, is shown as \code{0}.}
 
-\item{palette}{Character vector of at least six valid colours in the
+\item{palette}{Character vector of at least six valid colors in the
 semantic order used by \code{\link[=fourfold_palette]{fourfold_palette()}}. Defaults to
-\code{fourfold_palette()}, the colours of \code{vcd::fourfold()}; see that page for
+\code{fourfold_palette()}, the colors of \code{vcd::fourfold()}; see that page for
 other built-in palettes such as \code{fourfold_palette("okabe-ito")}.}
 
 \item{na.rm}{If \code{FALSE}, the default, rows with a missing \code{x} or \code{y} are
@@ -89,11 +122,14 @@ default aesthetic mappings. Defaults to \code{TRUE}.}
 A list of a ggplot2 layer and a default coordinate system,
 \code{coord_cartesian(reverse = "y", ratio = 1)}, which can be added to a
 \code{\link[ggplot2:ggplot]{ggplot2::ggplot()}} object (see the Coordinate systems section).
+\code{GeomFourfold} and \code{StatFourfold} are the \code{\link[ggplot2:ggproto]{ggplot2::ggproto()}} objects
+behind \code{geom_fourfold()}, a \code{Geom} and a \code{Stat}, for use with
+\code{\link[ggplot2:layer]{ggplot2::layer()}}.
 }
 \description{
 \code{geom_fourfold()} draws a fourfold display in each ggplot2 panel. Sector
 radii represent cell frequencies after the selected standardization, while
-sector colours, confidence rings, and direction ticks show the direction
+sector colors, confidence rings, and a diagonal line show the direction
 and strength of association.
 }
 \details{
@@ -129,18 +165,43 @@ same area as the corresponding quarter-circle (side
 shapes display a table with identical areas. Confidence rings
 become nested square outlines.
 
+In an extended display, one straight diagonal line through the center of
+the display marks the diagonal with more cases than expected under
+independence, and so the direction of the association; its two ends mark
+the sectors on that diagonal. The line is a band, drawn like a rectangle
+in \code{\link[ggplot2:geom_rect]{ggplot2::geom_rect()}}: its interior is white (\code{diagonal.fill}) and
+2.5 times as wide as the layer's \code{linewidth} (\code{diagonal.width}), and its
+border, in the layer's \code{colour} and as wide as its \code{linewidth}, runs along
+both sides and across both ends, so that it stands out on pale and dark
+sectors alike. The border's outer edge ends \code{diagonal.length} past the
+outline of each of the two sectors, measured along the diagonal: past the
+arc of a circle, 0.15 by default, or past the outer corner of a square,
+\code{0.02 * sqrt(2)} by default, which is 0.02 on each axis and a stub short
+enough that the counts of a typical standardized display stay inside. Set
+\code{diagonal = FALSE} to omit the line. This differs from \code{vcd::fourfold()},
+which marks the direction with two short black ticks, one at each of those
+sectors, instead of a line through the center; its \code{ticks} argument, the
+length of those ticks, corresponds to \code{diagonal.length}, except that
+\code{diagonal.length = 0} still draws the line (ending at the sectors), where
+\code{ticks = 0} in \code{vcd::fourfold()} draws no ticks. The band's ends are
+perpendicular to the line on the page and its border has the same width on
+every side, whatever the native units per inch on each axis, such as with a
+theme's \code{aspect.ratio}. A line no longer than its border's width, as for
+tiny sectors in a tiny panel, is not drawn.
+
 With \code{counts = "auto"}, cell counts stay inside the frame corners unless
-a sector, either confidence outline, or a direction tick comes close to the
-count text. Both shapes use the largest drawing extent across the layer; circles
-also account for the width of the layer's count labels. Counts then move
+a sector, either confidence outline, or an end of the diagonal line
+(including its border) comes close to the count text. Both
+shapes use the largest drawing extent across the layer; circles also
+account for the width of the layer's count labels. Counts then move
 just outside the frame corners. Clearance is measured at draw time, so
 placement can differ between panels of different physical sizes.
 Use \code{counts = "inside"} or \code{"outside"} to force the placement, or \code{"none"}
 to hide counts without affecting any statistics. Outside counts can collide
-with category labels or neighbouring panels at small sizes; use larger
+with category labels or neighboring panels at small sizes; use larger
 panels, more panel spacing, smaller text, or \code{counts = "inside"}.
 
-The six semantic fill colours are supplied by \code{palette}; they are not mapped
+The six semantic fill colors are supplied by \code{palette}; they are not mapped
 through a ggplot2 fill scale. Typography and layout defaults are controlled
 by \code{\link[=theme_fourfold]{theme_fourfold()}}.
 }
@@ -152,14 +213,17 @@ by \code{\link[=theme_fourfold]{theme_fourfold()}}.
 with exactly two levels. Convert numeric codes, such as 0/1, with
 \code{factor()}.
 \item \code{y} (required): a categorical variable with exactly two levels.
-\item \code{weight}: non-negative cell frequencies; defaults to \code{1}.
+\item \code{weight}: non-negative numeric cell frequencies; defaults to \code{1}.
 }
 
 Each panel draws one table, so its drawing properties are set for the whole
 layer rather than mapped: give \code{colour}, \code{linewidth}, and \code{alpha} as fixed
-arguments, for example \code{geom_fourfold(colour = "grey30")}. Text \code{size} and
-\code{family} are inherited from the plot theme, such as \code{\link[=theme_fourfold]{theme_fourfold()}}, and
-can also be given as fixed arguments. Fill colours are set with \code{palette}.
+arguments, for example \code{geom_fourfold(colour = "grey30")}. As in
+ggplot2's filled geoms, \code{alpha} sets the transparency of the cell fills
+only; outlines, rings, the diagonal line, axes, the frame, labels, and
+counts are not affected by \code{alpha}. Text \code{size} and \code{family} are inherited
+from the plot theme, such as \code{\link[=theme_fourfold]{theme_fourfold()}}, and can also be given as
+fixed arguments. Fill colors are set with \code{palette}.
 Mapping any of these five in \code{geom_fourfold()} is an error, including a
 mapping to a computed variable with \code{\link[ggplot2:after_stat]{ggplot2::after_stat()}},
 \code{\link[ggplot2:after_scale]{ggplot2::after_scale()}}, or \code{\link[ggplot2:stage]{ggplot2::stage()}}. Any such mapping inherited
@@ -176,7 +240,7 @@ move the mapping to the layer that uses it.
 The display is drawn in the plot's coordinate system, so axes, gridlines,
 and other layers agree with it. The first \code{x} level is at position 1 and the
 second at position 2, and likewise for \code{y}; the display fills the square
-from 0.5 to 2.5 on both axes, and each cell's quadrant is centred on its
+from 0.5 to 2.5 on both axes, and each cell's quadrant is centered on its
 category position.
 
 \code{geom_fourfold()} therefore also adds
@@ -203,8 +267,10 @@ Common additions such as \code{\link[ggplot2:coord_fixed]{ggplot2::coord_fixed()
 level at the bottom unless reversed. Any \code{reverse} setting is drawn
 correctly. \code{GeomFourfold} and \code{StatFourfold} are the ggproto objects behind
 \code{geom_fourfold()}. Used directly with \code{\link[ggplot2:layer]{ggplot2::layer()}}, they take the
-defaults of \code{geom_fourfold()}, and \code{GeomFourfold} adds no coordinate system
-and follows the one the plot has.
+defaults of \code{geom_fourfold()} (the arguments for the diagonal line are the
+parameters \code{diagonal}, \code{diagonal_length}, \code{diagonal_fill}, and
+\code{diagonal_width}), and
+\code{GeomFourfold} adds no coordinate system and follows the one the plot has.
 
 The coordinate system must be Cartesian, such as \code{\link[ggplot2:coord_cartesian]{ggplot2::coord_cartesian()}}
 or \code{\link[ggplot2:coord_fixed]{ggplot2::coord_fixed()}}. \code{\link[ggplot2:coord_flip]{ggplot2::coord_flip()}} is an error: swap the
@@ -224,15 +290,15 @@ then round only where a panel happens to be square.
 The display is not clipped to the panel, so that counts outside the frame
 stay whole. Zooming with the \code{xlim} and \code{ylim} of the coordinate system
 therefore does not crop it, and the display can then extend over
-neighbouring panels and strips.
+neighboring panels and strips.
 }
 
 \section{Annotations}{
 
 A point or label that another layer, such as \code{\link[ggplot2:geom_point]{ggplot2::geom_point()}},
 \code{\link[ggplot2:geom_text]{ggplot2::geom_text()}}, or \code{\link[ggplot2:annotate]{ggplot2::annotate()}}, places at an \code{x} level and
-a \code{y} level is drawn at the centre of that cell's quadrant. This is a fixed
-position, the same in every panel, not the centre of the sector, whose size
+a \code{y} level is drawn at the center of that cell's quadrant. This is a fixed
+position, the same in every panel, not the center of the sector, whose size
 varies with the data. See the examples.
 }
 
@@ -245,7 +311,7 @@ observed counts.
 
 A panel whose four counts are all zero, such as an empty stratum in a
 faceted display, is drawn blank: only its frame, axes, labels, and zero
-counts are shown, with no sectors, rings, or direction tick. It has no odds
+counts are shown, with no sectors, rings, or diagonal line. It has no odds
 ratio, confidence interval, or p-value (they are \code{NA}) and is left out of
 the p-value adjustment, so it does not change the other panels.
 (With the default \code{margin = c(1, 2)}, \code{vcd::fourfold()} instead draws such
@@ -270,8 +336,8 @@ would split between the columns. Its odds ratio and p-value exist only
 because of the correction. With an empty row, the odds ratio is the ratio
 of the two counts in the other row, each plus 0.5, so it reflects how that
 row splits rather than an association. The rings are correspondingly wide,
-but the p-value can still fall below the significance level, so the colour,
-significance shading, and direction tick of such a panel say nothing about
+but the p-value can still fall below the significance level, so the color,
+significance shading, and diagonal line of such a panel say nothing about
 an association.
 
 The sectors show the observed table wherever the standardization can use
@@ -357,6 +423,15 @@ ggplot2::ggplot(
   ggplot2::aes(x = Gender, y = Admit, weight = Freq)
 ) +
   geom_fourfold(shape = "square") +
+  ggplot2::facet_wrap(ggplot2::vars(Dept), ncol = 3) +
+  theme_fourfold()
+
+# A longer diagonal line, in light gray
+ggplot2::ggplot(
+  ucb,
+  ggplot2::aes(x = Gender, y = Admit, weight = Freq)
+) +
+  geom_fourfold(diagonal.length = 0.3, diagonal.fill = "gray80") +
   ggplot2::facet_wrap(ggplot2::vars(Dept), ncol = 3) +
   theme_fourfold()
 

@@ -11,26 +11,26 @@ fourfold_palette(palette = c("vcd", "okabe-ito"))
 \code{"okabe-ito"}.}
 }
 \value{
-A character vector containing six hexadecimal colours.
+A character vector containing six hexadecimal colors.
 }
 \description{
-\code{fourfold_palette()} returns six colours for the \code{palette} argument of
-\code{\link[=geom_fourfold]{geom_fourfold()}}. The colours encode the direction and statistical
+\code{fourfold_palette()} returns six colors for the \code{palette} argument of
+\code{\link[=geom_fourfold]{geom_fourfold()}}. The colors encode the direction and statistical
 strength of association and are drawn directly by the geom rather than
 through a fill scale.
 Entries 1-2 are used when \code{extended = FALSE} (or \code{conf_level = 0}),
 entries 3-4 for an extended display without adjusted significance, and
 entries 5-6 for an extended display with adjusted significance. Within
-each pair, the first colour fills the diagonal with fewer cases than
+each pair, the first color fills the diagonal with fewer cases than
 expected under independence and the second fills the diagonal with more.
 }
 \details{
-\code{"vcd"}, the default, gives the colours of \code{vcd::fourfold()} (Meyer et
+\code{"vcd"}, the default, gives the colors of \code{vcd::fourfold()} (Meyer et
 al., 2026): light and darker blue, then light red and light blue, then red
 and navy.
 
-\code{"okabe-ito"} uses the colours of Okabe and Ito (2008), chosen to remain
-distinguishable for readers with common forms of colour-vision deficiency:
+\code{"okabe-ito"} uses the colors of Okabe and Ito (2008), chosen to remain
+distinguishable for readers with common forms of color-vision deficiency:
 sky blue and blue, then orange and sky blue lightened about halfway to
 white, then vermillion and blue.
 }

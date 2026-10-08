@@ -110,7 +110,7 @@ A different picture emerges after faceting by `Dept`; namely, there is no signif
 
 ### Square displays
 
-Four squares can be drawn instead of quarter-circles with `shape = "square"`. Each square has the same area as the quarter-circle it replaces, so both shapes display a table with identical areas. Squares and their diagonal direction ticks can reach the corners of the frame where the cell counts are drawn; when they do in any panel, as here, the counts in every panel move just outside those corners.
+Four squares can be drawn instead of quarter-circles with `shape = "square"`. Each square has the same area as the quarter-circle it replaces, so both shapes display a table with identical areas. The line through the center ends just past the outer corners of the two squares it marks. A square, confidence ring, or line that reaches the corners of the frame where the cell counts are drawn moves the counts of every panel just outside those corners; here they all stay inside.
 
 ```{r ucb_square, fig.width = 9, fig.height = 6}
 ggplot(ucb, aes(x = Gender, y = Admit, weight = Freq)) +

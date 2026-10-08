@@ -23,11 +23,47 @@ NULL
 # objects with ggplot2::layer().
 .fourfold_defaults <- list(
   std = "margins", margin = c(1, 2), conf_level = 0.95, extended = TRUE,
-  ticks = 0.15, p_adjust_method = "holm", shape = "circle", counts = "auto",
-  palette = fourfold_palette(), na.rm = FALSE
+  diagonal = TRUE, diagonal_length = NULL, diagonal_fill = "white",
+  diagonal_width = NULL, p_adjust_method = "holm", shape = "circle",
+  counts = "auto", palette = fourfold_palette(), na.rm = FALSE
 )
 
 .fourfold_pt <- 72.27 / 25.4
+
+# The band of the diagonal line is this many times as wide as the layer's
+# lines unless `diagonal.width` is given. Its border, drawn on each side of it,
+# is as wide as the layer's lines.
+.fourfold_diagonal_width <- 2.5
+
+# The default `diagonal.length`, the length of the diagonal line beyond the
+# favored sectors, along the diagonal. For circles it is past the arc. For
+# squares it is past the outer corner, and is a short stub, this far on each
+# axis (`stub * sqrt(2)` along the diagonal), which leaves room for the counts
+# of a typical standardized display inside.
+.fourfold_square_stub <- 0.02
+.fourfold_default_length <- c(
+  circle = 0.15, square = .fourfold_square_stub * sqrt(2)
+)
+
+# The length of the diagonal line beyond the favored sectors: `length`, or the
+# default of the shape if it is NULL.
+.fourfold_diagonal_length <- function(length, shape = NULL) {
+  if (!is.null(length)) return(length)
+  if (is.null(shape)) shape <- .fourfold_defaults$shape
+  unname(.fourfold_default_length[shape])
+}
+
+# Whether the diagonal line is drawn: in an extended display, unless
+# `diagonal` is FALSE. NULL (the parameter of a bare layer() without it) is the
+# default.
+.fourfold_draws_diagonal <- function(extended, diagonal) {
+  if (is.null(extended)) extended <- .fourfold_defaults$extended
+  if (is.null(diagonal)) diagonal <- .fourfold_defaults$diagonal
+  isTRUE(extended) && isTRUE(diagonal)
+}
+
+# Grid line widths are in units of 1/96 inch.
+.fourfold_lwd_inches <- 1 / 96
 
 # Side of a quarter-square with the area of a unit quarter-circle.
 .fourfold_square_side <- sqrt(pi) / 2
@@ -35,51 +71,119 @@ NULL
 # Normalized position of the counts drawn inside the frame corners.
 .fourfold_count_offset <- 0.88
 
-# Squares whose outer corner (or direction tick) extends beyond this
-# normalized coordinate are taken to reach the counts inside the frame
-# corners. At draw time the limit is lowered further when the measured count
-# text extends below it (see makeContent.fourfold_counts()).
+# Squares whose outer corner (or diagonal line, including its line width)
+# extends beyond this normalized coordinate are taken to reach the counts
+# inside the frame corners. At draw time the limit is lowered further when the
+# measured count text extends below it (see makeContent.fourfold_counts()).
 .fourfold_square_count_limit <- 0.80
 
-# For circles, enlarge the count box towards the centre by 0.04 on each axis
+# For circles, enlarge the count box towards the center by 0.04 on each axis
 # (half the square rule's nominal 0.08 clearance). This leaves breathing room
-# around arcs without treating a diagonal tick as a whole circular outline.
+# around arcs without treating the end of the diagonal line as a whole
+# circular outline.
 .fourfold_circle_count_clearance <- 0.04
 
-# Layer-wide outline reach (square side or circle radius) and diagonal tick
-# endpoint coordinate. Only finite radii of nonblank panels contribute.
+# Layer-wide outline reach (square side or circle radius) and the coordinate,
+# on each axis, of the ends of the diagonal line. Only finite radii of nonblank
+# panels contribute. `extended` here is whether the line is drawn at all
+# (`extended && diagonal`; a line of length 0 ends at the sectors but is still
+# drawn). A line end lies `length` along the diagonal past a circle's
+# arc, or past a square's outer corner, so on each axis it is `length / sqrt(2)`
+# past the arc's or the corner's coordinate.
 .fourfold_counts_reach <- function(
-    data, shape = NULL, extended = NULL, ticks = NULL) {
+    data, shape = NULL, extended = NULL, length = NULL) {
   if (is.null(shape)) shape <- .fourfold_defaults$shape
   if (is.null(extended)) extended <- .fourfold_defaults$extended
-  if (is.null(ticks)) ticks <- .fourfold_defaults$ticks
+  length <- .fourfold_diagonal_length(length, shape)
   data <- data[!is.na(data$odds_ratio), , drop = FALSE]
   radii <- c(data$radius, data$conf_low_radius, data$conf_high_radius)
   multiplier <- if (shape == "square") .fourfold_square_side else 1
   reach <- max(c(-Inf, radii[is.finite(radii)])) * multiplier
   tick_reach <- -Inf
-  if (extended && ticks > 0) {
+  if (extended) {
     tick_cell <- ifelse(
       data$odds_ratio > 1, data$cell %in% c(1L, 4L),
       data$cell %in% c(2L, 3L)
     )
-    tick_multiplier <- if (shape == "square") .fourfold_square_side else 1 / sqrt(2)
-    tick_reach <- data$radius[tick_cell] * tick_multiplier + ticks / sqrt(2)
+    tick_multiplier <-
+      if (shape == "square") .fourfold_square_side else 1 / sqrt(2)
+    tick_reach <- data$radius[tick_cell] * tick_multiplier + length / sqrt(2)
     tick_reach <- max(c(-Inf, tick_reach[is.finite(tick_reach)]))
   }
   c(outline = reach, tick = tick_reach)
 }
 
+# The text of one count. A whole number is labeled as vcd::fourfold() labels
+# its table, by as.character(): "1e+05" for a double 1e5, but "100000" for an
+# integer 100000L. The counts here are always doubles, but `integer` says that
+# they are counts of integer weights, or of unweighted rows, and so would be
+# integers in vcd's table; those that fit in an integer (as vcd's would) are
+# labeled as integers. Any other count is rounded to three significant digits,
+# or to a whole number when that is larger (12345.6 is "12346"), without
+# trailing zeros and never in scientific notation. Each count is formatted on
+# its own, so that no label is padded to match another.
+.fourfold_format_count <- function(count, integer = FALSE) {
+  vapply(
+    count,
+    function(value) {
+      if (is.finite(value) && value == round(value)) {
+        if (integer && abs(value) <= .Machine$integer.max) {
+          return(as.character(as.integer(value)))
+        }
+        return(as.character(value))
+      }
+      text <- format(
+        value, digits = 3, scientific = FALSE, trim = TRUE, drop0trailing = TRUE
+      )
+      if (grepl("e", text, fixed = TRUE)) {
+        # format() ignores `scientific` for denormal numbers (positive).
+        parts <- sprintf("%.2e", value)
+        digits <- sub("\\.", "", sub("e.*", "", parts))
+        exponent <- as.integer(sub(".*e", "", parts))
+        text <- sub("0+$", "", paste0("0.", strrep("0", -exponent - 1L), digits))
+      }
+      text
+    },
+    character(1),
+    USE.NAMES = FALSE
+  )
+}
+
+# The labels of one panel's four counts, used both for the drawn labels and for
+# the labels that placement measures, so that the two always agree. Rounding
+# noise next to the panel's real counts, such as the 5.6e-17 left by
+# 0.1 + 0.2 - 0.3, is shown as 0, so that it does not draw a label of many
+# digits. A count is noise when zapsmall() (always at 15 digits, whatever
+# options("digits") says: a double has about 15.9, so this zaps only what is
+# lost in floating-point arithmetic, roughly counts below 1e-15 times the
+# panel's largest) zaps it to 0; no other count is changed, so genuine weights
+# keep their own labels and a panel whose counts are all small keeps them. A
+# whole number is never zapped: zapsmall() rounds to at least 0 decimals, so
+# above a panel maximum of about 1e15 only non-whole counts below 0.5 are.
+.fourfold_count_labels <- function(count, integer = FALSE) {
+  noise <- zapsmall(count, digits = 15L) == 0 & count != 0
+  # (Not assigned unless needed, which would turn integers into doubles.)
+  if (any(noise)) count[noise] <- 0
+  .fourfold_format_count(count, integer)
+}
+
 # The values that place counts alike in every panel of a layer: the outline
-# and tick reach, and the count labels to measure (see
-# makeContent.fourfold_counts()). Blank panels draw no sectors or ticks and
+# and diagonal line reach, and the count labels to measure (see
+# makeContent.fourfold_counts()). Blank panels draw no sectors or line and
 # must not affect placement.
-.fourfold_counts_params <- function(data, shape, extended, ticks) {
-  reach <- .fourfold_counts_reach(data, shape, extended, ticks)
+.fourfold_counts_params <- function(data, shape, extended, length) {
+  reach <- .fourfold_counts_reach(data, shape, extended, length)
+  table_rows <- !is.na(data$odds_ratio)
+  panel <- if (is.null(data$PANEL)) rep(1L, nrow(data)) else data$PANEL
+  # Without the stat's `integer_count`, as with another stat, counts are doubles.
+  integer <- isTRUE(data$integer_count[1L])
   list(
     counts_reach = unname(reach["outline"]),
     counts_tick_reach = unname(reach["tick"]),
-    counts_labels = unique(as.character(data$count[!is.na(data$odds_ratio)]))
+    counts_labels = unique(unlist(lapply(
+      split(data$count[table_rows], panel[table_rows]),
+      .fourfold_count_labels, integer = integer
+    )))
   )
 }
 
@@ -118,7 +222,7 @@ NULL
       sprintf(
         paste0(
           "%s cannot be mapped in geom_fourfold(), which draws one table per ",
-          "panel; set colour, linewidth, and alpha as fixed arguments, e.g. ",
+          "panel; set `colour`, `linewidth`, and `alpha` as fixed arguments, e.g. ",
           "`geom_fourfold(colour = \"grey30\")`, and text size and font with ",
           "`theme_fourfold()`"
         ),
@@ -130,8 +234,9 @@ NULL
 }
 
 .fourfold_validate_params <- function(
-    std, margin, conf_level, extended, ticks, p_adjust_method, palette,
-    shape = "circle") {
+    std, margin, conf_level, extended, p_adjust_method, palette,
+    shape = "circle", diagonal = TRUE, diagonal_length = NULL,
+    diagonal_fill = "white", diagonal_width = NULL) {
   std <- .fourfold_match_arg(
     std, c("margins", "ind.max", "all.max"), "std"
   )
@@ -144,24 +249,49 @@ NULL
         conf_level >= 0 && conf_level < 1)) {
     stop("conf_level must be a single number between 0 and 1", call. = FALSE)
   }
-  if (!(length(extended) == 1L && !is.na(extended))) {
+  if (!(is.logical(extended) && length(extended) == 1L && !is.na(extended))) {
     stop("extended must be TRUE or FALSE", call. = FALSE)
   }
-  if (!(length(ticks) == 1L && is.finite(ticks) && ticks >= 0)) {
-    stop("ticks must be a single non-negative number", call. = FALSE)
+  if (!(is.logical(diagonal) && length(diagonal) == 1L && !is.na(diagonal))) {
+    stop("diagonal must be TRUE or FALSE", call. = FALSE)
+  }
+  if (!is.null(diagonal_length) &&
+      !(is.numeric(diagonal_length) && length(diagonal_length) == 1L &&
+        is.finite(diagonal_length) && diagonal_length >= 0)) {
+    stop(
+      "diagonal.length must be NULL or a single non-negative number",
+      call. = FALSE
+    )
   }
   if (length(palette) < 6L) {
-    stop("palette must contain at least six colours", call. = FALSE)
+    stop("palette must contain at least six colors", call. = FALSE)
   }
   tryCatch(
     grDevices::col2rgb(palette[seq_len(6L)]),
-    error = function(e) stop("palette contains an invalid colour", call. = FALSE)
+    error = function(e) stop("palette contains an invalid color", call. = FALSE)
   )
+  # Anything col2rgb() accepts, as for the layer's color; a missing color
+  # draws no fill (a hollow band), as in ggplot2.
+  valid_fill <- is.atomic(diagonal_fill) && length(diagonal_fill) == 1L &&
+    !inherits(
+      try(grDevices::col2rgb(diagonal_fill), silent = TRUE), "try-error"
+    )
+  if (!valid_fill) {
+    stop("diagonal.fill must be a single valid color", call. = FALSE)
+  }
+  if (!is.null(diagonal_width) &&
+      !(is.numeric(diagonal_width) && length(diagonal_width) == 1L &&
+        is.finite(diagonal_width) && diagonal_width >= 0)) {
+    stop(
+      "diagonal.width must be NULL or a single non-negative number",
+      call. = FALSE
+    )
+  }
 
   if (std == "margins") {
-    valid_margin <- (length(margin) == 2L &&
-      all(sort(margin) == c(1, 2))) ||
-      (length(margin) == 1L && margin %in% c(1, 2))
+    valid_margin <- is.numeric(margin) && !anyNA(margin) &&
+      ((length(margin) == 2L && all(sort(margin) == c(1, 2))) ||
+         (length(margin) == 1L && margin %in% c(1, 2)))
     if (!valid_margin) {
       stop("incorrect margin specification", call. = FALSE)
     }
@@ -171,11 +301,14 @@ NULL
     std = std,
     margin = margin,
     conf_level = conf_level,
-    extended = isTRUE(extended),
-    ticks = ticks,
+    extended = extended,
     p_adjust_method = p_adjust_method,
     palette = palette,
-    shape = shape
+    shape = shape,
+    diagonal = diagonal,
+    diagonal_length = diagonal_length,
+    diagonal_fill = diagonal_fill,
+    diagonal_width = diagonal_width
   )
 }
 
@@ -398,6 +531,16 @@ NULL
   incomplete <- .fourfold_missing_category(data$x, panel_scales$x, "x", panel) |
     .fourfold_missing_category(data$y, panel_scales$y, "y", panel)
   unknown <- !incomplete & is.na(data$weight)
+  # As in stat_count(), the weights must be numeric: character, factor, and
+  # logical weights are not coerced. (stat_bin() and stat_sum() do coerce
+  # logicals, to 1 and 0; the package accepted them as such before.) A weight
+  # that is all NA, whatever its type, is a missing weight.
+  if (!is.numeric(data$weight) && !all(is.na(data$weight))) {
+    stop(
+      sprintf("fourfold weights in panel %s must be numeric", panel),
+      call. = FALSE
+    )
+  }
   weight <- data$weight[!is.na(data$weight)]
   if (any(!is.finite(weight)) || any(weight < 0)) {
     stop(sprintf("fourfold weights in panel %s must be finite and non-negative",
@@ -477,8 +620,30 @@ NULL
   )
 }
 
+# ggplot2's check of the required aesthetics, which StatFourfold skips by
+# replacing compute_layer(). Without it a missing x or y fails later with an
+# obscure error. (A layer without rows never reaches the stat.)
+.fourfold_check_required <- function(data) {
+  missing <- setdiff(c("x", "y"), names(data))
+  if (length(missing)) {
+    stop(
+      sprintf(
+        "geom_fourfold() requires the `x` and `y` aesthetics; missing: %s",
+        paste0("`", missing, "`", collapse = " and ")
+      ),
+      call. = FALSE
+    )
+  }
+  invisible()
+}
+
 .fourfold_compute_layer <- function(
     data, layout, std, margin, conf_level, extended, p_adjust_method, na.rm) {
+  # The counts are summed as doubles, so that nothing overflows, but vcd would
+  # hold them as integers, and so label them, if the weights are integers or
+  # the rows are counted. The flag is for the labels only (see
+  # .fourfold_format_count()).
+  integer_count <- is.null(data$weight) || is.integer(data$weight)
   if (is.null(data$weight)) {
     data$weight <- 1
   }
@@ -614,6 +779,7 @@ NULL
         item$y_labels[1], item$y_labels[2]
       ),
       count = unname(c(tab)),
+      integer_count = integer_count,
       standardized = unname(c(fit)),
       radius = unname(sqrt(c(fit))),
       conf_low_radius = unname(ci_radii[1, ]),
@@ -657,6 +823,8 @@ StatFourfold <- ggplot2::ggproto(
     params
   },
   compute_layer = function(self, data, params, layout) {
+    # This replaces ggplot2's compute_layer(), which checks required_aes.
+    .fourfold_check_required(data)
     .fourfold_compute_layer(
       data = data,
       layout = layout,
@@ -670,6 +838,8 @@ StatFourfold <- ggplot2::ggproto(
   }
 )
 
+# Only the fill takes the layer's alpha, as in ggplot2's filled geoms; the
+# outline is opaque.
 .fourfold_sector_grob <- function(
     radius, from, to, fill = "transparent", colour = "black",
     alpha = NA_real_, lwd = 1, shape = "circle", name = NULL) {
@@ -690,8 +860,8 @@ StatFourfold <- ggplot2::ggproto(
     x = grid::unit(x, "native"),
     y = grid::unit(y, "native"),
     gp = grid::gpar(
-      fill = scales::alpha(fill, alpha),
-      col = scales::alpha(colour, alpha),
+      fill = ggplot2::fill_alpha(fill, alpha),
+      col = colour,
       lwd = lwd,
       linejoin = "round"
     ),
@@ -701,7 +871,7 @@ StatFourfold <- ggplot2::ggproto(
 
 .fourfold_responsive_text_grob <- function(
     label, x, y, hjust = 0.5, vjust = 0.5, angle = 0,
-    relative_size, minimum_size, colour, alpha, family, fontface = 1,
+    relative_size, minimum_size, colour, family, fontface = 1,
     name = NULL) {
   grid::gTree(
     label = label,
@@ -712,7 +882,7 @@ StatFourfold <- ggplot2::ggproto(
     angle = angle,
     relative_size = relative_size,
     minimum_size = minimum_size,
-    colour = scales::alpha(colour, alpha),
+    colour = colour,
     family = family,
     fontface = fontface,
     name = name,
@@ -754,8 +924,8 @@ makeContent.fourfold_responsive_text <- function(x) {
 }
 
 # Counts are placed when drawn, once the responsive text size is known: inside
-# the frame corners unless the layer's sectors, outlines or ticks reach the
-# measured count text, and otherwise just outside the corners.
+# the frame corners unless the layer's sectors, outlines or diagonal line
+# reach the measured count text, and otherwise just outside the corners.
 #' @exportS3Method grid::makeContent
 makeContent.fourfold_counts <- function(x) {
   panel_width <- grid::convertWidth(
@@ -793,13 +963,13 @@ makeContent.fourfold_counts <- function(x) {
     },
     numeric(1)
   ))
-  # Recorded on the drawn grob for inspection (see dev/square-counts.R).
+  # Recorded on the drawn grob for inspection (see dev/old/square-counts.R).
   x$count_limit <- .fourfold_count_limit(text_height)
   if (x$shape == "circle") {
     # Use the layer's labels so a wider count in one facet moves all facets.
     # An entirely blank layer has no reach; measure its own zero labels.
     measure_labels <- if (length(x$measure_labels)) x$measure_labels else x$labels
-    # Clamp at the axes for text extending past the centre of a small panel.
+    # Clamp at the axes for text extending past the center of a small panel.
     inner <- vapply(measure_labels, function(label) {
       text <- grid::textGrob(label, gp = gp)
       dimensions <- c(
@@ -814,8 +984,30 @@ makeContent.fourfold_counts <- function(x) {
   } else {
     tick_limit <- x$count_limit
   }
+  # The diagonal line's width reaches past its end point. The line's outer
+  # edge, its border included, whose width `tick_lwd` is, ends flat at the end
+  # point, perpendicular to the line on the page, with square corners (the
+  # border's miter joins), so its corners lie half a width to
+  # either side, in the direction perpendicular to the line's physical
+  # direction (1 / a, 1 / b), where a and b are the native units per inch on x
+  # and y. In native units that offset is half_width * (a^2, b^2) /
+  # sqrt(a^2 + b^2), which is half_width * a / sqrt(2) on each axis for equal
+  # units. The larger extent is used; native units may be reversed. Recorded
+  # on the drawn grob.
+  tick_reach <- x$tick_reach
+  if (isTRUE(is.finite(tick_reach) && x$tick_lwd > 0)) {
+    half_width <- x$tick_lwd * .fourfold_lwd_inches / 2
+    inch <- grid::unit(1, "inches")
+    per_inch <- abs(c(
+      grid::convertWidth(inch, "native", valueOnly = TRUE),
+      grid::convertHeight(inch, "native", valueOnly = TRUE)
+    ))
+    tick_reach <- tick_reach +
+      half_width * max(per_inch)^2 / sqrt(sum(per_inch^2))
+  }
+  x$tick_edge <- tick_reach
   x$outside <- switch(x$counts,
-    auto = isTRUE(x$reach > x$count_limit || x$tick_reach > tick_limit),
+    auto = isTRUE(x$reach > x$count_limit || tick_reach > tick_limit),
     inside = FALSE,
     outside = TRUE
   )
@@ -850,16 +1042,85 @@ makeContent.fourfold_counts <- function(x) {
   max(minimum_size, min(panel_width, panel_height) * relative_size)
 }
 
-.fourfold_segments_grob <- function(x0, y0, x1, y1, colour, alpha, lwd,
-                                    name = NULL) {
+.fourfold_segments_grob <- function(x0, y0, x1, y1, colour, lwd,
+                                    name = NULL, lineend = NULL) {
   grid::segmentsGrob(
     x0 = grid::unit(x0, "native"),
     y0 = grid::unit(y0, "native"),
     x1 = grid::unit(x1, "native"),
     y1 = grid::unit(y1, "native"),
-    gp = grid::gpar(col = scales::alpha(colour, alpha), lwd = lwd),
+    gp = grid::gpar(
+      col = colour, lwd = lwd, lineend = lineend
+    ),
     name = name
   )
+}
+
+# The diagonal line: one straight band through the center along a diagonal,
+# from the end point (x[1], y[1]) to (x[2], y[2]), drawn like geom_rect()'s
+# rectangle: a polygon with the interior color `fill` and a border of the
+# layer's color and line width, `lwd`. The band is `width` wide (a grid line
+# width, in 1/96 inch), not counting its border, and runs end to end, so that
+# the border's outer edge lies at the end points. It is a gTree whose
+# polygon is made when it is drawn (see makeContent.fourfold_diagonal()), as
+# the corners are offsets in inches, perpendicular to the line on the page.
+.fourfold_diagonal_grob <- function(x, y, fill, colour, lwd, width,
+                                    name = "fourfold-diagonal") {
+  grid::gTree(
+    x = x, y = y, fill = fill, colour = colour, lwd = lwd, width = width,
+    name = name, cl = "fourfold_diagonal"
+  )
+}
+
+# The band's corners, in inches on the page, from the end points (`x`, `y`, in
+# inches) and the border's width `border` and the band's `width`, both in
+# inches: a rectangle whose long edges are `width + border` apart, so that
+# their centered borders leave `width` of interior, and whose short edges lie
+# half a border inside the end points, so that the border's outer edge is at
+# them. Returns NULL if the line is no longer than its border, which leaves no
+# interior and, with the ends of the rectangle crossing, would invert it.
+.fourfold_diagonal_corners <- function(x, y, width, border) {
+  dx <- x[2] - x[1]
+  dy <- y[2] - y[1]
+  length <- sqrt(dx^2 + dy^2)
+  if (!is.finite(length) || length <= border) return(NULL)
+  along <- c(dx, dy) / length
+  across <- c(-along[2], along[1]) * (width + border) / 2
+  start <- c(x[1], y[1]) + along * border / 2
+  end <- c(x[2], y[2]) - along * border / 2
+  list(
+    x = c(start[1] + across[1], end[1] + across[1],
+          end[1] - across[1], start[1] - across[1]),
+    y = c(start[2] + across[2], end[2] + across[2],
+          end[2] - across[2], start[2] - across[2])
+  )
+}
+
+# Made when drawn, in physical units: the band is perpendicular to the line on
+# the page whatever the native units per inch on each axis (a theme's
+# `aspect.ratio` makes them differ), and its border is the same width on every
+# side. A line no longer than its border draws nothing.
+#' @exportS3Method grid::makeContent
+makeContent.fourfold_diagonal <- function(x) {
+  inches_x <- grid::convertX(
+    grid::unit(x$x, "native"), "inches", valueOnly = TRUE
+  )
+  inches_y <- grid::convertY(
+    grid::unit(x$y, "native"), "inches", valueOnly = TRUE
+  )
+  corners <- .fourfold_diagonal_corners(
+    inches_x, inches_y,
+    width = x$width * .fourfold_lwd_inches,
+    border = x$lwd * .fourfold_lwd_inches
+  )
+  if (is.null(corners)) return(grid::setChildren(x, grid::gList()))
+  grid::setChildren(x, grid::gList(grid::polygonGrob(
+    x = grid::unit(corners$x, "inches"), y = grid::unit(corners$y, "inches"),
+    gp = grid::gpar(
+      fill = x$fill, col = x$colour, lwd = x$lwd, linejoin = "mitre"
+    ),
+    name = "fourfold-diagonal-band"
+  )))
 }
 
 # Cartesian coordinates only rescale each axis, so the drawing's shape
@@ -905,7 +1166,6 @@ makeContent.fourfold_counts <- function(x) {
 #' @importFrom ggplot2 aes draw_key_blank from_theme Geom ggproto
 #' @importFrom grid gList gpar gTree polygonGrob
 #' @importFrom grid rectGrob segmentsGrob unit viewport
-#' @importFrom scales alpha
 #' @export
 GeomFourfold <- ggplot2::ggproto(
   "GeomFourfold", ggplot2::Geom,
@@ -920,7 +1180,10 @@ GeomFourfold <- ggplot2::ggproto(
     family = ggplot2::from_theme(family),
     alpha = NA
   ),
-  extra_params = c("na.rm", "palette", "ticks", "extended", "shape", "counts"),
+  extra_params = c(
+    "na.rm", "palette", "diagonal", "diagonal_length", "diagonal_fill",
+    "diagonal_width", "extended", "shape", "counts"
+  ),
   draw_key = ggplot2::draw_key_blank,
   setup_params = function(data, params) {
     # Layer-wide values, so that every facet places its counts alike: this
@@ -928,8 +1191,8 @@ GeomFourfold <- ggplot2::ggproto(
     counts_params <- .fourfold_counts_params(
       data,
       shape = params$shape,
-      extended = params$extended,
-      ticks = params$ticks
+      extended = .fourfold_draws_diagonal(params$extended, params$diagonal),
+      length = params$diagonal_length
     )
     params[names(counts_params)] <- counts_params
     params
@@ -962,7 +1225,11 @@ GeomFourfold <- ggplot2::ggproto(
   # Defaults match geom_fourfold() for direct use with ggplot2::layer().
   draw_panel = function(
       data, panel_params, coord, palette = .fourfold_defaults$palette,
-      ticks = .fourfold_defaults$ticks, extended = .fourfold_defaults$extended,
+      diagonal = .fourfold_defaults$diagonal,
+      diagonal_length = .fourfold_defaults$diagonal_length,
+      diagonal_fill = .fourfold_defaults$diagonal_fill,
+      diagonal_width = .fourfold_defaults$diagonal_width,
+      extended = .fourfold_defaults$extended,
       shape = .fourfold_defaults$shape, counts = .fourfold_defaults$counts,
       counts_reach = NULL, counts_tick_reach = NULL, counts_labels = NULL,
       na.rm = FALSE) {
@@ -973,6 +1240,18 @@ GeomFourfold <- ggplot2::ggproto(
     family <- data$family[1]
     base_size <- data$size[1] * .fourfold_pt
     lwd <- data$linewidth[1] * .fourfold_pt
+    # The diagonal line's band is white unless given, 2.5 times the layer's
+    # line width, and bordered in the layer's color and line width.
+    diagonal_lwd <- (if (is.null(diagonal_width)) {
+      .fourfold_diagonal_width * data$linewidth[1]
+    } else {
+      diagonal_width
+    }) * .fourfold_pt
+    diagonal_length <- .fourfold_diagonal_length(diagonal_length, shape)
+    draw_diagonal <- .fourfold_draws_diagonal(extended, diagonal)
+    # The width of the whole line with its border, which is what the counts
+    # must clear.
+    outline_lwd <- diagonal_lwd + 2 * lwd
 
     grobs <- list()
     add <- function(grob) {
@@ -1001,14 +1280,14 @@ GeomFourfold <- ggplot2::ggproto(
         for (cell in seq_len(4L)) {
           add(.fourfold_sector_grob(
             data[[bound]][cell], angle_from[cell], angle_to[cell],
-            fill = "transparent", colour = colour, alpha = alpha, lwd = lwd,
+            fill = "transparent", colour = colour, lwd = lwd,
             shape = shape, name = paste0("fourfold-", bound, "-", cell)
           ))
         }
       }
     }
 
-    if (extended && ticks > 0 && !blank) {
+    if (draw_diagonal && !blank) {
       if (data$odds_ratio[1] > 1) {
         cells <- c(1L, 4L)
         angles <- c(3 * pi / 4, -pi / 4)
@@ -1018,19 +1297,20 @@ GeomFourfold <- ggplot2::ggproto(
       }
       radii <- data$radius[cells]
       if (shape == "square") {
-        # Start the diagonal ticks at the outer corners of the squares.
+        # Start at the outer corners of the squares.
         radii <- radii * .fourfold_square_side * sqrt(2)
       }
-      add(.fourfold_segments_grob(
-        radii * cos(angles), radii * sin(angles),
-        (radii + ticks) * cos(angles), (radii + ticks) * sin(angles),
-        colour, alpha, lwd, "fourfold-direction-ticks"
+      ends <- radii + diagonal_length
+      add(.fourfold_diagonal_grob(
+        ends * cos(angles), ends * sin(angles),
+        fill = diagonal_fill, colour = colour, lwd = lwd,
+        width = diagonal_lwd
       ))
     }
 
     add(.fourfold_segments_grob(
       c(-1, 0), c(0, -1), c(1, 0), c(0, 1),
-      colour, alpha, lwd, "fourfold-axes"
+      colour, lwd, "fourfold-axes"
     ))
     major <- seq(-0.8, 0.8, by = 0.2)
     minor <- seq(-0.9, 0.9, by = 0.2)
@@ -1039,7 +1319,7 @@ GeomFourfold <- ggplot2::ggproto(
       c(rep(-0.02, length(major)), rep(-0.01, length(minor)), major, minor),
       c(major, minor, rep(0.02, length(major)), rep(0.01, length(minor))),
       c(rep(0.02, length(major)), rep(0.01, length(minor)), major, minor),
-      colour, alpha, lwd * 0.8, "fourfold-axis-ticks"
+      colour, lwd * 0.8, "fourfold-axis-ticks"
     ))
     add(grid::rectGrob(
       x = grid::unit(-1, "native"),
@@ -1048,7 +1328,7 @@ GeomFourfold <- ggplot2::ggproto(
       height = grid::unit(2, "native"),
       just = c("left", "bottom"),
       gp = grid::gpar(
-        fill = "transparent", col = scales::alpha(colour, alpha), lwd = lwd
+        fill = "transparent", col = colour, lwd = lwd
       ),
       name = "fourfold-frame"
     ))
@@ -1069,7 +1349,7 @@ GeomFourfold <- ggplot2::ggproto(
       add(.fourfold_responsive_text_grob(
         label = outer[[i]][[1]], x = outer[[i]][[2]], y = outer[[i]][[3]],
         angle = outer[[i]][[4]], relative_size = relative_size,
-        minimum_size = minimum_size, colour = colour, alpha = alpha,
+        minimum_size = minimum_size, colour = colour,
         family = family, name = paste0("fourfold-label-", outer_names[i])
       ))
     }
@@ -1077,20 +1357,23 @@ GeomFourfold <- ggplot2::ggproto(
     if (counts != "none") {
       # setup_params() gives the layer-wide values; without them, as when
       # draw_panel() is called directly, the panel is placed on its own.
-      own <- .fourfold_counts_params(data, shape, extended, ticks)
+      own <- .fourfold_counts_params(
+        data, shape, draw_diagonal, diagonal_length
+      )
       if (is.null(counts_reach)) counts_reach <- own$counts_reach
       if (is.null(counts_tick_reach)) counts_tick_reach <- own$counts_tick_reach
       if (is.null(counts_labels)) counts_labels <- own$counts_labels
       add(grid::gTree(
-        labels = as.character(data$count),
+        labels = .fourfold_count_labels(data$count, isTRUE(data$integer_count[1L])),
         measure_labels = counts_labels,
         reach = counts_reach,
         tick_reach = counts_tick_reach,
+        tick_lwd = if (draw_diagonal) outline_lwd else 0,
         shape = shape,
         counts = counts,
         relative_size = relative_size,
         minimum_size = minimum_size,
-        colour = scales::alpha(colour, alpha),
+        colour = colour,
         family = family,
         name = "fourfold-counts",
         cl = "fourfold_counts"
@@ -1126,7 +1409,7 @@ GeomFourfold <- ggplot2::ggproto(
 #'
 #' `geom_fourfold()` draws a fourfold display in each ggplot2 panel. Sector
 #' radii represent cell frequencies after the selected standardization, while
-#' sector colours, confidence rings, and direction ticks show the direction
+#' sector colors, confidence rings, and a diagonal line show the direction
 #' and strength of association.
 #'
 #' @details
@@ -1162,18 +1445,43 @@ GeomFourfold <- ggplot2::ggproto(
 #' shapes display a table with identical areas. Confidence rings
 #' become nested square outlines.
 #'
+#' In an extended display, one straight diagonal line through the center of
+#' the display marks the diagonal with more cases than expected under
+#' independence, and so the direction of the association; its two ends mark
+#' the sectors on that diagonal. The line is a band, drawn like a rectangle
+#' in [ggplot2::geom_rect()]: its interior is white (`diagonal.fill`) and
+#' 2.5 times as wide as the layer's `linewidth` (`diagonal.width`), and its
+#' border, in the layer's `colour` and as wide as its `linewidth`, runs along
+#' both sides and across both ends, so that it stands out on pale and dark
+#' sectors alike. The border's outer edge ends `diagonal.length` past the
+#' outline of each of the two sectors, measured along the diagonal: past the
+#' arc of a circle, 0.15 by default, or past the outer corner of a square,
+#' `0.02 * sqrt(2)` by default, which is 0.02 on each axis and a stub short
+#' enough that the counts of a typical standardized display stay inside. Set
+#' `diagonal = FALSE` to omit the line. This differs from `vcd::fourfold()`,
+#' which marks the direction with two short black ticks, one at each of those
+#' sectors, instead of a line through the center; its `ticks` argument, the
+#' length of those ticks, corresponds to `diagonal.length`, except that
+#' `diagonal.length = 0` still draws the line (ending at the sectors), where
+#' `ticks = 0` in `vcd::fourfold()` draws no ticks. The band's ends are
+#' perpendicular to the line on the page and its border has the same width on
+#' every side, whatever the native units per inch on each axis, such as with a
+#' theme's `aspect.ratio`. A line no longer than its border's width, as for
+#' tiny sectors in a tiny panel, is not drawn.
+#'
 #' With `counts = "auto"`, cell counts stay inside the frame corners unless
-#' a sector, either confidence outline, or a direction tick comes close to the
-#' count text. Both shapes use the largest drawing extent across the layer; circles
-#' also account for the width of the layer's count labels. Counts then move
+#' a sector, either confidence outline, or an end of the diagonal line
+#' (including its border) comes close to the count text. Both
+#' shapes use the largest drawing extent across the layer; circles also
+#' account for the width of the layer's count labels. Counts then move
 #' just outside the frame corners. Clearance is measured at draw time, so
 #' placement can differ between panels of different physical sizes.
 #' Use `counts = "inside"` or `"outside"` to force the placement, or `"none"`
 #' to hide counts without affecting any statistics. Outside counts can collide
-#' with category labels or neighbouring panels at small sizes; use larger
+#' with category labels or neighboring panels at small sizes; use larger
 #' panels, more panel spacing, smaller text, or `counts = "inside"`.
 #'
-#' The six semantic fill colours are supplied by `palette`; they are not mapped
+#' The six semantic fill colors are supplied by `palette`; they are not mapped
 #' through a ggplot2 fill scale. Typography and layout defaults are controlled
 #' by [theme_fourfold()].
 #'
@@ -1184,13 +1492,16 @@ GeomFourfold <- ggplot2::ggproto(
 #'   with exactly two levels. Convert numeric codes, such as 0/1, with
 #'   `factor()`.
 #' - `y` (required): a categorical variable with exactly two levels.
-#' - `weight`: non-negative cell frequencies; defaults to `1`.
+#' - `weight`: non-negative numeric cell frequencies; defaults to `1`.
 #'
 #' Each panel draws one table, so its drawing properties are set for the whole
 #' layer rather than mapped: give `colour`, `linewidth`, and `alpha` as fixed
-#' arguments, for example `geom_fourfold(colour = "grey30")`. Text `size` and
-#' `family` are inherited from the plot theme, such as [theme_fourfold()], and
-#' can also be given as fixed arguments. Fill colours are set with `palette`.
+#' arguments, for example `geom_fourfold(colour = "grey30")`. As in
+#' ggplot2's filled geoms, `alpha` sets the transparency of the cell fills
+#' only; outlines, rings, the diagonal line, axes, the frame, labels, and
+#' counts are not affected by `alpha`. Text `size` and `family` are inherited
+#' from the plot theme, such as [theme_fourfold()], and can also be given as
+#' fixed arguments. Fill colors are set with `palette`.
 #' Mapping any of these five in `geom_fourfold()` is an error, including a
 #' mapping to a computed variable with [ggplot2::after_stat()],
 #' [ggplot2::after_scale()], or [ggplot2::stage()]. Any such mapping inherited
@@ -1205,7 +1516,7 @@ GeomFourfold <- ggplot2::ggproto(
 #' The display is drawn in the plot's coordinate system, so axes, gridlines,
 #' and other layers agree with it. The first `x` level is at position 1 and the
 #' second at position 2, and likewise for `y`; the display fills the square
-#' from 0.5 to 2.5 on both axes, and each cell's quadrant is centred on its
+#' from 0.5 to 2.5 on both axes, and each cell's quadrant is centered on its
 #' category position.
 #'
 #' `geom_fourfold()` therefore also adds
@@ -1232,8 +1543,10 @@ GeomFourfold <- ggplot2::ggproto(
 #' level at the bottom unless reversed. Any `reverse` setting is drawn
 #' correctly. `GeomFourfold` and `StatFourfold` are the ggproto objects behind
 #' `geom_fourfold()`. Used directly with [ggplot2::layer()], they take the
-#' defaults of `geom_fourfold()`, and `GeomFourfold` adds no coordinate system
-#' and follows the one the plot has.
+#' defaults of `geom_fourfold()` (the arguments for the diagonal line are the
+#' parameters `diagonal`, `diagonal_length`, `diagonal_fill`, and
+#' `diagonal_width`), and
+#' `GeomFourfold` adds no coordinate system and follows the one the plot has.
 #'
 #' The coordinate system must be Cartesian, such as [ggplot2::coord_cartesian()]
 #' or [ggplot2::coord_fixed()]. [ggplot2::coord_flip()] is an error: swap the
@@ -1253,13 +1566,13 @@ GeomFourfold <- ggplot2::ggproto(
 #' The display is not clipped to the panel, so that counts outside the frame
 #' stay whole. Zooming with the `xlim` and `ylim` of the coordinate system
 #' therefore does not crop it, and the display can then extend over
-#' neighbouring panels and strips.
+#' neighboring panels and strips.
 #'
 #' @section Annotations:
 #' A point or label that another layer, such as [ggplot2::geom_point()],
 #' [ggplot2::geom_text()], or [ggplot2::annotate()], places at an `x` level and
-#' a `y` level is drawn at the centre of that cell's quadrant. This is a fixed
-#' position, the same in every panel, not the centre of the sector, whose size
+#' a `y` level is drawn at the center of that cell's quadrant. This is a fixed
+#' position, the same in every panel, not the center of the sector, whose size
 #' varies with the data. See the examples.
 #'
 #' @section Zero counts:
@@ -1270,7 +1583,7 @@ GeomFourfold <- ggplot2::ggproto(
 #'
 #' A panel whose four counts are all zero, such as an empty stratum in a
 #' faceted display, is drawn blank: only its frame, axes, labels, and zero
-#' counts are shown, with no sectors, rings, or direction tick. It has no odds
+#' counts are shown, with no sectors, rings, or diagonal line. It has no odds
 #' ratio, confidence interval, or p-value (they are `NA`) and is left out of
 #' the p-value adjustment, so it does not change the other panels.
 #' (With the default `margin = c(1, 2)`, `vcd::fourfold()` instead draws such
@@ -1295,8 +1608,8 @@ GeomFourfold <- ggplot2::ggproto(
 #' because of the correction. With an empty row, the odds ratio is the ratio
 #' of the two counts in the other row, each plus 0.5, so it reflects how that
 #' row splits rather than an association. The rings are correspondingly wide,
-#' but the p-value can still fall below the significance level, so the colour,
-#' significance shading, and direction tick of such a panel say nothing about
+#' but the p-value can still fall below the significance level, so the color,
+#' significance shading, and diagonal line of such a panel say nothing about
 #' an association.
 #'
 #' The sectors show the observed table wherever the standardization can use
@@ -1371,18 +1684,37 @@ GeomFourfold <- ggplot2::ggproto(
 #'   the margins chosen by `margin` while preserving the odds ratio.
 #'   `"ind.max"` and `"all.max"` draw unstandardized displays of the raw
 #'   counts, scaled by the largest cell in each panel or in the whole layer.
-#' @param margin Integer vector selecting the table margins when
+#' @param margin Numeric vector selecting the table margins when
 #'   `std = "margins"`. Use `c(1, 2)` (the default) for both margins, `1` for
 #'   the `y` (row) margin, or `2` for the `x` (column) margin, as in
 #'   [vcd::fourfold()].
 #' @param conf_level Confidence level in `[0, 1)`. Defaults to `0.95`; set to
 #'   `0` to suppress confidence rings and significance shading.
-#' @param extended If `FALSE`, omit the direction ticks, which mark the
-#'   diagonal with more cases than expected under independence, and fill cells
-#'   with the first two `palette` colours instead of shading by significance.
-#'   Defaults to `TRUE`.
-#' @param ticks Length of the direction ticks (see `extended`), where `1` is
-#'   the largest possible sector radius. Defaults to `0.15`; `0` hides them.
+#' @param extended A single `TRUE` or `FALSE`. If `FALSE`, omit the diagonal
+#'   line, which marks the diagonal with more cases than expected under
+#'   independence, and fill cells with the first two `palette` colors instead
+#'   of shading by significance. Defaults to `TRUE`.
+#' @param diagonal A single `TRUE` or `FALSE`: draw the diagonal line of an
+#'   extended display (see `extended`) or not. Defaults to `TRUE`.
+#' @param diagonal.length How far each end of the diagonal line extends past
+#'   the outline of the sector it marks, measured along the diagonal for both
+#'   shapes (past the arc of a circle, or the outer corner of a square), where
+#'   `1` is the largest possible sector radius. If `NULL`, the default, it is
+#'   `0.15` for circles and `0.02 * sqrt(2)` (about `0.028`) for squares, which
+#'   is `0.02` on each axis; a number applies to either shape as given. With
+#'   `0` the line ends at the sectors but is still drawn: use
+#'   `diagonal = FALSE` to omit it. Give `NULL` or a single non-negative
+#'   number.
+#' @param diagonal.fill The color of the diagonal line's interior, inside its
+#'   border, which is drawn in the layer's `colour`. Defaults to `"white"`. As
+#'   `fill` in ggplot2, `NA` or `"transparent"` leaves the line hollow, with its
+#'   border only. Give a single color.
+#' @param diagonal.width The width of the diagonal line's interior, in mm as
+#'   for `linewidth`, not counting its border, which is drawn outside it on each
+#'   side with the layer's `colour` and `linewidth`. If `NULL`, the default, it
+#'   is 2.5 times the layer's `linewidth`. Give `NULL` or a single non-negative
+#'   number. With `0`, the two borders meet and the line is one line in the
+#'   layer's `colour`, twice the layer's `linewidth` wide.
 #' @param p_adjust_method Method passed to [stats::p.adjust()] for adjustment
 #'   across panels. Defaults to `"holm"`, the first value in
 #'   [stats::p.adjust.methods].
@@ -1392,10 +1724,18 @@ GeomFourfold <- ggplot2::ggproto(
 #' @param counts Placement of cell counts: `"auto"` (the default) moves counts
 #'   outside when the drawing approaches them; `"inside"` always uses the inside
 #'   corners, even if overlapped; `"outside"` always uses the outside corners;
-#'   `"none"` hides the counts.
-#' @param palette Character vector of at least six valid colours in the
+#'   `"none"` hides the counts. Counts are labeled as [vcd::fourfold()] labels
+#'   the corresponding table, with [as.character()]: counts of integer
+#'   weights, or of unweighted rows, in full (`100000`) when they fit in an
+#'   integer, and whole-number
+#'   counts of double weights as R prints them, so that `1e5` is `1e+05`.
+#'   Non-integer counts (weights) are rounded to three significant digits, or
+#'   to a whole number when that is larger. A count that is only rounding noise
+#'   next to a panel's other counts, such as `5.6e-17` beside counts in the
+#'   tens, is shown as `0`.
+#' @param palette Character vector of at least six valid colors in the
 #'   semantic order used by [fourfold_palette()]. Defaults to
-#'   `fourfold_palette()`, the colours of `vcd::fourfold()`; see that page for
+#'   `fourfold_palette()`, the colors of `vcd::fourfold()`; see that page for
 #'   other built-in palettes such as `fourfold_palette("okabe-ito")`.
 #' @param na.rm If `FALSE`, the default, rows with a missing `x` or `y` are
 #'   removed, and panels with a missing `weight` are left empty, with a
@@ -1409,6 +1749,9 @@ GeomFourfold <- ggplot2::ggproto(
 #' @return A list of a ggplot2 layer and a default coordinate system,
 #'   `coord_cartesian(reverse = "y", ratio = 1)`, which can be added to a
 #'   [ggplot2::ggplot()] object (see the Coordinate systems section).
+#'   `GeomFourfold` and `StatFourfold` are the [ggplot2::ggproto()] objects
+#'   behind `geom_fourfold()`, a `Geom` and a `Stat`, for use with
+#'   [ggplot2::layer()].
 #'
 #' @references
 #' Friendly, M. (1994a). *A fourfold display for 2 by 2 by k tables*
@@ -1450,6 +1793,15 @@ GeomFourfold <- ggplot2::ggproto(
 #'   ggplot2::facet_wrap(ggplot2::vars(Dept), ncol = 3) +
 #'   theme_fourfold()
 #'
+#' # A longer diagonal line, in light gray
+#' ggplot2::ggplot(
+#'   ucb,
+#'   ggplot2::aes(x = Gender, y = Admit, weight = Freq)
+#' ) +
+#'   geom_fourfold(diagonal.length = 0.3, diagonal.fill = "gray80") +
+#'   ggplot2::facet_wrap(ggplot2::vars(Dept), ncol = 3) +
+#'   theme_fourfold()
+#'
 #' # Other layers are placed by category: a label in the Male-Admitted cell
 #' ggplot2::ggplot(
 #'   subset(ucb, Dept == "A"),
@@ -1471,7 +1823,10 @@ geom_fourfold <- function(
     margin = c(1, 2),
     conf_level = 0.95,
     extended = TRUE,
-    ticks = 0.15,
+    diagonal = TRUE,
+    diagonal.length = NULL,
+    diagonal.fill = "white",
+    diagonal.width = NULL,
     p_adjust_method = stats::p.adjust.methods,
     shape = c("circle", "square"),
     counts = c("auto", "inside", "outside", "none"),
@@ -1484,8 +1839,9 @@ geom_fourfold <- function(
     counts, c("auto", "inside", "outside", "none"), "counts"
   )
   validated <- .fourfold_validate_params(
-    std, margin, conf_level, extended, ticks, p_adjust_method, palette,
-    shape
+    std, margin, conf_level, extended, p_adjust_method, palette, shape,
+    diagonal = diagonal, diagonal_length = diagonal.length,
+    diagonal_fill = diagonal.fill, diagonal_width = diagonal.width
   )
   layer <- ggplot2::layer(
     data = data,
@@ -1501,7 +1857,10 @@ geom_fourfold <- function(
         margin = validated$margin,
         conf_level = validated$conf_level,
         extended = validated$extended,
-        ticks = validated$ticks,
+        diagonal = validated$diagonal,
+        diagonal_length = validated$diagonal_length,
+        diagonal_fill = validated$diagonal_fill,
+        diagonal_width = validated$diagonal_width,
         p_adjust_method = validated$p_adjust_method,
         palette = validated$palette,
         shape = validated$shape,
