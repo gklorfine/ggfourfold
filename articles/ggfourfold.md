@@ -49,9 +49,9 @@ a tendency for one pair of diagonally opposite cells to be larger than
 the other pair. The fourfold plot shows the association and the odds
 ratio visually as follows:
 
-- **Color and diagonal tick marks** show the **direction of
-  association**: the relatively larger diagonal pair is drawn in blue
-  (more than expected under independence) with the tick marks along that
+- **Color and a diagonal line** show the **direction of association**:
+  the relatively larger diagonal pair is drawn in blue (more than
+  expected under independence) with a line through the center along that
   diagonal, and the other pair in red.
 
 - **Confidence rings** around each quadrant give a **visual test of
@@ -127,7 +127,7 @@ berkeley + geom_fourfold()
 The quadrants do not align, and the 95% confidence rings, computed from
 the interval \\1.62 \le \theta \le 2.09\\, do not overlap: the odds
 ratio differs significantly from 1, apparent evidence of gender bias in
-favour of men.
+favor of men.
 
 ## Stratified \\2 \times 2 \times k\\ tables
 
@@ -154,7 +154,7 @@ berkeley +
 Surprisingly, for five of the six departments the odds of admission are
 about the same for men and women. Only Department A differs, and in the
 opposite direction: there women were about 2.86 times as likely as men
-to be admitted (\\1 / 0.349\\). The more intense colours mark the one
+to be admitted (\\1 / 0.349\\). The more intense colors mark the one
 panel whose odds ratio differs significantly from 1. With several
 strata,
 [`geom_fourfold()`](https://gavinklorfine.com/ggfourfold/reference/geom_fourfold.md)
@@ -259,10 +259,10 @@ With several strata, each panel’s rings show that stratum’s own interval
 at `conf_level`. They are not adjusted for multiple comparisons, as is
 also the case in
 [`vcd::fourfold()`](https://rdrr.io/pkg/vcd/man/fourfold.html). Only the
-*p*-values that decide which panels are drawn in the more intense
-colours are adjusted (Holm’s method, by default). A stratum whose rings
-only just separate can therefore still be drawn in the paler colours.
-Set `conf_level = 0` to omit the rings.
+*p*-values that decide which panels are drawn in the more intense colors
+are adjusted (Holm’s method, by default). A stratum whose rings only
+just separate can therefore still be drawn in the paler colors. Set
+`conf_level = 0` to omit the rings.
 
 ## Customizing the display
 
@@ -300,21 +300,24 @@ uses `counts = "auto"`.
 ``` r
 
 berkeley +
-  geom_fourfold(shape = "square", counts = "inside") +
+  geom_fourfold(shape = "square", counts = "outside") +
   facet_wrap(vars(Dept), ncol = 3, labeller = label_both)
 ```
 
-![](ggfourfold_files/figure-html/berkeley-square-inside-1.png)
+![](ggfourfold_files/figure-html/berkeley-square-outside-1.png)
 
-### Colours
+### Colors
 
 Displays are *extended* by default: each stratum is shaded by the
 significance of its association, as in the Berkeley examples above, and
-direction ticks are drawn. If `extended = FALSE` is supplied to
+a diagonal line is drawn through the center, along the diagonal with
+more cases than expected. If `extended = FALSE` is supplied to
 [`geom_fourfold()`](https://gavinklorfine.com/ggfourfold/reference/geom_fourfold.md),
 every panel is shaded alike, with the larger diagonal being darker.
-Significance is not shown and the direction ticks are omitted, giving a
-simpler display.
+Significance is not shown and the diagonal line is omitted, giving a
+simpler display. To keep the shading and omit only the line, supply
+`diagonal = FALSE`; its length, interior color, and width can be changed
+with `diagonal.length`, `diagonal.fill`, and `diagonal.width`.
 
 ``` r
 
@@ -325,11 +328,11 @@ berkeley +
 
 ![](ggfourfold_files/figure-html/berkeley-simple-1.png)
 
-Since colours carry the display’s meaning, they are drawn directly
+Since colors carry the display’s meaning, they are drawn directly
 through the `geom` rather than mapped through a fill scale.
 [`scale_fill_manual()`](https://ggplot2.tidyverse.org/reference/scale_manual.html)
 and similar functions therefore have no effect. Supply them through the
-`palette` argument instead, as a vector of six colours in the same order
+`palette` argument instead, as a vector of six colors in the same order
 used by
 [`fourfold_palette()`](https://gavinklorfine.com/ggfourfold/reference/fourfold_palette.md).
 
@@ -339,21 +342,20 @@ fourfold_palette()
 #> [1] "#99CCFF" "#6699CC" "#FFA0A0" "#A0A0FF" "#FF0000" "#000080"
 ```
 
-The six colours form three pairs:
+The six colors form three pairs:
 
-- Colours 1–2 are used when `extended = FALSE`
-- Colours 3–4 are used for a stratum whose association is not
-  significant
-- Colours 5–6 are used for a stratum whose association is significant
+- Colors 1–2 are used when `extended = FALSE`
+- Colors 3–4 are used for a stratum whose association is not significant
+- Colors 5–6 are used for a stratum whose association is significant
   after adjustment
 
-Within each pair, the first colour fills the diagonal with *fewer* cases
+Within each pair, the first color fills the diagonal with *fewer* cases
 than expected under independence and the second fills the diagonal with
 *more*.
 
-For example, we can construct a palette based on the Okabe-Ito colours
+For example, we can construct a palette based on the Okabe-Ito colors
 (Okabe & Ito, 2008), which remain distinguishable for readers with
-common forms of colour-deficient vision. Lightened orange and sky blue
+common forms of color-deficient vision. Lightened orange and sky blue
 mark strata whose association is not significant, while vermillion and
 blue mark those whose association is significant.
 

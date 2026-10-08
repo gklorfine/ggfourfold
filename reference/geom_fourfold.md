@@ -2,7 +2,7 @@
 
 `geom_fourfold()` draws a fourfold display in each ggplot2 panel. Sector
 radii represent cell frequencies after the selected standardization,
-while sector colours, confidence rings, and direction ticks show the
+while sector colors, confidence rings, and a diagonal line show the
 direction and strength of association.
 
 ## Usage
@@ -16,7 +16,10 @@ geom_fourfold(
   margin = c(1, 2),
   conf_level = 0.95,
   extended = TRUE,
-  ticks = 0.15,
+  diagonal = TRUE,
+  diagonal.length = NULL,
+  diagonal.fill = "white",
+  diagonal.width = NULL,
   p_adjust_method = stats::p.adjust.methods,
   shape = c("circle", "square"),
   counts = c("auto", "inside", "outside", "none"),
@@ -57,7 +60,7 @@ geom_fourfold(
 
 - margin:
 
-  Integer vector selecting the table margins when `std = "margins"`. Use
+  Numeric vector selecting the table margins when `std = "margins"`. Use
   `c(1, 2)` (the default) for both margins, `1` for the `y` (row)
   margin, or `2` for the `x` (column) margin, as in
   [`vcd::fourfold()`](https://rdrr.io/pkg/vcd/man/fourfold.html).
@@ -69,15 +72,43 @@ geom_fourfold(
 
 - extended:
 
-  If `FALSE`, omit the direction ticks, which mark the diagonal with
-  more cases than expected under independence, and fill cells with the
-  first two `palette` colours instead of shading by significance.
-  Defaults to `TRUE`.
+  A single `TRUE` or `FALSE`. If `FALSE`, omit the diagonal line, which
+  marks the diagonal with more cases than expected under independence,
+  and fill cells with the first two `palette` colors instead of shading
+  by significance. Defaults to `TRUE`.
 
-- ticks:
+- diagonal:
 
-  Length of the direction ticks (see `extended`), where `1` is the
-  largest possible sector radius. Defaults to `0.15`; `0` hides them.
+  A single `TRUE` or `FALSE`: draw the diagonal line of an extended
+  display (see `extended`) or not. Defaults to `TRUE`.
+
+- diagonal.length:
+
+  How far each end of the diagonal line extends past the outline of the
+  sector it marks, measured along the diagonal for both shapes (past the
+  arc of a circle, or the outer corner of a square), where `1` is the
+  largest possible sector radius. If `NULL`, the default, it is `0.15`
+  for circles and `0.02 * sqrt(2)` (about `0.028`) for squares, which is
+  `0.02` on each axis; a number applies to either shape as given. With
+  `0` the line ends at the sectors but is still drawn: use
+  `diagonal = FALSE` to omit it. Give `NULL` or a single non-negative
+  number.
+
+- diagonal.fill:
+
+  The color of the diagonal line's interior, inside its border, which is
+  drawn in the layer's `colour`. Defaults to `"white"`. As `fill` in
+  ggplot2, `NA` or `"transparent"` leaves the line hollow, with its
+  border only. Give a single color.
+
+- diagonal.width:
+
+  The width of the diagonal line's interior, in mm as for `linewidth`,
+  not counting its border, which is drawn outside it on each side with
+  the layer's `colour` and `linewidth`. If `NULL`, the default, it is
+  2.5 times the layer's `linewidth`. Give `NULL` or a single
+  non-negative number. With `0`, the two borders meet and the line is
+  one line in the layer's `colour`, twice the layer's `linewidth` wide.
 
 - p_adjust_method:
 
@@ -97,16 +128,26 @@ geom_fourfold(
   Placement of cell counts: `"auto"` (the default) moves counts outside
   when the drawing approaches them; `"inside"` always uses the inside
   corners, even if overlapped; `"outside"` always uses the outside
-  corners; `"none"` hides the counts.
+  corners; `"none"` hides the counts. Counts are labeled as
+  [`vcd::fourfold()`](https://rdrr.io/pkg/vcd/man/fourfold.html) labels
+  the corresponding table, with
+  [`as.character()`](https://rdrr.io/r/base/character.html): counts of
+  integer weights, or of unweighted rows, in full (`100000`) when they
+  fit in an integer, and whole-number counts of double weights as R
+  prints them, so that `1e5` is `1e+05`. Non-integer counts (weights)
+  are rounded to three significant digits, or to a whole number when
+  that is larger. A count that is only rounding noise next to a panel's
+  other counts, such as `5.6e-17` beside counts in the tens, is shown as
+  `0`.
 
 - palette:
 
-  Character vector of at least six valid colours in the semantic order
+  Character vector of at least six valid colors in the semantic order
   used by
   [`fourfold_palette()`](https://gavinklorfine.com/ggfourfold/reference/fourfold_palette.md).
   Defaults to
   [`fourfold_palette()`](https://gavinklorfine.com/ggfourfold/reference/fourfold_palette.md),
-  the colours of
+  the colors of
   [`vcd::fourfold()`](https://rdrr.io/pkg/vcd/man/fourfold.html); see
   that page for other built-in palettes such as
   `fourfold_palette("okabe-ito")`.
@@ -133,7 +174,11 @@ geom_fourfold(
 A list of a ggplot2 layer and a default coordinate system,
 `coord_cartesian(reverse = "y", ratio = 1)`, which can be added to a
 [`ggplot2::ggplot()`](https://ggplot2.tidyverse.org/reference/ggplot.html)
-object (see the Coordinate systems section).
+object (see the Coordinate systems section). `GeomFourfold` and
+`StatFourfold` are the
+[`ggplot2::ggproto()`](https://ggplot2.tidyverse.org/reference/ggproto.html)
+objects behind `geom_fourfold()`, a `Geom` and a `Stat`, for use with
+[`ggplot2::layer()`](https://ggplot2.tidyverse.org/reference/layer.html).
 
 ## Details
 
@@ -175,19 +220,48 @@ same area as the corresponding quarter-circle (side \\r\sqrt{\pi}/2\\
 for radius \\r\\), so the two shapes display a table with identical
 areas. Confidence rings become nested square outlines.
 
-With `counts = "auto"`, cell counts stay inside the frame corners unless
-a sector, either confidence outline, or a direction tick comes close to
-the count text. Both shapes use the largest drawing extent across the
-layer; circles also account for the width of the layer's count labels.
-Counts then move just outside the frame corners. Clearance is measured
-at draw time, so placement can differ between panels of different
-physical sizes. Use `counts = "inside"` or `"outside"` to force the
-placement, or `"none"` to hide counts without affecting any statistics.
-Outside counts can collide with category labels or neighbouring panels
-at small sizes; use larger panels, more panel spacing, smaller text, or
-`counts = "inside"`.
+In an extended display, one straight diagonal line through the center of
+the display marks the diagonal with more cases than expected under
+independence, and so the direction of the association; its two ends mark
+the sectors on that diagonal. The line is a band, drawn like a rectangle
+in
+[`ggplot2::geom_rect()`](https://ggplot2.tidyverse.org/reference/geom_tile.html):
+its interior is white (`diagonal.fill`) and 2.5 times as wide as the
+layer's `linewidth` (`diagonal.width`), and its border, in the layer's
+`colour` and as wide as its `linewidth`, runs along both sides and
+across both ends, so that it stands out on pale and dark sectors alike.
+The border's outer edge ends `diagonal.length` past the outline of each
+of the two sectors, measured along the diagonal: past the arc of a
+circle, 0.15 by default, or past the outer corner of a square,
+`0.02 * sqrt(2)` by default, which is 0.02 on each axis and a stub short
+enough that the counts of a typical standardized display stay inside.
+Set `diagonal = FALSE` to omit the line. This differs from
+[`vcd::fourfold()`](https://rdrr.io/pkg/vcd/man/fourfold.html), which
+marks the direction with two short black ticks, one at each of those
+sectors, instead of a line through the center; its `ticks` argument, the
+length of those ticks, corresponds to `diagonal.length`, except that
+`diagonal.length = 0` still draws the line (ending at the sectors),
+where `ticks = 0` in
+[`vcd::fourfold()`](https://rdrr.io/pkg/vcd/man/fourfold.html) draws no
+ticks. The band's ends are perpendicular to the line on the page and its
+border has the same width on every side, whatever the native units per
+inch on each axis, such as with a theme's `aspect.ratio`. A line no
+longer than its border's width, as for tiny sectors in a tiny panel, is
+not drawn.
 
-The six semantic fill colours are supplied by `palette`; they are not
+With `counts = "auto"`, cell counts stay inside the frame corners unless
+a sector, either confidence outline, or an end of the diagonal line
+(including its border) comes close to the count text. Both shapes use
+the largest drawing extent across the layer; circles also account for
+the width of the layer's count labels. Counts then move just outside the
+frame corners. Clearance is measured at draw time, so placement can
+differ between panels of different physical sizes. Use
+`counts = "inside"` or `"outside"` to force the placement, or `"none"`
+to hide counts without affecting any statistics. Outside counts can
+collide with category labels or neighboring panels at small sizes; use
+larger panels, more panel spacing, smaller text, or `counts = "inside"`.
+
+The six semantic fill colors are supplied by `palette`; they are not
 mapped through a ggplot2 fill scale. Typography and layout defaults are
 controlled by
 [`theme_fourfold()`](https://gavinklorfine.com/ggfourfold/reference/theme_fourfold.md).
@@ -202,14 +276,17 @@ controlled by
 
 - `y` (required): a categorical variable with exactly two levels.
 
-- `weight`: non-negative cell frequencies; defaults to `1`.
+- `weight`: non-negative numeric cell frequencies; defaults to `1`.
 
 Each panel draws one table, so its drawing properties are set for the
 whole layer rather than mapped: give `colour`, `linewidth`, and `alpha`
-as fixed arguments, for example `geom_fourfold(colour = "grey30")`. Text
-`size` and `family` are inherited from the plot theme, such as
+as fixed arguments, for example `geom_fourfold(colour = "grey30")`. As
+in ggplot2's filled geoms, `alpha` sets the transparency of the cell
+fills only; outlines, rings, the diagonal line, axes, the frame, labels,
+and counts are not affected by `alpha`. Text `size` and `family` are
+inherited from the plot theme, such as
 [`theme_fourfold()`](https://gavinklorfine.com/ggfourfold/reference/theme_fourfold.md),
-and can also be given as fixed arguments. Fill colours are set with
+and can also be given as fixed arguments. Fill colors are set with
 `palette`. Mapping any of these five in `geom_fourfold()` is an error,
 including a mapping to a computed variable with
 [`ggplot2::after_stat()`](https://ggplot2.tidyverse.org/reference/aes_eval.html),
@@ -234,7 +311,7 @@ The display is drawn in the plot's coordinate system, so axes,
 gridlines, and other layers agree with it. The first `x` level is at
 position 1 and the second at position 2, and likewise for `y`; the
 display fills the square from 0.5 to 2.5 on both axes, and each cell's
-quadrant is centred on its category position.
+quadrant is centered on its category position.
 
 `geom_fourfold()` therefore also adds
 `coord_cartesian(reverse = "y", ratio = 1)` to the plot, as
@@ -267,7 +344,9 @@ unless reversed. Any `reverse` setting is drawn correctly.
 `GeomFourfold` and `StatFourfold` are the ggproto objects behind
 `geom_fourfold()`. Used directly with
 [`ggplot2::layer()`](https://ggplot2.tidyverse.org/reference/layer.html),
-they take the defaults of `geom_fourfold()`, and `GeomFourfold` adds no
+they take the defaults of `geom_fourfold()` (the arguments for the
+diagonal line are the parameters `diagonal`, `diagonal_length`,
+`diagonal_fill`, and `diagonal_width`), and `GeomFourfold` adds no
 coordinate system and follows the one the plot has.
 
 The coordinate system must be Cartesian, such as
@@ -295,7 +374,7 @@ happens to be square.
 The display is not clipped to the panel, so that counts outside the
 frame stay whole. Zooming with the `xlim` and `ylim` of the coordinate
 system therefore does not crop it, and the display can then extend over
-neighbouring panels and strips.
+neighboring panels and strips.
 
 ## Annotations
 
@@ -304,9 +383,9 @@ A point or label that another layer, such as
 [`ggplot2::geom_text()`](https://ggplot2.tidyverse.org/reference/geom_text.html),
 or
 [`ggplot2::annotate()`](https://ggplot2.tidyverse.org/reference/annotate.html),
-places at an `x` level and a `y` level is drawn at the centre of that
+places at an `x` level and a `y` level is drawn at the center of that
 cell's quadrant. This is a fixed position, the same in every panel, not
-the centre of the sector, whose size varies with the data. See the
+the center of the sector, whose size varies with the data. See the
 examples.
 
 ## Zero counts
@@ -319,7 +398,7 @@ count labels always show the observed counts.
 
 A panel whose four counts are all zero, such as an empty stratum in a
 faceted display, is drawn blank: only its frame, axes, labels, and zero
-counts are shown, with no sectors, rings, or direction tick. It has no
+counts are shown, with no sectors, rings, or diagonal line. It has no
 odds ratio, confidence interval, or p-value (they are `NA`) and is left
 out of the p-value adjustment, so it does not change the other panels.
 (With the default `margin = c(1, 2)`,
@@ -348,8 +427,8 @@ exist only because of the correction. With an empty row, the odds ratio
 is the ratio of the two counts in the other row, each plus 0.5, so it
 reflects how that row splits rather than an association. The rings are
 correspondingly wide, but the p-value can still fall below the
-significance level, so the colour, significance shading, and direction
-tick of such a panel say nothing about an association.
+significance level, so the color, significance shading, and diagonal
+line of such a panel say nothing about an association.
 
 The sectors show the observed table wherever the standardization can use
 it:
@@ -463,6 +542,16 @@ ggplot2::ggplot(
   ggplot2::aes(x = Gender, y = Admit, weight = Freq)
 ) +
   geom_fourfold(shape = "square") +
+  ggplot2::facet_wrap(ggplot2::vars(Dept), ncol = 3) +
+  theme_fourfold()
+
+
+# A longer diagonal line, in light gray
+ggplot2::ggplot(
+  ucb,
+  ggplot2::aes(x = Gender, y = Admit, weight = Freq)
+) +
+  geom_fourfold(diagonal.length = 0.3, diagonal.fill = "gray80") +
   ggplot2::facet_wrap(ggplot2::vars(Dept), ncol = 3) +
   theme_fourfold()
 
