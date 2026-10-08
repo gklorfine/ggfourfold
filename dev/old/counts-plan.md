@@ -119,7 +119,7 @@ process (several sizes in one session shift pixels):
    invalid value is an error; layer data identical across values; decision identical
    across orientations. Plant bugs (drop `conf_low_radius`; circles back to `-Inf`;
    ignore `counts`) and confirm tests catch them.
-5. `devtools::test()`, `Rscript dev/verify-geom-fourfold.R`, `dev/square-counts.R`
+5. `devtools::test()`, `Rscript dev/verify-geom-fourfold.R`, `dev/old/square-counts.R`
    (update its comments if the rule description changes), `R CMD check --as-cran`
    (use `env -u DISPLAY` on this Mac), spelling, extrachecks.
 6. Independent review by two reviewers (statistics/visual correctness; ggplot2 API and

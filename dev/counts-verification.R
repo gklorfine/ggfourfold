@@ -20,7 +20,8 @@ settings <- list(
 )
 inferences <- list(default = list(), no_conf = list(conf_level = 0),
   nonextended = list(extended = FALSE),
-  alternatives = list(conf_level = 0.8, p_adjust_method = "bonferroni", ticks = 0))
+  alternatives = list(conf_level = 0.8, p_adjust_method = "bonferroni",
+    diagonal = FALSE))
 
 make_plot <- function(dataset, params = list(), orientation = NULL, base_size = 12) {
   ucb <- as.data.frame(UCBAdmissions)
@@ -62,6 +63,12 @@ make_plot <- function(dataset, params = list(), orientation = NULL, base_size = 
     dat$Freq[1] <- NA
     facet <- ggplot2::facet_wrap(ggplot2::vars(Dept), ncol = 3)
   } else stop("Unknown dataset: ", dataset)
+  # `diagonal = FALSE` (no diagonal line) is `ticks = 0` for a package from
+  # before the diagonal arguments, so that baselines can still be made.
+  if (!is.null(params$diagonal) && !"diagonal" %in% names(formals(geom_fourfold))) {
+    params$diagonal <- NULL
+    params$ticks <- 0
+  }
   p <- ggplot2::ggplot(dat, ggplot2::aes(x, y, weight = Freq)) +
     do.call(geom_fourfold, params) + facet + theme_fourfold(base_size = base_size)
   if (!is.null(orientation)) p <- p + ggplot2::coord_cartesian(reverse = orientation, ratio = 1)
@@ -83,15 +90,15 @@ if (mode == "manifest") {
           c(settings[[setting]], list(shape = shape)))
   for (dataset in c("bug", "strong", "zero", "blank", "mixed_blank", "empty", "missing_x", "missing_weight"))
     for (shape in c("circle", "square"))
-      add(paste(dataset, shape, sep = "-"), dataset, list(shape = shape, ticks = 0))
+      add(paste(dataset, shape, sep = "-"), dataset, list(shape = shape, diagonal = FALSE))
   for (shape in c("circle", "square")) {
     add(paste0("ucb-", shape, "-no_conf"), "ucb", list(shape = shape, conf_level = 0))
     add(paste0("ucb-", shape, "-nonextended"), "ucb", list(shape = shape, extended = FALSE))
-    add(paste0("ucb-", shape, "-small"), "ucb", list(shape = shape, ticks = 0), 500, 350)
+    add(paste0("ucb-", shape, "-small"), "ucb", list(shape = shape, diagonal = FALSE), 500, 350)
     for (counts in c("inside", "outside", "none"))
       for (orientation in c("none", "x", "y", "xy"))
         add(paste(shape, counts, orientation, sep = "-"), "bug",
-          list(shape = shape, ticks = 0, counts = counts), 600, 600,
+          list(shape = shape, diagonal = FALSE, counts = counts), 600, 600,
           orientation, "explicit")
   }
   saveRDS(cases, args[2])

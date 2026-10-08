@@ -10,7 +10,7 @@
 # forces `counts = "inside"` to show whether each variant clears the counts.
 #
 # Run from the package root:
-#   Rscript dev/tick-mockup.R [output-dir]
+#   Rscript dev/old/tick-mockup.R [output-dir]
 
 devtools::load_all(quiet = TRUE)
 library(ggplot2)

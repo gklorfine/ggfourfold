@@ -7,7 +7,7 @@ or less the same thing. Might be interesting...
   *Status*: implemented as `geom_fourfold(shape = "square")` (equal-area quarter-squares).
   See `issues/TASKS.md`, "Display / layout": **Square fourfold displays** (done), with
   follow-ups **Add a `counts = c("auto", "inside", "outside")` argument** and **Square tick
-  direction**. Visual check: `dev/square-counts.R`.
+  direction**. Visual check: `dev/old/square-counts.R`.
 
 * **Marginal plots**: For the 2 x 2 x R x C case (cf `woolf_test()`) showing the fourfold plot
 for the marginal 2 x 2 R & 2 x 2 C tables would show the effect of pooling over R or C or both,

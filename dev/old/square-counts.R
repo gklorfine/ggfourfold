@@ -12,7 +12,7 @@
 # In RStudio, open the ggfourfold project, source this file, and print the
 # plot objects one at a time. From the package root, all plots can also be
 # written to PNG files with:
-#   Rscript dev/square-counts.R [output-dir]
+#   Rscript dev/old/square-counts.R [output-dir]
 
 devtools::load_all(".", quiet = TRUE)
 library(ggplot2)

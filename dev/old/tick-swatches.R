@@ -1,8 +1,18 @@
+# NOTE (2026-10-08): the package now draws the LC2/LS2 line from
+# dev/old/tick-line-swatches.R, so the cards marked "current" show the earlier
+# direction ticks. The mock-ups edit the grob "fourfold-direction-ticks", which
+# the package no longer has (it is "fourfold-diagonal").
+#
+# NOTE (2026-10-07): the cards were drawn against the pre-change ticks (1x black
+# line width). C0/S0 "today" refer to that version, before C2/S2 were adopted as
+# the package default, so the restyle factors here multiply the old 1x black
+# ticks; re-running this script on the current package multiplies the new ones.
+#
 # Swatch sheet of every direction-tick option tried so far, for MF: one
 # labelled card per option, each showing UCB Dept A (significant, odds ratio
 # > 1) and Dept C (not significant, odds ratio < 1). See the "Square tick
 # direction" and "coloured direction ticks" items in issues/TASKS.md, and
-# dev/tick-mockup.R for the working sheets these came from.
+# dev/old/tick-mockup.R for the working sheets these came from.
 #
 # Options are mocked up by editing each panel's "fourfold-direction-ticks"
 # grob. Where the package itself can place the counts for an option (a style
@@ -11,7 +21,7 @@
 # forced inside to show whether the mark clears them; these cards say so.
 #
 # Run from the package root:
-#   Rscript dev/tick-swatches.R [output-dir]
+#   Rscript dev/old/tick-swatches.R [output-dir]
 # Writes tick-swatches.pdf and tick-swatches.png.
 
 devtools::load_all(quiet = TRUE)
