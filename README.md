@@ -18,15 +18,15 @@ Commit](https://img.shields.io/github/last-commit/gklorfine/ggfourfold)](https:/
 
 # ggfourfold <img src="man/figures/logo.png" align="right" height="200px" /><br><sub>Fourfold Displays for ‘ggplot2’</sub>
 
-A `ggplot2` extension that provides a geom and theme for creating
-fourfold displays. Inspired by the `fourfold` SAS macro (Friendly, 2000)
-and `vcd` R package (Meyer et al., 2026).
+A **ggplot2** extension that provides a geom and theme for creating
+fourfold displays. Inspired by the **fourfold** SAS macro (Friendly,
+2000) and **vcd** R package (Meyer et al., 2026).
 
 ## Installation
 
-The current development version (0.1.0) of `ggfourfold` can be installed
-from [R-universe](https://gklorfine.r-universe.dev/ggfourfold) or
-directly from the [GitHub
+The current development version (0.1.0) of **ggfourfold** can be
+installed from [R-universe](https://gklorfine.r-universe.dev/ggfourfold)
+or directly from the [GitHub
 repository](https://github.com/gklorfine/ggfourfold) with:
 
 ``` r
@@ -47,11 +47,11 @@ quadrants, giving a segment for each cell in the table. Unlike a pie
 chart, the angles of the segments are fixed, and it is the radii that
 vary.
 
-In an **unstandardized** display, these quadrants have area proportional
-to the sample size of their corresponding cell. **Standardized**
-displays rescale the table so that the row and/or column totals are
-equal, while preserving the sample odds ratio. This helps with comparing
-the quadrants when one group is much larger than another. A fully
+In an unstandardized display, these quadrants have area proportional to
+the sample size of their corresponding cell. Standardized displays
+rescale the table so that the row and/or column totals are equal, while
+preserving the sample odds ratio. This helps with comparing the
+quadrants when one group is much larger than another. A fully
 standardized display (the default) equates both the row *and* column
 totals, and gives a visual interpretation of the sample odds ratio:
 
@@ -88,13 +88,13 @@ library(ggfourfold)
 library(ggplot2)
 ```
 
-To construct a fourfold display with `ggfourfold`, you add
+To construct a fourfold display with **ggfourfold**, you add
 `geom_fourfold()` and `theme_fourfold()` to a `ggplot2::ggplot()` call.
 Then use `ggplot2::aes()` to map the two binary variables to `x` and
 `y`. If the data are in frequency form, also supply a mapping for
 `weight`. For a review of the different forms of categorical data in R,
-and how to convert among them, see the `vcdExtra` (Friendly & Klorfine,
-2026) vignettes [*1. Creating and manipulating frequency
+and how to convert among them, see the **vcdExtra** (Friendly &
+Klorfine, 2026) vignettes [*1. Creating and manipulating frequency
 tables*](https://friendly.github.io/vcdExtra/articles/a1-creating.html)
 and [*1a. Steps Toward Tidy Categorical Data
 Analysis*](https://friendly.github.io/vcdExtra/articles/a1a-convert-collapse.html).
