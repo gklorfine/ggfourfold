@@ -1,8 +1,8 @@
 # ggfourfold _(Fourfold Displays for ‘ggplot2’)
 
 A **ggplot2** extension that provides a geom and theme for creating
-fourfold displays. Inspired by the **fourfold** SAS macro (Friendly,
-2000) and **vcd** R package (Meyer et al., 2026).
+fourfold displays. Inspired by the `fourfold` SAS macro (Friendly, 2000)
+and **vcd** R package (Meyer et al., 2026).
 
 ## Installation
 
