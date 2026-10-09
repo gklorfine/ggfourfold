@@ -269,7 +269,7 @@ berkeley +
 
 ### Colors
 
-Displays are *extended* by default: each stratum is shaded by the significance of its association, as in the Berkeley examples above, and a diagonal line is drawn through the center, along the diagonal with more cases than expected. If `extended = FALSE` is supplied to `geom_fourfold()`, every panel is shaded alike, with the larger diagonal being darker. Significance is not shown and the diagonal line is omitted, giving a simpler display. To keep the shading and omit only the line, supply `diagonal = FALSE`; its length, interior color, and width can be changed with `diagonal.length`, `diagonal.fill`, and `diagonal.width`.
+Displays are *extended* by default: each stratum is shaded by the significance of its association, as in the Berkeley examples above, and a diagonal line is drawn through the center, along the diagonal with more cases than expected. If `extended = FALSE` is supplied to `geom_fourfold()`, every panel is shaded alike, with the larger diagonal being darker. Significance is not shown and the diagonal line is omitted, giving a simpler display.
 
 ```{r berkeley-simple, fig.width = 7, fig.height = 5}
 berkeley +
@@ -311,6 +311,20 @@ This palette is also built into `ggfourfold`, so the same display can be drawn w
 berkeley +
   geom_fourfold(palette = fourfold_palette("okabe-ito")) +
   facet_wrap(vars(Dept), ncol = 3, labeller = label_both)
+```
+
+### Diagonal line
+
+The diagonal line marking the direction of association can be omitted by supplying `diagonal = FALSE` to `geom_fourfold()`. The length, interior color, and width of the line can be changed with arguments `diagonal.length`, `diagonal.fill`, and `diagonal.width`. The line's outline follows the `color` and `linewidth` of the layer, like the cell outlines, confidence rings, axes, and frame. `color` also applies to the text.
+
+```{r berkeley-diagonal, fig.width = 5, fig.height = 5}
+berkeley +
+  geom_fourfold(
+    diagonal.length = 0.05,
+    diagonal.fill = "limegreen",
+    diagonal.width = 1.5,
+    color = "grey30"
+  )
 ```
 
 ### Working with 'ggplot2'
