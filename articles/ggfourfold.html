@@ -404,10 +404,11 @@ as a vector of six colors in the same order used by
 <span><span class="co">#&gt; [1] "#99CCFF" "#6699CC" "#FFA0A0" "#A0A0FF" "#FF0000" "#000080"</span></span></code></pre></div>
 <p>The six colors form three pairs:</p>
 <ul>
-<li>Colors 1–2 are used when <code>extended = FALSE</code>
+<li>Colors 1–2 are used when <code>extended = FALSE</code> or
+<code>conf_level = 0</code>
 </li>
 <li>Colors 3–4 are used for a stratum whose association is not
-significant</li>
+significant after adjustment</li>
 <li>Colors 5–6 are used for a stratum whose association is significant
 after adjustment</li>
 </ul>

@@ -342,8 +342,9 @@ fourfold_palette()
 
 The six colors form three pairs:
 
-- Colors 1–2 are used when `extended = FALSE`
+- Colors 1–2 are used when `extended = FALSE` or `conf_level = 0`
 - Colors 3–4 are used for a stratum whose association is not significant
+  after adjustment
 - Colors 5–6 are used for a stratum whose association is significant
   after adjustment
 

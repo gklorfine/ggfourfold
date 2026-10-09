@@ -10,18 +10,20 @@ geom_fourfold(). The colors encode the direction and statistical
 strength of association and are drawn directly by the geom rather than
 through a fill scale.
 Entries 1-2 are used when extended = FALSE (or conf_level = 0),
-entries 3-4 for an extended display without adjusted significance, and
-entries 5-6 for an extended display with adjusted significance. Within
-each pair, the first color fills the diagonal with fewer cases than
-expected under independence and the second fills the diagonal with more."><meta property="og:description" content="fourfold_palette() returns six colors for the palette argument of
+entries 3-4 are used for a stratum whose association is not
+significant after adjustment, and entries 5-6 are used for a stratum whose
+association is significant after adjustment. Within each pair, the first
+color fills the diagonal with fewer cases than expected under independence
+and the second fills the diagonal with more."><meta property="og:description" content="fourfold_palette() returns six colors for the palette argument of
 geom_fourfold(). The colors encode the direction and statistical
 strength of association and are drawn directly by the geom rather than
 through a fill scale.
 Entries 1-2 are used when extended = FALSE (or conf_level = 0),
-entries 3-4 for an extended display without adjusted significance, and
-entries 5-6 for an extended display with adjusted significance. Within
-each pair, the first color fills the diagonal with fewer cases than
-expected under independence and the second fills the diagonal with more."><meta property="og:image" content="https://gavinklorfine.com/ggfourfold/logo.png"></head><body>
+entries 3-4 are used for a stratum whose association is not
+significant after adjustment, and entries 5-6 are used for a stratum whose
+association is significant after adjustment. Within each pair, the first
+color fills the diagonal with fewer cases than expected under independence
+and the second fills the diagonal with more."><meta property="og:image" content="https://gavinklorfine.com/ggfourfold/logo.png"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -61,10 +63,11 @@ expected under independence and the second fills the diagonal with more."><meta 
 strength of association and are drawn directly by the geom rather than
 through a fill scale.
 Entries 1-2 are used when <code>extended = FALSE</code> (or <code>conf_level = 0</code>),
-entries 3-4 for an extended display without adjusted significance, and
-entries 5-6 for an extended display with adjusted significance. Within
-each pair, the first color fills the diagonal with fewer cases than
-expected under independence and the second fills the diagonal with more.</p>
+entries 3-4 are used for a stratum whose association <em>is not</em>
+significant after adjustment, and entries 5-6 are used for a stratum whose
+association <em>is</em> significant after adjustment. Within each pair, the first
+color fills the diagonal with fewer cases than expected under independence
+and the second fills the diagonal with more.</p>
     </div>
 
     <div class="section level2">
