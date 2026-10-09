@@ -2667,7 +2667,7 @@ test_that("the default length of the line depends on the shape", {
   # An explicit length applies as given, to either shape.
   expect_identical(.fourfold_diagonal_length(0.3, "square"), 0.3)
   expect_identical(.fourfold_diagonal_length(0, "circle"), 0)
-  expect_null(.fourfold_defaults$diagonal_length)
+  expect_null(.fourfold_defaults$diagonal.length)
   expect_null(formals(geom_fourfold)$diagonal.length)
   expect_null(formals(geom_fourfold)$diagonal.width)
   expect_identical(formals(geom_fourfold)$diagonal.fill, "white")
@@ -2719,7 +2719,7 @@ test_that("a layer built from the geom and stat styles the line like geom_fourfo
   expect_identical(rgba(band_of(default[[1]])$gp$fill), rgba("white"))
   # With them, they apply.
   styled <- lines_of(from_layer(params = list(
-    diagonal_fill = "orange", diagonal_width = 0.5, diagonal_length = 0.3
+    diagonal.fill = "orange", diagonal.width = 0.5, diagonal.length = 0.3
   )))
   expect_identical(rgba(band_of(styled[[1]])$gp$fill), rgba("orange"))
   expect_equal(
@@ -2752,10 +2752,36 @@ test_that("a layer built from the geom and stat styles the line like geom_fourfo
   # Calling draw_panel() through a layer with explicit NULLs is the default.
   expect_identical(
     lines_of(from_layer(params = list(
-      diagonal_length = NULL, diagonal_width = NULL
+      diagonal.length = NULL, diagonal.width = NULL
     ))),
     default
   )
+  # `diagonal.length` given to layer() sets where the line ends: its end
+  # points lie `length` beyond the circles, whatever the length.
+  reach <- function(line) sqrt(line$x^2 + line$y^2)
+  for (len in c(0, 0.05, 0.3)) {
+    given <- lines_of(from_layer(params = list(diagonal.length = len)))
+    expect_equal(reach(given[[1]]) - reach(default[[1]]), rep(len - 0.15, 2))
+  }
+  # A single diagonal parameter must not be taken for `diagonal` (an exact
+  # name match), so the counts are placed as for geom_fourfold().
+  counts_of <- function(layer) {
+    counts <- counts_printed(
+      ucb + layer, width = 7, height = 5
+    )
+    list(
+      outside = vapply(counts, function(x) x$outside, logical(1)),
+      tick_edge = lapply(counts, function(x) x$tick_edge)
+    )
+  }
+  for (one in list(list(diagonal.length = 0.8), list(diagonal.width = 3),
+                   list(diagonal.fill = "red"))) {
+    expect_identical(
+      counts_of(from_layer(params = one)),
+      counts_of(do.call(geom_fourfold, one)[[1]])
+    )
+  }
+  expect_true(all(counts_of(from_layer(params = list(diagonal.length = 0.8)))$outside))
 })
 
 # Counts and the width of the diagonal line ----------------------------------------------

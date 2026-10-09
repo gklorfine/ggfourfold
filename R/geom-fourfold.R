@@ -23,8 +23,8 @@ NULL
 # objects with ggplot2::layer().
 .fourfold_defaults <- list(
   std = "margins", margin = c(1, 2), conf_level = 0.95, extended = TRUE,
-  diagonal = TRUE, diagonal_length = NULL, diagonal_fill = "white",
-  diagonal_width = NULL, p_adjust_method = "holm", shape = "circle",
+  diagonal = TRUE, diagonal.length = NULL, diagonal.fill = "white",
+  diagonal.width = NULL, p_adjust_method = "holm", shape = "circle",
   counts = "auto", palette = fourfold_palette(), na.rm = FALSE
 )
 
@@ -65,7 +65,7 @@ NULL
 # Grid line widths are in units of 1/96 inch.
 .fourfold_lwd_inches <- 1 / 96
 
-# Side of a quarter-square with the area of a unit quarter-circle.
+# Side of a square with the area of a unit quarter-circle.
 .fourfold_square_side <- sqrt(pi) / 2
 
 # Normalized position of the counts drawn inside the frame corners.
@@ -235,8 +235,8 @@ NULL
 
 .fourfold_validate_params <- function(
     std, margin, conf_level, extended, p_adjust_method, palette,
-    shape = "circle", diagonal = TRUE, diagonal_length = NULL,
-    diagonal_fill = "white", diagonal_width = NULL) {
+    shape = "circle", diagonal = TRUE, diagonal.length = NULL,
+    diagonal.fill = "white", diagonal.width = NULL) {
   std <- .fourfold_match_arg(
     std, c("margins", "ind.max", "all.max"), "std"
   )
@@ -255,9 +255,9 @@ NULL
   if (!(is.logical(diagonal) && length(diagonal) == 1L && !is.na(diagonal))) {
     stop("diagonal must be TRUE or FALSE", call. = FALSE)
   }
-  if (!is.null(diagonal_length) &&
-      !(is.numeric(diagonal_length) && length(diagonal_length) == 1L &&
-        is.finite(diagonal_length) && diagonal_length >= 0)) {
+  if (!is.null(diagonal.length) &&
+      !(is.numeric(diagonal.length) && length(diagonal.length) == 1L &&
+        is.finite(diagonal.length) && diagonal.length >= 0)) {
     stop(
       "diagonal.length must be NULL or a single non-negative number",
       call. = FALSE
@@ -272,16 +272,16 @@ NULL
   )
   # Anything col2rgb() accepts, as for the layer's color; a missing color
   # draws no fill (a hollow band), as in ggplot2.
-  valid_fill <- is.atomic(diagonal_fill) && length(diagonal_fill) == 1L &&
+  valid_fill <- is.atomic(diagonal.fill) && length(diagonal.fill) == 1L &&
     !inherits(
-      try(grDevices::col2rgb(diagonal_fill), silent = TRUE), "try-error"
+      try(grDevices::col2rgb(diagonal.fill), silent = TRUE), "try-error"
     )
   if (!valid_fill) {
     stop("diagonal.fill must be a single valid color", call. = FALSE)
   }
-  if (!is.null(diagonal_width) &&
-      !(is.numeric(diagonal_width) && length(diagonal_width) == 1L &&
-        is.finite(diagonal_width) && diagonal_width >= 0)) {
+  if (!is.null(diagonal.width) &&
+      !(is.numeric(diagonal.width) && length(diagonal.width) == 1L &&
+        is.finite(diagonal.width) && diagonal.width >= 0)) {
     stop(
       "diagonal.width must be NULL or a single non-negative number",
       call. = FALSE
@@ -306,9 +306,9 @@ NULL
     palette = palette,
     shape = shape,
     diagonal = diagonal,
-    diagonal_length = diagonal_length,
-    diagonal_fill = diagonal_fill,
-    diagonal_width = diagonal_width
+    diagonal.length = diagonal.length,
+    diagonal.fill = diagonal.fill,
+    diagonal.width = diagonal.width
   )
 }
 
@@ -828,12 +828,12 @@ StatFourfold <- ggplot2::ggproto(
     .fourfold_compute_layer(
       data = data,
       layout = layout,
-      std = params$std,
-      margin = params$margin,
-      conf_level = params$conf_level,
-      extended = params$extended,
-      p_adjust_method = params$p_adjust_method,
-      na.rm = params$na.rm
+      std = params[["std"]],
+      margin = params[["margin"]],
+      conf_level = params[["conf_level"]],
+      extended = params[["extended"]],
+      p_adjust_method = params[["p_adjust_method"]],
+      na.rm = params[["na.rm"]]
     )
   }
 )
@@ -1181,8 +1181,8 @@ GeomFourfold <- ggplot2::ggproto(
     alpha = NA
   ),
   extra_params = c(
-    "na.rm", "palette", "diagonal", "diagonal_length", "diagonal_fill",
-    "diagonal_width", "extended", "shape", "counts"
+    "na.rm", "palette", "diagonal", "diagonal.length", "diagonal.fill",
+    "diagonal.width", "extended", "shape", "counts"
   ),
   draw_key = ggplot2::draw_key_blank,
   setup_params = function(data, params) {
@@ -1190,9 +1190,9 @@ GeomFourfold <- ggplot2::ggproto(
     # sees the whole layer's data, draw_panel() only its own panel's.
     counts_params <- .fourfold_counts_params(
       data,
-      shape = params$shape,
-      extended = .fourfold_draws_diagonal(params$extended, params$diagonal),
-      length = params$diagonal_length
+      shape = params[["shape"]],
+      extended = .fourfold_draws_diagonal(params[["extended"]], params[["diagonal"]]),
+      length = params[["diagonal.length"]]
     )
     params[names(counts_params)] <- counts_params
     params
@@ -1226,9 +1226,9 @@ GeomFourfold <- ggplot2::ggproto(
   draw_panel = function(
       data, panel_params, coord, palette = .fourfold_defaults$palette,
       diagonal = .fourfold_defaults$diagonal,
-      diagonal_length = .fourfold_defaults$diagonal_length,
-      diagonal_fill = .fourfold_defaults$diagonal_fill,
-      diagonal_width = .fourfold_defaults$diagonal_width,
+      diagonal.length = .fourfold_defaults$diagonal.length,
+      diagonal.fill = .fourfold_defaults$diagonal.fill,
+      diagonal.width = .fourfold_defaults$diagonal.width,
       extended = .fourfold_defaults$extended,
       shape = .fourfold_defaults$shape, counts = .fourfold_defaults$counts,
       counts_reach = NULL, counts_tick_reach = NULL, counts_labels = NULL,
@@ -1242,12 +1242,12 @@ GeomFourfold <- ggplot2::ggproto(
     lwd <- data$linewidth[1] * .fourfold_pt
     # The diagonal line's band is white unless given, 2.5 times the layer's
     # line width, and bordered in the layer's color and line width.
-    diagonal_lwd <- (if (is.null(diagonal_width)) {
+    diagonal_lwd <- (if (is.null(diagonal.width)) {
       .fourfold_diagonal_width * data$linewidth[1]
     } else {
-      diagonal_width
+      diagonal.width
     }) * .fourfold_pt
-    diagonal_length <- .fourfold_diagonal_length(diagonal_length, shape)
+    diagonal.length <- .fourfold_diagonal_length(diagonal.length, shape)
     draw_diagonal <- .fourfold_draws_diagonal(extended, diagonal)
     # The width of the whole line with its border, which is what the counts
     # must clear.
@@ -1300,10 +1300,10 @@ GeomFourfold <- ggplot2::ggproto(
         # Start at the outer corners of the squares.
         radii <- radii * .fourfold_square_side * sqrt(2)
       }
-      ends <- radii + diagonal_length
+      ends <- radii + diagonal.length
       add(.fourfold_diagonal_grob(
         ends * cos(angles), ends * sin(angles),
-        fill = diagonal_fill, colour = colour, lwd = lwd,
+        fill = diagonal.fill, colour = colour, lwd = lwd,
         width = diagonal_lwd
       ))
     }
@@ -1358,7 +1358,7 @@ GeomFourfold <- ggplot2::ggproto(
       # setup_params() gives the layer-wide values; without them, as when
       # draw_panel() is called directly, the panel is placed on its own.
       own <- .fourfold_counts_params(
-        data, shape, draw_diagonal, diagonal_length
+        data, shape, draw_diagonal, diagonal.length
       )
       if (is.null(counts_reach)) counts_reach <- own$counts_reach
       if (is.null(counts_tick_reach)) counts_tick_reach <- own$counts_tick_reach
@@ -1539,9 +1539,7 @@ GeomFourfold <- ggplot2::ggproto(
 #' level at the bottom unless reversed. Any `reverse` setting is drawn
 #' correctly. `GeomFourfold` and `StatFourfold` are the ggproto objects behind
 #' `geom_fourfold()`. Used directly with [ggplot2::layer()], they take the
-#' defaults of `geom_fourfold()` (the arguments for the diagonal line are the
-#' parameters `diagonal`, `diagonal_length`, `diagonal_fill`, and
-#' `diagonal_width`), and
+#' defaults of `geom_fourfold()`, and
 #' `GeomFourfold` adds no coordinate system and follows the one the plot has.
 #'
 #' The coordinate system must be Cartesian, such as [ggplot2::coord_cartesian()]
@@ -1836,8 +1834,8 @@ geom_fourfold <- function(
   )
   validated <- .fourfold_validate_params(
     std, margin, conf_level, extended, p_adjust_method, palette, shape,
-    diagonal = diagonal, diagonal_length = diagonal.length,
-    diagonal_fill = diagonal.fill, diagonal_width = diagonal.width
+    diagonal = diagonal, diagonal.length = diagonal.length,
+    diagonal.fill = diagonal.fill, diagonal.width = diagonal.width
   )
   layer <- ggplot2::layer(
     data = data,
@@ -1854,9 +1852,9 @@ geom_fourfold <- function(
         conf_level = validated$conf_level,
         extended = validated$extended,
         diagonal = validated$diagonal,
-        diagonal_length = validated$diagonal_length,
-        diagonal_fill = validated$diagonal_fill,
-        diagonal_width = validated$diagonal_width,
+        diagonal.length = validated$diagonal.length,
+        diagonal.fill = validated$diagonal.fill,
+        diagonal.width = validated$diagonal.width,
         p_adjust_method = validated$p_adjust_method,
         palette = validated$palette,
         shape = validated$shape,

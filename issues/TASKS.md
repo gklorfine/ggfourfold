@@ -1478,6 +1478,10 @@ As these items are resolved, check them off as [X] and record the fix and verifi
       function), `direction`; `linewidth` is not used because in ggplot2 it is the border's
       stroke. Layer parameters for `layer()`: `diagonal`, `diagonal_length`,
       `diagonal_fill`, `diagonal_width`. vcd's `ticks` corresponds to `diagonal.length`.
+      (2026-10-09, GK decision: the layer parameters now use the same dotted names as
+      `geom_fourfold()`: `diagonal`, `diagonal.length`, `diagonal.fill`, `diagonal.width`.
+      `setup_params()` now reads layer parameters with `[[`, since `$` partial-matched a lone
+      `diagonal.*` parameter as `diagonal` and placed the counts as if no line were drawn.)
     - Squares' stub is 0.02 per axis (`0.02 * sqrt(2)`, about 0.0283, along the diagonal),
       not 0.03; circles stay at 0.15. Claude's call, GK did not object: an explicit
       `diagonal.length` is along the diagonal past the sector for both shapes. A length of 0
