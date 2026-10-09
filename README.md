@@ -135,7 +135,9 @@ appears to show a gender bias; that is, men are significantly more
 likely to be admitted than women, pooling over department. This is
 illustrated through the much larger area and intense blue shading of the
 male-admitted and female-rejected quadrants, along with the
-non-overlapping confidence rings of adjacent quadrants.
+non-overlapping confidence rings of adjacent quadrants. The white
+diagonal line through the male-admitted and female-rejected quadrants
+marks the direction of association.
 
 To see the relationship between `Admit` and `Gender` across `Dept`, add
 `ggplot2::facet_wrap()` or `ggplot2::facet_grid()` to draw one display
