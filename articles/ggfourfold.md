@@ -6,14 +6,14 @@ library(ggfourfold)
 library(ggplot2)
 ```
 
-`ggfourfold` provides
+**ggfourfold** provides
 [`geom_fourfold()`](https://gavinklorfine.com/ggfourfold/reference/geom_fourfold.md)
 and
 [`theme_fourfold()`](https://gavinklorfine.com/ggfourfold/reference/theme_fourfold.md)
 for drawing fourfold displays of \\2 \times 2\\ and \\2 \times 2 \times
-k\\ tables with `ggplot2` to show the **direction** and **strength** of
-association between two binary variables, and its **pattern** of
-association across \\k\\ strata.
+k\\ tables with **ggplot2** to show the direction and strength of
+association between two binary variables, and its pattern of association
+across \\k\\ strata.
 
 For example, in the classic case we use here, one could ask if there is
 an association between gender and admission to graduate school, and
@@ -23,12 +23,12 @@ introduction follows the treatment in Friendly & Meyer (2016, Section
 
 ## Fourfold displays
 
-The *fourfold display* is a special case of a **radial diagram**, or
-“polar area chart”, designed for \\2 \times 2\\ (or \\2 \times 2 \times
-k\\) tables (Fienberg, 1975; Friendly, 1994a, 1994b). The frequency
+The fourfold display is a special case of a radial diagram, or “polar
+area chart”, designed for \\2 \times 2\\ (or \\2 \times 2 \times k\\)
+tables (Fienberg, 1975; Friendly, 1994a, 1994b). The frequency
 \\n\_{ij}\\ in each cell is shown by a quarter circle whose radius is
-proportional to \\\sqrt{n\_{ij}}\\, so that its *area* is proportional
-to the cell count.
+proportional to \\\sqrt{n\_{ij}}\\, so that its area is proportional to
+the cell count.
 
 Like a pie chart, it uses segments of a circle to show frequencies;
 unlike a pie chart, it keeps the angles of the segments constant and
@@ -36,10 +36,10 @@ varies the radius. This is the \\2 \times 2\\ cousin of the graphic form
 used by Florence Nightingale (Nightingale, 1858). Friendly & Andrews
 (2021) describe the rich history of radial diagrams.
 
-The main purpose of the display is to show the **sample odds ratio**.
-This gives a number that compares the odds of an event (accepted!)
-happening in one group (men) to the odds of it happening in another
-group (women).
+The main purpose of the display is to show the sample odds ratio
+(\\\hat{\theta}\\). This gives a number that compares the odds of an
+event (accepted!) happening in one group (men) to the odds of it
+happening in another group (women).
 
 \\ \hat{\theta} = \frac{n\_{11} / n\_{12}}{n\_{21} / n\_{22}} =
 \frac{n\_{11} \\ n\_{22}}{n\_{12} \\ n\_{21}} . \\
@@ -49,13 +49,13 @@ a tendency for one pair of diagonally opposite cells to be larger than
 the other pair. The fourfold plot shows the association and the odds
 ratio visually as follows:
 
-- **Color and a diagonal line** show the **direction of association**:
-  the relatively larger diagonal pair is drawn in blue (more than
-  expected under independence) with a line through the center along that
+- Color and a diagonal line show the direction of association: the
+  relatively larger diagonal pair is drawn in blue (more than expected
+  under independence) with a line through the center along that
   diagonal, and the other pair in red.
 
-- **Confidence rings** around each quadrant give a **visual test of
-  independence**, \\H_0: \theta = 1\\: in a standardized display, the
+- Confidence rings around each quadrant give a visual test of
+  independence, \\H_0: \theta = 1\\: in a standardized display, the
   rings for adjacent quadrants overlap if and only if the observed
   counts are consistent with the null hypothesis.
 
@@ -77,7 +77,7 @@ berkeley <- ggplot(ucb, aes(x = Admit, y = Gender, weight = Freq)) +
   theme_fourfold()
 ```
 
-The *unstandardized* display (`std = "ind.max"`) shows the raw
+The unstandardized display (`std = "ind.max"`) shows the raw
 frequencies, with the largest cell drawn at full size. The sample odds
 ratio, Odds(Admit \| Male) / Odds(Admit \| Female), is \\(1198 / 1493) /
 (557 / 1278) = 1.84\\: male applicants were nearly twice as likely to be
@@ -268,7 +268,7 @@ just separate can therefore still be drawn in the paler colors. Set
 
 ### Square cells
 
-`ggfourfold` allows for four squares to be drawn instead of
+**ggfourfold** allows for four squares to be drawn instead of
 quarter-circles via the `shape` argument of
 [`geom_fourfold()`](https://gavinklorfine.com/ggfourfold/reference/geom_fourfold.md).
 Squares are drawn with area equal to the quarter-circle they replace
@@ -373,8 +373,8 @@ berkeley +
 
 ![](ggfourfold_files/figure-html/berkeley-okabe-ito-1.png)
 
-This palette is also built into `ggfourfold`, so the same display can be
-drawn with `fourfold_palette("okabe-ito")`.
+This palette is also built into **ggfourfold**, so the same display can
+be drawn with `fourfold_palette("okabe-ito")`.
 
 ``` r
 
