@@ -387,11 +387,7 @@ and a diagonal line is drawn through the center, along the diagonal with
 more cases than expected. If <code>extended = FALSE</code> is supplied
 to <code><a href="../reference/geom_fourfold.html">geom_fourfold()</a></code>, every panel is shaded alike, with the
 larger diagonal being darker. Significance is not shown and the diagonal
-line is omitted, giving a simpler display. To keep the shading and omit
-only the line, supply <code>diagonal = FALSE</code>; its length,
-interior color, and width can be changed with
-<code>diagonal.length</code>, <code>diagonal.fill</code>, and
-<code>diagonal.width</code>.</p>
+line is omitted, giving a simpler display.</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">berkeley</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="../reference/geom_fourfold.html">geom_fourfold</a></span><span class="op">(</span>extended <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span> <span class="op">+</span></span>
@@ -444,6 +440,27 @@ display can be drawn with
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/facet_wrap.html" class="external-link">facet_wrap</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/vars.html" class="external-link">vars</a></span><span class="op">(</span><span class="va">Dept</span><span class="op">)</span>, ncol <span class="op">=</span> <span class="fl">3</span>, labeller <span class="op">=</span> <span class="va">label_both</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
+<h3 id="diagonal-line">Diagonal line<a class="anchor" aria-label="anchor" href="#diagonal-line"></a>
+</h3>
+<p>The diagonal line marking the direction of association can be omitted
+by supplying <code>diagonal = FALSE</code> to
+<code><a href="../reference/geom_fourfold.html">geom_fourfold()</a></code>. The length, interior color, and width of
+the line can be changed with arguments <code>diagonal.length</code>,
+<code>diagonal.fill</code>, and <code>diagonal.width</code>. The line’s
+outline follows the <code>color</code> and <code>linewidth</code> of the
+layer, like the cell outlines, confidence rings, axes, and frame.
+<code>color</code> also applies to the text.</p>
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">berkeley</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="../reference/geom_fourfold.html">geom_fourfold</a></span><span class="op">(</span></span>
+<span>    diagonal.length <span class="op">=</span> <span class="fl">0.05</span>,</span>
+<span>    diagonal.fill <span class="op">=</span> <span class="st">"limegreen"</span>,</span>
+<span>    diagonal.width <span class="op">=</span> <span class="fl">1.5</span>,</span>
+<span>    color <span class="op">=</span> <span class="st">"grey30"</span></span>
+<span>  <span class="op">)</span></span></code></pre></div>
+<p><img src="ggfourfold_files/figure-html/berkeley-diagonal-1.png" class="r-plt" alt="" width="480"></p>
+</div>
+<div class="section level3">
 <h3 id="working-with-ggplot2">Working with ‘ggplot2’<a class="anchor" aria-label="anchor" href="#working-with-ggplot2"></a>
 </h3>
 <p>A fourfold display is an ordinary ggplot, so the usual tools for
@@ -459,7 +476,7 @@ a single argument changes the font of the whole figure. If more control
 is needed, other theme settings can be passed through the
 <code>...</code> of <code><a href="../reference/theme_fourfold.html">theme_fourfold()</a></code> or added with
 <code><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">ggplot2::theme()</a></code> as usual.</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">applicants</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/marginSums.html" class="external-link">margin.table</a></span><span class="op">(</span><span class="va">UCBAdmissions</span>, <span class="fl">3</span><span class="op">)</span></span>
 <span><span class="va">dept_labels</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"%s (n = %d)"</span>, <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">applicants</span><span class="op">)</span>, <span class="va">applicants</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">dept_labels</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">applicants</span><span class="op">)</span></span>

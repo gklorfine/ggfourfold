@@ -315,9 +315,7 @@ more cases than expected. If `extended = FALSE` is supplied to
 [`geom_fourfold()`](https://gavinklorfine.com/ggfourfold/reference/geom_fourfold.md),
 every panel is shaded alike, with the larger diagonal being darker.
 Significance is not shown and the diagonal line is omitted, giving a
-simpler display. To keep the shading and omit only the line, supply
-`diagonal = FALSE`; its length, interior color, and width can be changed
-with `diagonal.length`, `diagonal.fill`, and `diagonal.width`.
+simpler display.
 
 ``` r
 
@@ -383,6 +381,30 @@ berkeley +
   geom_fourfold(palette = fourfold_palette("okabe-ito")) +
   facet_wrap(vars(Dept), ncol = 3, labeller = label_both)
 ```
+
+### Diagonal line
+
+The diagonal line marking the direction of association can be omitted by
+supplying `diagonal = FALSE` to
+[`geom_fourfold()`](https://gavinklorfine.com/ggfourfold/reference/geom_fourfold.md).
+The length, interior color, and width of the line can be changed with
+arguments `diagonal.length`, `diagonal.fill`, and `diagonal.width`. The
+line’s outline follows the `color` and `linewidth` of the layer, like
+the cell outlines, confidence rings, axes, and frame. `color` also
+applies to the text.
+
+``` r
+
+berkeley +
+  geom_fourfold(
+    diagonal.length = 0.05,
+    diagonal.fill = "limegreen",
+    diagonal.width = 1.5,
+    color = "grey30"
+  )
+```
+
+![](ggfourfold_files/figure-html/berkeley-diagonal-1.png)
 
 ### Working with ‘ggplot2’
 
