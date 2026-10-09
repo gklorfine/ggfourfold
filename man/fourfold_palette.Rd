@@ -19,10 +19,11 @@ A character vector containing six hexadecimal colors.
 strength of association and are drawn directly by the geom rather than
 through a fill scale.
 Entries 1-2 are used when \code{extended = FALSE} (or \code{conf_level = 0}),
-entries 3-4 for an extended display without adjusted significance, and
-entries 5-6 for an extended display with adjusted significance. Within
-each pair, the first color fills the diagonal with fewer cases than
-expected under independence and the second fills the diagonal with more.
+entries 3-4 are used for a stratum whose association \emph{is not}
+significant after adjustment, and entries 5-6 are used for a stratum whose
+association \emph{is} significant after adjustment. Within each pair, the first
+color fills the diagonal with fewer cases than expected under independence
+and the second fills the diagonal with more.
 }
 \details{
 \code{"vcd"}, the default, gives the colors of \code{vcd::fourfold()} (Meyer et
