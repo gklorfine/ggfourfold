@@ -19,17 +19,17 @@ applied after the fourfold defaults.}
 A complete ggplot2 theme.
 }
 \description{
-\code{theme_fourfold()} supplies an uncluttered panel and responsive typography
-for \code{\link[=geom_fourfold]{geom_fourfold()}}. It also styles facet strips like fourfold stratum
-headings and provides compact spacing that remains readable in both the
-RStudio plot pane and exported graphics.
+\code{theme_fourfold()} is a minimal theme for \code{\link[=geom_fourfold]{geom_fourfold()}} that gives
+plots the plain look of \code{vcd::fourfold()}: a white panel without axes or
+gridlines, facet labels without boxes, centered titles, and compact spacing
+between panels. It also sets the text size, font, and line width.
 }
 \details{
-\code{base_size} and \code{base_family} control all text, including the category and
-count labels drawn inside \code{geom_fourfold()}. Those labels respond to the
-physical panel size while retaining a readable lower bound. Additional theme
-elements passed through \code{...} are applied last and therefore override the
-defaults.
+\code{base_size} and \code{base_family} control all text, including the category
+labels and cell counts drawn by \code{geom_fourfold()}. These grow with the size
+of each panel, so larger plots get larger labels, but never shrink below
+five-sixths of \code{base_size} (10 points by default). Additional theme elements
+passed through \code{...} are applied last and therefore override the defaults.
 
 The theme sets no \code{aspect.ratio}. The display stays round, and the panels
 square by default, because \code{\link[=geom_fourfold]{geom_fourfold()}} adds a coordinate system with
@@ -37,6 +37,7 @@ square by default, because \code{\link[=geom_fourfold]{geom_fourfold()}} adds a 
 Passing \code{aspect.ratio} through \code{...} fixes the panel's shape and overrides
 that ratio, so circles become ellipses when the ranges of the \code{x} and \code{y}
 axes differ, for example when a missing value keeps a place on one axis.
+Therefore, it is recommended to leave \code{aspect.ratio} unset.
 
 This theme uses ggplot2's theme-derived geom defaults and requires ggplot2
 4.0.0 or later.
