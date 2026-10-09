@@ -1408,12 +1408,12 @@ GeomFourfold <- ggplot2::ggproto(
 #' Fourfold displays for 2-by-2 tables
 #'
 #' `geom_fourfold()` draws a fourfold display in each ggplot2 panel. Sector
-#' radii represent cell frequencies after the selected standardization, while
-#' sector colors, confidence rings, and a diagonal line show the direction
-#' and strength of association.
+#' areas are proportional to cell frequencies after the selected
+#' standardization, while sector colors, confidence rings, and a diagonal line
+#' show the direction and strength of association.
 #'
 #' @details
-#' Map the two-level horizontal variable to `x`, the two-level vertical
+#' Map the binary horizontal variable to `x`, the binary vertical
 #' variable to `y`, and cell frequencies to `weight`. When `weight` is omitted,
 #' each row counts as one observation. The first `x` level is drawn on the left
 #' and the second on the right; the first `y` level is drawn at the top and the
@@ -1430,14 +1430,15 @@ GeomFourfold <- ggplot2::ggproto(
 #' with no rows are completed with zero counts. For missing values, see the
 #' Missing values section.
 #'
-#' Odds ratios, Wald confidence intervals, and extended-display p-values match
-#' the calculations in `vcd::fourfold()`. If any observed cell is zero, 0.5 is
-#' added to all four cells for inference; see the Zero counts section for how
-#' such tables are drawn. P-values are adjusted across all panels in the
-#' layer that have one. A panel whose counts are all zero has none, whereas
-#' `vcd::fourfold()` counts it with a p-value of 1, so in a layer with such a
-#' panel the adjusted p-values differ from those it gives. Confidence
-#' intervals themselves are not adjusted.
+#' Odds ratios, Wald confidence intervals, and extended-display *p*-values
+#' match the calculations in `vcd::fourfold()`. If any observed cell is zero,
+#' 0.5 is added to all four cells for inference; see the Zero counts section
+#' for how such tables are drawn. *p*-values are adjusted for multiple testing
+#' across the panels of the layer. A panel whose counts are all zero has no
+#' *p*-value and is left out of this adjustment. `vcd::fourfold()` instead
+#' includes such a panel with a *p*-value of 1, so in a layer that contains
+#' one, the adjusted *p*-values of the other panels are smaller here than in
+#' `vcd::fourfold()`. Confidence intervals themselves are not adjusted.
 #'
 #' With `shape = "square"`, each cell is drawn as a quarter-square with the
 #' same area as the corresponding quarter-circle (side
@@ -1445,41 +1446,36 @@ GeomFourfold <- ggplot2::ggproto(
 #' shapes display a table with identical areas. Confidence rings
 #' become nested square outlines.
 #'
-#' In an extended display, one straight diagonal line through the center of
-#' the display marks the diagonal with more cases than expected under
-#' independence, and so the direction of the association; its two ends mark
-#' the sectors on that diagonal. The line is a band, drawn like a rectangle
-#' in [ggplot2::geom_rect()]: its interior is white (`diagonal.fill`) and
-#' 2.5 times as wide as the layer's `linewidth` (`diagonal.width`), and its
-#' border, in the layer's `colour` and as wide as its `linewidth`, runs along
-#' both sides and across both ends, so that it stands out on pale and dark
-#' sectors alike. The border's outer edge ends `diagonal.length` past the
-#' outline of each of the two sectors, measured along the diagonal: past the
-#' arc of a circle, 0.15 by default, or past the outer corner of a square,
-#' `0.02 * sqrt(2)` by default, which is 0.02 on each axis and a stub short
-#' enough that the counts of a typical standardized display stay inside. Set
-#' `diagonal = FALSE` to omit the line. This differs from `vcd::fourfold()`,
-#' which marks the direction with two short black ticks, one at each of those
-#' sectors, instead of a line through the center; its `ticks` argument, the
-#' length of those ticks, corresponds to `diagonal.length`, except that
-#' `diagonal.length = 0` still draws the line (ending at the sectors), where
-#' `ticks = 0` in `vcd::fourfold()` draws no ticks. The band's ends are
-#' perpendicular to the line on the page and its border has the same width on
-#' every side, whatever the native units per inch on each axis, such as with a
-#' theme's `aspect.ratio`. A line no longer than its border's width, as for
-#' tiny sectors in a tiny panel, is not drawn.
+#' In an extended display (the default), one straight diagonal line through
+#' the center of the display marks the diagonal with more cases than expected
+#' under independence--the direction of the association. The line is a band,
+#' drawn like a rectangle in [ggplot2::geom_rect()], with a border along both
+#' sides and across both ends so that it stands out on pale and dark sectors
+#' alike. By default its interior is white and 2.5 times as wide as the
+#' layer's `linewidth`. Use `diagonal.fill` and `diagonal.width` to change
+#' these. The border is drawn in the layer's `color` and `linewidth`.
+#' Each end extends `diagonal.length` past the sector it marks,
+#' measured along the diagonal in units of half the frame's width. By default,
+#' this length is 0.15 units past the arc of a circle, or `0.02 * sqrt(2)`
+#' (0.02 units on each axis) units past the outer corner of a square, short
+#' enough that the counts of a typical standardized display stay inside. The
+#' line can be omitted by setting `diagonal = FALSE`. This differs from
+#' `vcd::fourfold()`, which marks the direction with two short black ticks, one
+#' at each of the two sectors on that diagonal, instead of a line through the
+#' center. `vcd`'s `ticks` argument, which controls the length of those ticks,
+#' corresponds to `diagonal.length`, except that `diagonal.length = 0` still
+#' draws the line (ending at the sectors), whereas `ticks = 0` in
+#' `vcd::fourfold()` draws no ticks.
 #'
 #' With `counts = "auto"`, cell counts stay inside the frame corners unless
 #' a sector, either confidence outline, or an end of the diagonal line
-#' (including its border) comes close to the count text. Both
-#' shapes use the largest drawing extent across the layer; circles also
-#' account for the width of the layer's count labels. Counts then move
+#' comes close to the count text. If they come close, counts then move
 #' just outside the frame corners. Clearance is measured at draw time, so
 #' placement can differ between panels of different physical sizes.
 #' Use `counts = "inside"` or `"outside"` to force the placement, or `"none"`
-#' to hide counts without affecting any statistics. Outside counts can collide
-#' with category labels or neighboring panels at small sizes; use larger
-#' panels, more panel spacing, smaller text, or `counts = "inside"`.
+#' to hide counts. Outside counts can collide with category labels or
+#' neighboring panels at small sizes. If this occurs, use larger panels, more
+#' panel spacing, smaller text, or `counts = "inside"`.
 #'
 #' The six semantic fill colors are supplied by `palette`; they are not mapped
 #' through a ggplot2 fill scale. Typography and layout defaults are controlled
