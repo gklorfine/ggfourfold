@@ -19,8 +19,8 @@ Commit](https://img.shields.io/github/last-commit/gklorfine/ggfourfold)](https:/
 # ggfourfold <img src="man/figures/logo.png" align="right" height="200px" /><br><sub>Fourfold Displays for ‘ggplot2’</sub>
 
 A **ggplot2** extension that provides a geom and theme for creating
-fourfold displays. Inspired by the **fourfold** SAS macro (Friendly,
-2000) and **vcd** R package (Meyer et al., 2026).
+fourfold displays. Inspired by the `fourfold` SAS macro (Friendly, 2000)
+and **vcd** R package (Meyer et al., 2026).
 
 ## Installation
 
