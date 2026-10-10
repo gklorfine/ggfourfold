@@ -20,8 +20,8 @@
 #' axes differ, for example when a missing value keeps a place on one axis.
 #' Therefore, it is recommended to leave `aspect.ratio` unset.
 #'
-#' This theme uses ggplot2's theme-derived geom defaults and requires ggplot2
-#' 4.0.0 or later.
+#' This theme uses **ggplot2**'s theme-derived geom defaults and requires
+#' **ggplot2** 4.0.0 or later.
 #'
 #' @param base_size Base font size in points.
 #' @param base_family Base font family. The default, `""`, uses the graphics
@@ -29,7 +29,7 @@
 #' @param ... Additional arguments passed to [ggplot2::theme()]. They are
 #'   applied after the fourfold defaults.
 #'
-#' @return A complete ggplot2 theme.
+#' @return A complete **ggplot2** theme.
 #'
 #' @seealso [geom_fourfold()] and [ggplot2::theme()]
 #'

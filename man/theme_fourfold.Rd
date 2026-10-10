@@ -16,7 +16,7 @@ device's default family.}
 applied after the fourfold defaults.}
 }
 \value{
-A complete ggplot2 theme.
+A complete \strong{ggplot2} theme.
 }
 \description{
 \code{theme_fourfold()} is a minimal theme for \code{\link[=geom_fourfold]{geom_fourfold()}} that gives
@@ -39,8 +39,8 @@ that ratio, so circles become ellipses when the ranges of the \code{x} and \code
 axes differ, for example when a missing value keeps a place on one axis.
 Therefore, it is recommended to leave \code{aspect.ratio} unset.
 
-This theme uses ggplot2's theme-derived geom defaults and requires ggplot2
-4.0.0 or later.
+This theme uses \strong{ggplot2}'s theme-derived geom defaults and requires
+\strong{ggplot2} 4.0.0 or later.
 }
 \examples{
 ucb <- as.data.frame(UCBAdmissions)

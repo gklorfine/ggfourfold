@@ -1407,7 +1407,7 @@ GeomFourfold <- ggplot2::ggproto(
 
 #' Fourfold displays for 2-by-2 tables
 #'
-#' `geom_fourfold()` draws a fourfold display in each ggplot2 panel. Sector
+#' `geom_fourfold()` draws a fourfold display in each **ggplot2** panel. Sector
 #' areas are proportional to cell frequencies after the selected
 #' standardization, while sector colors, confidence rings, and a diagonal line
 #' show the direction and strength of association.
@@ -1440,8 +1440,8 @@ GeomFourfold <- ggplot2::ggproto(
 #' one, the adjusted *p*-values of the other panels are smaller here than in
 #' `vcd::fourfold()`. Confidence intervals themselves are not adjusted.
 #'
-#' With `shape = "square"`, each cell is drawn as a quarter-square with the
-#' same area as the corresponding quarter-circle (side
+#' With `shape = "square"`, each cell is drawn as a square with the same area
+#' as the corresponding quarter-circle (side
 #' \eqn{r\sqrt{\pi}/2}{r * sqrt(pi) / 2} for radius \eqn{r}), so the two
 #' shapes display a table with identical areas. Confidence rings
 #' become nested square outlines.
@@ -1462,7 +1462,7 @@ GeomFourfold <- ggplot2::ggproto(
 #' line can be omitted by setting `diagonal = FALSE`. This differs from
 #' `vcd::fourfold()`, which marks the direction with two short black ticks, one
 #' at each of the two sectors on that diagonal, instead of a line through the
-#' center. `vcd`'s `ticks` argument, which controls the length of those ticks,
+#' center. **vcd**'s `ticks` argument, which controls the length of those ticks,
 #' corresponds to `diagonal.length`, except that `diagonal.length = 0` still
 #' draws the line (ending at the sectors), whereas `ticks = 0` in
 #' `vcd::fourfold()` draws no ticks.
@@ -1478,8 +1478,8 @@ GeomFourfold <- ggplot2::ggproto(
 #' panel spacing, smaller text, or `counts = "inside"`.
 #'
 #' The six semantic fill colors are supplied by `palette`; they are not mapped
-#' through a ggplot2 fill scale. Typography and layout defaults are controlled
-#' by [theme_fourfold()].
+#' through a **ggplot2** fill scale. Typography and layout defaults are
+#' controlled by [theme_fourfold()].
 #'
 #' @section Aesthetics:
 #' `geom_fourfold()` understands the following aesthetics:
@@ -1490,64 +1490,60 @@ GeomFourfold <- ggplot2::ggproto(
 #' - `y` (required): a categorical variable with exactly two levels.
 #' - `weight`: non-negative numeric cell frequencies; defaults to `1`.
 #'
-#' Each panel draws one table, so its drawing properties are set for the whole
-#' layer rather than mapped: give `colour`, `linewidth`, and `alpha` as fixed
-#' arguments, for example `geom_fourfold(colour = "grey30")`. As in
-#' ggplot2's filled geoms, `alpha` sets the transparency of the cell fills
-#' only; outlines, rings, the diagonal line, axes, the frame, labels, and
-#' counts are not affected by `alpha`. Text `size` and `family` are inherited
-#' from the plot theme, such as [theme_fourfold()], and can also be given as
-#' fixed arguments. Fill colors are set with `palette`.
-#' Mapping any of these five in `geom_fourfold()` is an error, including a
-#' mapping to a computed variable with [ggplot2::after_stat()],
-#' [ggplot2::after_scale()], or [ggplot2::stage()]. Any such mapping inherited
-#' from [ggplot2::ggplot()] is ignored, since it may be meant for other layers.
-#' The exception is an inherited `after_stat()` mapping to a variable that
-#' `geom_fourfold()` does not compute, such as `after_stat(n)` for
-#' [ggplot2::geom_count()]: ggplot2 evaluates it before the layer can ignore
-#' it, so it stops the plot. Use `inherit.aes = FALSE` in `geom_fourfold()`, or
-#' move the mapping to the layer that uses it.
+#' Give `color`, `linewidth`, and `alpha` as fixed arguments rather than
+#' mappings, for example `geom_fourfold(color = "grey30")`. As in **ggplot2**'s
+#' filled geoms, `alpha` sets the transparency of the cell fills only. Fill
+#' colors are set with `palette`. Text `size` and `family` come from the plot
+#' theme, such as [theme_fourfold()]. To override them for this layer only,
+#' give them to `geom_fourfold()`, for example
+#' `geom_fourfold(family = "serif")`. As elsewhere in **ggplot2**, `size` is in
+#' mm, while the theme's `base_size` is in points.
+#'
+#' Mapping a `color`, `linewidth`, `alpha`, `size`, or `family` aesthetic in
+#' `geom_fourfold()` is an error. This includes mappings to computed variables
+#' with [ggplot2::after_stat()], [ggplot2::after_scale()], or
+#' [ggplot2::stage()]. The same mappings inherited from [ggplot2::ggplot()] are
+#' ignored, because they may be meant for other layers. The one exception is an
+#' inherited `after_stat()` mapping to a variable that `geom_fourfold()` does
+#' not compute, such as `after_stat(n)` for [ggplot2::geom_count()]. **ggplot2**
+#' evaluates it before the layer can ignore it, so the plot stops with an error.
+#' To avoid this, set `inherit.aes = FALSE` in `geom_fourfold()`, or move the
+#' mapping into the layer that uses it.
 #'
 #' @section Coordinate systems:
-#' The display is drawn in the plot's coordinate system, so axes, gridlines,
-#' and other layers agree with it. The first `x` level is at position 1 and the
-#' second at position 2, and likewise for `y`; the display fills the square
-#' from 0.5 to 2.5 on both axes, and each cell's quadrant is centered on its
-#' category position.
+#' The display is drawn in the plot's own coordinates, so axes, gridlines,
+#' and other layers line up with it. Each category sits at its usual discrete
+#' position, with the first `x` level at 1 and the second at 2, and likewise
+#' for `y`. The frame spans 0.5 to 2.5 on both axes, so each cell's quadrant
+#' is centered on its two category positions. A label placed at `x = 1, y = 2`,
+#' for example, lands in the middle of the cell for the first level of `x` and
+#' the second level of `y`.
 #'
 #' `geom_fourfold()` therefore also adds
 #' `coord_cartesian(reverse = "y", ratio = 1)` to the plot, as
-#' [ggplot2::geom_sf()] adds [ggplot2::coord_sf()]. Reversing the `y` axis
-#' keeps the first `y` level at the top, as in `vcd::fourfold()`, for every
-#' layer; reversing the `y` scale with `limits` would instead reorder the
-#' table. The unit `ratio` keeps circles round under any theme. Both axes span
-#' the same range by default, so it also makes the panels square. A theme's
-#' `aspect.ratio` overrides `ratio`: it fixes the panel's shape, and circles
-#' become ellipses when the ranges of the axes differ (see the Missing values
+#' [ggplot2::geom_sf()] adds [ggplot2::coord_sf()]. `reverse = "y"` keeps the
+#' first `y` level at the top, as in `vcd::fourfold()`, for every layer.
+#' `ratio = 1` keeps circles round, and because both axes span the same range
+#' by default, it also makes the panels square. A theme's `aspect.ratio`
+#' overrides `ratio`, fixing the panel's shape, with circles turning into
+#' ellipses when the ranges of the axes differ (see the Missing values
 #' section).
 #'
 #' A coordinate system that you add to the plot replaces this one, as usual in
-#' ggplot2. Add yours after the last `geom_fourfold()` in the plot: a later
-#' `geom_fourfold()` replaces your coordinate system with its own, with
-#' ggplot2's message. Without `reverse = "y"`, the first `y` level is drawn at
-#' the bottom, as for any ggplot2 layer. To keep it at the top and the circles
-#' round, add `coord_cartesian(reverse = "y", ratio = 1, ...)`: without
-#' `ratio`, the display stretches to fill the panel, so circles become
-#' ellipses wherever the panel is not square.
-#' Common additions such as [ggplot2::coord_fixed()] and
-#' [ggplot2::coord_equal()] also replace the default, and draw the first `y`
-#' level at the bottom unless reversed. Any `reverse` setting is drawn
-#' correctly. `GeomFourfold` and `StatFourfold` are the ggproto objects behind
-#' `geom_fourfold()`. Used directly with [ggplot2::layer()], they take the
-#' defaults of `geom_fourfold()`, and
-#' `GeomFourfold` adds no coordinate system and follows the one the plot has.
+#' **ggplot2**. Add yours after the last `geom_fourfold()` in the plot, because
+#' a later `geom_fourfold()` replaces it with its own. Without
+#' `reverse = "y"`, the first `y` level is drawn at the bottom, as for any
+#' **ggplot2** layer. To keep it at the top and the circles round, add
+#' `coord_cartesian(reverse = "y", ratio = 1, ...)`. Used directly with
+#' [ggplot2::layer()], `GeomFourfold` and `StatFourfold` take the defaults of
+#' `geom_fourfold()` but add no coordinate system.
 #'
 #' The coordinate system must be Cartesian, such as [ggplot2::coord_cartesian()]
 #' or [ggplot2::coord_fixed()]. [ggplot2::coord_flip()] is an error: swap the
 #' `x` and `y` aesthetics instead, which transposes each table and keeps its
 #' odds ratio. So are [ggplot2::coord_sf()], [ggplot2::coord_transform()], and
 #' polar coordinates, which would distort the areas that carry the display's
-#' meaning. Because of the fixed `ratio`, ggplot2 does not allow free facet
+#' meaning. Because of the fixed `ratio`, **ggplot2** does not allow free facet
 #' scales (`scales = "free"`) with the default coordinate system. To use them,
 #' add your own coordinate system without `ratio` after `geom_fourfold()`,
 #' such as `coord_cartesian(reverse = "y")`. Then `facet_grid(space = "free")`
@@ -1565,9 +1561,10 @@ GeomFourfold <- ggplot2::ggproto(
 #' @section Annotations:
 #' A point or label that another layer, such as [ggplot2::geom_point()],
 #' [ggplot2::geom_text()], or [ggplot2::annotate()], places at an `x` level and
-#' a `y` level is drawn at the center of that cell's quadrant. This is a fixed
-#' position, the same in every panel, not the center of the sector, whose size
-#' varies with the data. See the examples.
+#' a `y` level is drawn at the center of that cell's quadrant. This position
+#' is fixed, the same in every panel, and does not follow the cell's filled
+#' quarter-circle or square, whose size varies with the data. See the
+#' examples.
 #'
 #' @section Zero counts:
 #' If any cell of a panel's table is zero, 0.5 is added to all four cells
@@ -1578,12 +1575,12 @@ GeomFourfold <- ggplot2::ggproto(
 #' A panel whose four counts are all zero, such as an empty stratum in a
 #' faceted display, is drawn blank: only its frame, axes, labels, and zero
 #' counts are shown, with no sectors, rings, or diagonal line. It has no odds
-#' ratio, confidence interval, or p-value (they are `NA`) and is left out of
-#' the p-value adjustment, so it does not change the other panels.
-#' (With the default `margin = c(1, 2)`, `vcd::fourfold()` instead draws such
-#' a stratum from the corrected table, as four equal quarter-circles.) A facet
+#' ratio, confidence interval, or *p*-value (they are `NA`) and is left out of
+#' the *p*-value adjustment, so it does not change the other panels.
+#' With the default `margin = c(1, 2)`, `vcd::fourfold()` instead draws such
+#' a stratum from the corrected table, as four equal quarter-circles. A facet
 #' level with no rows at all, for example with `drop = FALSE`, is left empty
-#' by ggplot2 as usual, without a frame or counts.
+#' by **ggplot2** as usual, without a frame or counts.
 #'
 #' Each confidence ring shows the table that has the observed row and column
 #' totals and an odds ratio equal to one confidence limit, standardized like
@@ -1598,11 +1595,11 @@ GeomFourfold <- ggplot2::ggproto(
 #'
 #' A table with an empty row or column contains no information about the odds
 #' ratio: with an empty row, for example, nothing is known about how that row
-#' would split between the columns. Its odds ratio and p-value exist only
+#' would split between the columns. Its odds ratio and *p*-value exist only
 #' because of the correction. With an empty row, the odds ratio is the ratio
 #' of the two counts in the other row, each plus 0.5, so it reflects how that
 #' row splits rather than an association. The rings are correspondingly wide,
-#' but the p-value can still fall below the significance level, so the color,
+#' but the *p*-value can still fall below the significance level, so the color,
 #' significance shading, and diagonal line of such a panel say nothing about
 #' an association.
 #'
@@ -1634,38 +1631,37 @@ GeomFourfold <- ggplot2::ggproto(
 #' meant to be zero.
 #'
 #' @section Missing values:
-#' A row with a missing `x` or `y` cannot be placed in the table and is
-#' removed; a panel with no rows left is left empty. Values that the `limits`
-#' of a discrete scale exclude become missing and are removed the same way,
-#' with the same warning. A row with a missing `weight` but known `x` and `y`
-#' is different: its cell's count, and so the panel's table, is unknown.
-#' Counting it as zero would change the odds ratio, so its whole panel is left
-#' empty instead. (`vcd::fourfold()` likewise draws no table with a missing
-#' count; it stops with an error.) A cell with no rows at all is still a zero
-#' count.
+#' A row with a missing `x` or `y` cannot be placed in the table, so it is
+#' removed, and a panel with no rows left is left empty. Values excluded by
+#' the `limits` of a discrete scale become missing and are removed the same
+#' way. A row with a missing `weight` but known `x` and `y` is different. Its
+#' cell's count, and so the panel's table, is unknown, and counting it as zero
+#' would change the odds ratio. Its whole panel is therefore left empty. A cell
+#' with no rows at all is not missing but a zero count. With a missing count,
+#' `vcd::fourfold()` instead stops with an error.
 #'
 #' An empty panel has no frame, counts, or labels, so it cannot be mistaken
 #' for a panel whose counts are all zero, and it looks the same as a facet
 #' level with no rows. It has no rows in the layer data and takes no part in
-#' `std = "all.max"` or the p-value adjustment, so the other panels are drawn
-#' exactly as if its stratum were not in the data. (With
-#' `facet_grid(margins = TRUE)`, the margin panels that pool that stratum are
-#' unknown too, and are also left empty.) With `na.rm = FALSE`, the default, a
-#' warning names each panel that lost rows or was left empty; with
-#' `na.rm = TRUE`, these warnings are not given. With free scales, which need
-#' a coordinate system you add without `ratio` (see the Coordinate systems
-#' section), ggplot2 itself may still warn about the axes of an empty panel
+#' `std = "all.max"` or the *p*-value adjustment, so the other panels are drawn
+#' exactly as if its stratum were not in the data. With `na.rm = FALSE`,
+#' the default, a warning names each panel that lost rows or was left empty.
+#' With `na.rm = TRUE`, these warnings are not given. With free scales, which
+#' need a coordinate system added without `ratio` (see the Coordinate systems
+#' section), **ggplot2** itself may still warn about the axes of an empty panel
 #' ("Position guide is perpendicular to the intended axis"), as it does for
 #' its own layers.
 #'
-#' A missing `x` or `y` keeps a place for missing values on its axis, as for
-#' every geom, because ggplot2 trains position scales before the stat runs.
-#' The display removes those rows, but the axis stays wider, so the panels that
-#' share that scale are wider (or taller) than the display, with space beside
-#' it. With the default coordinate system the display stays round, and the
-#' counts and statistics are not affected.
-#' `scale_x_discrete(na.translate = FALSE)` (`scale_y_discrete()` for `y`)
-#' removes that place.
+#' `NA` values in the `x` or `y` variable leave empty space beside the
+#' display, which can then be drawn smaller. Only the layout changes: panels
+#' that share the scale shrink alike and stay comparable, the display stays
+#' round with the default coordinate system, and the areas, counts, and
+#' statistics are not affected. To remove the space, add
+#' `scale_x_discrete(na.translate = FALSE)` for `x`,
+#' `scale_y_discrete(na.translate = FALSE)` for `y`, or both. The space appears
+#' because **ggplot2** trains position scales before the stat runs, so the axis
+#' keeps a place for missing values, as for every geom, even though the display
+#' removes those rows.
 #'
 #' @param mapping Set of aesthetic mappings created by [ggplot2::aes()]. If
 #'   supplied and `inherit.aes = TRUE`, these are combined with the plot's
@@ -1673,74 +1669,73 @@ GeomFourfold <- ggplot2::ggproto(
 #' @param data The data to display in this layer. If `NULL`, the default, the
 #'   data are inherited from the plot.
 #' @param ... Other arguments passed to [ggplot2::layer()], typically fixed
-#'   aesthetics such as `colour` or `linewidth`.
+#'   aesthetics such as `color` or `linewidth`.
 #' @param std `"margins"` (the default) draws a standardized display, equating
 #'   the margins chosen by `margin` while preserving the odds ratio.
 #'   `"ind.max"` and `"all.max"` draw unstandardized displays of the raw
-#'   counts, scaled by the largest cell in each panel or in the whole layer.
+#'   counts, respectively scaled by the largest cell in each panel or in the
+#'   whole layer.
 #' @param margin Numeric vector selecting the table margins when
 #'   `std = "margins"`. Use `c(1, 2)` (the default) for both margins, `1` for
 #'   the `y` (row) margin, or `2` for the `x` (column) margin, as in
 #'   [vcd::fourfold()].
 #' @param conf_level Confidence level in `[0, 1)`. Defaults to `0.95`; set to
 #'   `0` to suppress confidence rings and significance shading.
-#' @param extended A single `TRUE` or `FALSE`. If `FALSE`, omit the diagonal
-#'   line, which marks the diagonal with more cases than expected under
-#'   independence, and fill cells with the first two `palette` colors instead
-#'   of shading by significance. Defaults to `TRUE`.
-#' @param diagonal A single `TRUE` or `FALSE`: draw the diagonal line of an
-#'   extended display (see `extended`) or not. Defaults to `TRUE`.
+#' @param extended A single `TRUE` (the default) or `FALSE`. If `FALSE`, omit
+#'   the diagonal line, which marks the diagonal with more cases than expected
+#'   under independence, and fill cells with the first two `palette` colors
+#'   instead of shading by significance.
+#' @param diagonal A single `TRUE` (the default) or `FALSE`: draw the diagonal
+#'   line of an extended display (see `extended`) or not.
 #' @param diagonal.length How far each end of the diagonal line extends past
 #'   the outline of the sector it marks, measured along the diagonal for both
 #'   shapes (past the arc of a circle, or the outer corner of a square), where
 #'   `1` is the largest possible sector radius. If `NULL`, the default, it is
 #'   `0.15` for circles and `0.02 * sqrt(2)` (about `0.028`) for squares, which
 #'   is `0.02` on each axis; a number applies to either shape as given. With
-#'   `0` the line ends at the sectors but is still drawn: use
-#'   `diagonal = FALSE` to omit it. Give `NULL` or a single non-negative
+#'   `0`, the line ends at the sectors but is still drawn: use
+#'   `diagonal = FALSE` to omit it. Supply `NULL` or a single non-negative
 #'   number.
-#' @param diagonal.fill The color of the diagonal line's interior, inside its
-#'   border, which is drawn in the layer's `colour`. Defaults to `"white"`. As
-#'   `fill` in ggplot2, `NA` or `"transparent"` leaves the line hollow, with its
-#'   border only. Give a single color.
-#' @param diagonal.width The width of the diagonal line's interior, in mm as
-#'   for `linewidth`, not counting its border, which is drawn outside it on each
-#'   side with the layer's `colour` and `linewidth`. If `NULL`, the default, it
-#'   is 2.5 times the layer's `linewidth`. Give `NULL` or a single non-negative
-#'   number. With `0`, the two borders meet and the line is one line in the
-#'   layer's `colour`, twice the layer's `linewidth` wide.
+#' @param diagonal.fill The color of the diagonal line's interior (its border
+#'   is drawn in the layer's `color`). Defaults to `"white"`. Like `fill` in
+#'   **ggplot2**, `NA` or `"transparent"` leaves the line hollow, with its
+#'   border only. Supply a single color.
+#' @param diagonal.width The width of the diagonal line's interior, in
+#'   millimeters like `linewidth`. This width does not count the line's border,
+#'   which is drawn outside it with the layer's `color` and `linewidth`. If
+#'   `NULL`, the default, it is 2.5 times the layer's `linewidth`. Supply `NULL`
+#'   or a single non-negative number. With `0`, the two borders meet and the
+#'   line interior disappears, leaving a line in the layer's `color` that is
+#'   twice the layer's `linewidth` wide.
 #' @param p_adjust_method Method passed to [stats::p.adjust()] for adjustment
 #'   across panels. Defaults to `"holm"`, the first value in
 #'   [stats::p.adjust.methods].
-#' @param shape Shape of the cell sectors: `"circle"` (the default, as in
-#'   `vcd::fourfold()`) draws quarter-circles; `"square"` draws
-#'   quarter-squares of equal area.
+#' @param shape Shape of the cell sectors. `"circle"` (the default, as in
+#'   `vcd::fourfold()`) draws quarter-circles. `"square"` draws
+#'   squares with equivalent area to the corresponding quarter-circle.
 #' @param counts Placement of cell counts: `"auto"` (the default) moves counts
 #'   outside when the drawing approaches them; `"inside"` always uses the inside
 #'   corners, even if overlapped; `"outside"` always uses the outside corners;
-#'   `"none"` hides the counts. Counts are labeled as [vcd::fourfold()] labels
-#'   the corresponding table, with [as.character()]: counts of integer
-#'   weights, or of unweighted rows, in full (`100000`) when they fit in an
-#'   integer, and whole-number
-#'   counts of double weights as R prints them, so that `1e5` is `1e+05`.
-#'   Non-integer counts (weights) are rounded to three significant digits, or
-#'   to a whole number when that is larger. A count that is only rounding noise
-#'   next to a panel's other counts, such as `5.6e-17` beside counts in the
-#'   tens, is shown as `0`.
+#'   `"none"` hides the counts. Counts are labeled as in `vcd::fourfold()`,
+#'   so large round counts stored as doubles can appear as, for example,
+#'   `1e+05`. Non-integer counts are rounded to three significant digits, and
+#'   rounding noise such as `5.6e-17` is shown as `0`.
 #' @param palette Character vector of at least six valid colors in the
 #'   semantic order used by [fourfold_palette()]. Defaults to
-#'   `fourfold_palette()`, the colors of `vcd::fourfold()`; see that page for
-#'   other built-in palettes such as `fourfold_palette("okabe-ito")`.
-#' @param na.rm If `FALSE`, the default, rows with a missing `x` or `y` are
-#'   removed, and panels with a missing `weight` are left empty, with a
-#'   warning. If `TRUE`, this is done silently. See the Missing values section.
+#'   `fourfold_palette()`, the colors of `vcd::fourfold()`. See
+#'   [fourfold_palette()] for other built-in palettes such as
+#'   `fourfold_palette("okabe-ito")`.
+#' @param na.rm Missing values are handled the same way either way. Rows with
+#'   `NA` in `x` or `y` are removed, and a panel with an `NA` weight is left
+#'   empty. If `FALSE`, the default, a warning says so. If `TRUE`, this is done
+#'   silently. See the Missing values section.
 #' @param show.legend Logical indicating whether this layer should be included
 #'   in legends. The default is `FALSE` because the semantic fills are not a
 #'   mapped aesthetic.
 #' @param inherit.aes If `FALSE`, override rather than combine with the plot's
 #'   default aesthetic mappings. Defaults to `TRUE`.
 #'
-#' @return A list of a ggplot2 layer and a default coordinate system,
+#' @return A list of a **ggplot2** layer and a default coordinate system,
 #'   `coord_cartesian(reverse = "y", ratio = 1)`, which can be added to a
 #'   [ggplot2::ggplot()] object (see the Coordinate systems section).
 #'   `GeomFourfold` and `StatFourfold` are the [ggplot2::ggproto()] objects
@@ -1778,13 +1773,14 @@ GeomFourfold <- ggplot2::ggproto(
 #'   ggplot2::labs(title = "Berkeley admissions") +
 #'   theme_fourfold()
 #'
-#' # Quarter-squares of equal area instead of quarter-circles
+#' # Squares instead of quarter-circles
 #' ggplot2::ggplot(
 #'   ucb,
 #'   ggplot2::aes(x = Gender, y = Admit, weight = Freq)
 #' ) +
 #'   geom_fourfold(shape = "square") +
 #'   ggplot2::facet_wrap(ggplot2::vars(Dept), ncol = 3) +
+#'   ggplot2::labs(title = "Berkeley admissions") +
 #'   theme_fourfold()
 #'
 #' # A longer diagonal line, in light gray
@@ -1794,15 +1790,19 @@ GeomFourfold <- ggplot2::ggproto(
 #' ) +
 #'   geom_fourfold(diagonal.length = 0.3, diagonal.fill = "gray80") +
 #'   ggplot2::facet_wrap(ggplot2::vars(Dept), ncol = 3) +
+#'   ggplot2::labs(title = "Berkeley admissions") +
 #'   theme_fourfold()
 #'
-#' # Other layers are placed by category: a label in the Male-Admitted cell
+#' # Other layers are placed by category: admission rates in the admitted cells
 #' ggplot2::ggplot(
 #'   subset(ucb, Dept == "A"),
 #'   ggplot2::aes(x = Gender, y = Admit, weight = Freq)
 #' ) +
 #'   geom_fourfold() +
-#'   ggplot2::annotate("label", x = "Male", y = "Admitted", label = "Male") +
+#'   ggplot2::annotate(
+#'     "label", x = c("Male", "Female"), y = "Admitted",
+#'     label = c("62% admitted", "82% admitted")
+#'   ) +
 #'   theme_fourfold()
 #'
 #' @importFrom grDevices col2rgb
