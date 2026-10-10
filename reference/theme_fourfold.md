@@ -33,7 +33,7 @@ theme_fourfold(base_size = 12, base_family = "", ...)
 
 ## Value
 
-A complete ggplot2 theme.
+A complete **ggplot2** theme.
 
 ## Details
 
@@ -56,8 +56,8 @@ overrides that ratio, so circles become ellipses when the ranges of the
 `x` and `y` axes differ, for example when a missing value keeps a place
 on one axis. Therefore, it is recommended to leave `aspect.ratio` unset.
 
-This theme uses ggplot2's theme-derived geom defaults and requires
-ggplot2 4.0.0 or later.
+This theme uses **ggplot2**'s theme-derived geom defaults and requires
+**ggplot2** 4.0.0 or later.
 
 ## See also
 

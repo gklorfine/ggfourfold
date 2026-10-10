@@ -1,9 +1,9 @@
 # Fourfold displays for 2-by-2 tables
 
-`geom_fourfold()` draws a fourfold display in each ggplot2 panel. Sector
-radii represent cell frequencies after the selected standardization,
-while sector colors, confidence rings, and a diagonal line show the
-direction and strength of association.
+`geom_fourfold()` draws a fourfold display in each **ggplot2** panel.
+Sector areas are proportional to cell frequencies after the selected
+standardization, while sector colors, confidence rings, and a diagonal
+line show the direction and strength of association.
 
 ## Usage
 
@@ -48,15 +48,15 @@ geom_fourfold(
 
   Other arguments passed to
   [`ggplot2::layer()`](https://ggplot2.tidyverse.org/reference/layer.html),
-  typically fixed aesthetics such as `colour` or `linewidth`.
+  typically fixed aesthetics such as `color` or `linewidth`.
 
 - std:
 
   `"margins"` (the default) draws a standardized display, equating the
   margins chosen by `margin` while preserving the odds ratio.
   `"ind.max"` and `"all.max"` draw unstandardized displays of the raw
-  counts, scaled by the largest cell in each panel or in the whole
-  layer.
+  counts, respectively scaled by the largest cell in each panel or in
+  the whole layer.
 
 - margin:
 
@@ -72,15 +72,15 @@ geom_fourfold(
 
 - extended:
 
-  A single `TRUE` or `FALSE`. If `FALSE`, omit the diagonal line, which
-  marks the diagonal with more cases than expected under independence,
-  and fill cells with the first two `palette` colors instead of shading
-  by significance. Defaults to `TRUE`.
+  A single `TRUE` (the default) or `FALSE`. If `FALSE`, omit the
+  diagonal line, which marks the diagonal with more cases than expected
+  under independence, and fill cells with the first two `palette` colors
+  instead of shading by significance.
 
 - diagonal:
 
-  A single `TRUE` or `FALSE`: draw the diagonal line of an extended
-  display (see `extended`) or not. Defaults to `TRUE`.
+  A single `TRUE` (the default) or `FALSE`: draw the diagonal line of an
+  extended display (see `extended`) or not.
 
 - diagonal.length:
 
@@ -90,25 +90,26 @@ geom_fourfold(
   largest possible sector radius. If `NULL`, the default, it is `0.15`
   for circles and `0.02 * sqrt(2)` (about `0.028`) for squares, which is
   `0.02` on each axis; a number applies to either shape as given. With
-  `0` the line ends at the sectors but is still drawn: use
-  `diagonal = FALSE` to omit it. Give `NULL` or a single non-negative
+  `0`, the line ends at the sectors but is still drawn: use
+  `diagonal = FALSE` to omit it. Supply `NULL` or a single non-negative
   number.
 
 - diagonal.fill:
 
-  The color of the diagonal line's interior, inside its border, which is
-  drawn in the layer's `colour`. Defaults to `"white"`. As `fill` in
-  ggplot2, `NA` or `"transparent"` leaves the line hollow, with its
-  border only. Give a single color.
+  The color of the diagonal line's interior (its border is drawn in the
+  layer's `color`). Defaults to `"white"`. Like `fill` in **ggplot2**,
+  `NA` or `"transparent"` leaves the line hollow, with its border only.
+  Supply a single color.
 
 - diagonal.width:
 
-  The width of the diagonal line's interior, in mm as for `linewidth`,
-  not counting its border, which is drawn outside it on each side with
-  the layer's `colour` and `linewidth`. If `NULL`, the default, it is
-  2.5 times the layer's `linewidth`. Give `NULL` or a single
-  non-negative number. With `0`, the two borders meet and the line is
-  one line in the layer's `colour`, twice the layer's `linewidth` wide.
+  The width of the diagonal line's interior, in millimeters like
+  `linewidth`. This width does not count the line's border, which is
+  drawn outside it with the layer's `color` and `linewidth`. If `NULL`,
+  the default, it is 2.5 times the layer's `linewidth`. Supply `NULL` or
+  a single non-negative number. With `0`, the two borders meet and the
+  line interior disappears, leaving a line in the layer's `color` that
+  is twice the layer's `linewidth` wide.
 
 - p_adjust_method:
 
@@ -119,26 +120,21 @@ geom_fourfold(
 
 - shape:
 
-  Shape of the cell sectors: `"circle"` (the default, as in
+  Shape of the cell sectors. `"circle"` (the default, as in
   [`vcd::fourfold()`](https://rdrr.io/pkg/vcd/man/fourfold.html)) draws
-  quarter-circles; `"square"` draws quarter-squares of equal area.
+  quarter-circles. `"square"` draws squares with equivalent area to the
+  corresponding quarter-circle.
 
 - counts:
 
   Placement of cell counts: `"auto"` (the default) moves counts outside
   when the drawing approaches them; `"inside"` always uses the inside
   corners, even if overlapped; `"outside"` always uses the outside
-  corners; `"none"` hides the counts. Counts are labeled as
-  [`vcd::fourfold()`](https://rdrr.io/pkg/vcd/man/fourfold.html) labels
-  the corresponding table, with
-  [`as.character()`](https://rdrr.io/r/base/character.html): counts of
-  integer weights, or of unweighted rows, in full (`100000`) when they
-  fit in an integer, and whole-number counts of double weights as R
-  prints them, so that `1e5` is `1e+05`. Non-integer counts (weights)
-  are rounded to three significant digits, or to a whole number when
-  that is larger. A count that is only rounding noise next to a panel's
-  other counts, such as `5.6e-17` beside counts in the tens, is shown as
-  `0`.
+  corners; `"none"` hides the counts. Counts are labeled as in
+  [`vcd::fourfold()`](https://rdrr.io/pkg/vcd/man/fourfold.html), so
+  large round counts stored as doubles can appear as, for example,
+  `1e+05`. Non-integer counts are rounded to three significant digits,
+  and rounding noise such as `5.6e-17` is shown as `0`.
 
 - palette:
 
@@ -148,15 +144,16 @@ geom_fourfold(
   Defaults to
   [`fourfold_palette()`](https://gavinklorfine.com/ggfourfold/reference/fourfold_palette.md),
   the colors of
-  [`vcd::fourfold()`](https://rdrr.io/pkg/vcd/man/fourfold.html); see
-  that page for other built-in palettes such as
-  `fourfold_palette("okabe-ito")`.
+  [`vcd::fourfold()`](https://rdrr.io/pkg/vcd/man/fourfold.html). See
+  [`fourfold_palette()`](https://gavinklorfine.com/ggfourfold/reference/fourfold_palette.md)
+  for other built-in palettes such as `fourfold_palette("okabe-ito")`.
 
 - na.rm:
 
-  If `FALSE`, the default, rows with a missing `x` or `y` are removed,
-  and panels with a missing `weight` are left empty, with a warning. If
-  `TRUE`, this is done silently. See the Missing values section.
+  Missing values are handled the same way either way. Rows with `NA` in
+  `x` or `y` are removed, and a panel with an `NA` weight is left empty.
+  If `FALSE`, the default, a warning says so. If `TRUE`, this is done
+  silently. See the Missing values section.
 
 - show.legend:
 
@@ -171,7 +168,7 @@ geom_fourfold(
 
 ## Value
 
-A list of a ggplot2 layer and a default coordinate system,
+A list of a **ggplot2** layer and a default coordinate system,
 `coord_cartesian(reverse = "y", ratio = 1)`, which can be added to a
 [`ggplot2::ggplot()`](https://ggplot2.tidyverse.org/reference/ggplot.html)
 object (see the Coordinate systems section). `GeomFourfold` and
@@ -182,13 +179,13 @@ objects behind `geom_fourfold()`, a `Geom` and a `Stat`, for use with
 
 ## Details
 
-Map the two-level horizontal variable to `x`, the two-level vertical
-variable to `y`, and cell frequencies to `weight`. When `weight` is
-omitted, each row counts as one observation. The first `x` level is
-drawn on the left and the second on the right; the first `y` level is
-drawn at the top and the second at the bottom (see the Coordinate
-systems section). Set factor levels explicitly when their order matters.
-Alternatively, reorder categories with the `limits` argument of
+Map the binary horizontal variable to `x`, the binary vertical variable
+to `y`, and cell frequencies to `weight`. When `weight` is omitted, each
+row counts as one observation. The first `x` level is drawn on the left
+and the second on the right; the first `y` level is drawn at the top and
+the second at the bottom (see the Coordinate systems section). Set
+factor levels explicitly when their order matters. Alternatively,
+reorder categories with the `limits` argument of
 [`ggplot2::scale_x_discrete()`](https://ggplot2.tidyverse.org/reference/scale_discrete.html)
 or
 [`ggplot2::scale_y_discrete()`](https://ggplot2.tidyverse.org/reference/scale_discrete.html),
@@ -203,67 +200,63 @@ to display stratified tables. Duplicate `x`/`y` combinations within a
 panel are summed and cells with no rows are completed with zero counts.
 For missing values, see the Missing values section.
 
-Odds ratios, Wald confidence intervals, and extended-display p-values
+Odds ratios, Wald confidence intervals, and extended-display *p*-values
 match the calculations in
 [`vcd::fourfold()`](https://rdrr.io/pkg/vcd/man/fourfold.html). If any
 observed cell is zero, 0.5 is added to all four cells for inference; see
-the Zero counts section for how such tables are drawn. P-values are
-adjusted across all panels in the layer that have one. A panel whose
-counts are all zero has none, whereas
-[`vcd::fourfold()`](https://rdrr.io/pkg/vcd/man/fourfold.html) counts it
-with a p-value of 1, so in a layer with such a panel the adjusted
-p-values differ from those it gives. Confidence intervals themselves are
-not adjusted.
+the Zero counts section for how such tables are drawn. *p*-values are
+adjusted for multiple testing across the panels of the layer. A panel
+whose counts are all zero has no *p*-value and is left out of this
+adjustment.
+[`vcd::fourfold()`](https://rdrr.io/pkg/vcd/man/fourfold.html) instead
+includes such a panel with a *p*-value of 1, so in a layer that contains
+one, the adjusted *p*-values of the other panels are smaller here than
+in [`vcd::fourfold()`](https://rdrr.io/pkg/vcd/man/fourfold.html).
+Confidence intervals themselves are not adjusted.
 
-With `shape = "square"`, each cell is drawn as a quarter-square with the
-same area as the corresponding quarter-circle (side \\r\sqrt{\pi}/2\\
-for radius \\r\\), so the two shapes display a table with identical
-areas. Confidence rings become nested square outlines.
+With `shape = "square"`, each cell is drawn as a square with the same
+area as the corresponding quarter-circle (side \\r\sqrt{\pi}/2\\ for
+radius \\r\\), so the two shapes display a table with identical areas.
+Confidence rings become nested square outlines.
 
-In an extended display, one straight diagonal line through the center of
-the display marks the diagonal with more cases than expected under
-independence, and so the direction of the association; its two ends mark
-the sectors on that diagonal. The line is a band, drawn like a rectangle
-in
-[`ggplot2::geom_rect()`](https://ggplot2.tidyverse.org/reference/geom_tile.html):
-its interior is white (`diagonal.fill`) and 2.5 times as wide as the
-layer's `linewidth` (`diagonal.width`), and its border, in the layer's
-`colour` and as wide as its `linewidth`, runs along both sides and
-across both ends, so that it stands out on pale and dark sectors alike.
-The border's outer edge ends `diagonal.length` past the outline of each
-of the two sectors, measured along the diagonal: past the arc of a
-circle, 0.15 by default, or past the outer corner of a square,
-`0.02 * sqrt(2)` by default, which is 0.02 on each axis and a stub short
-enough that the counts of a typical standardized display stay inside.
-Set `diagonal = FALSE` to omit the line. This differs from
+In an extended display (the default), one straight diagonal line through
+the center of the display marks the diagonal with more cases than
+expected under independence–the direction of the association. The line
+is a band, drawn like a rectangle in
+[`ggplot2::geom_rect()`](https://ggplot2.tidyverse.org/reference/geom_tile.html),
+with a border along both sides and across both ends so that it stands
+out on pale and dark sectors alike. By default its interior is white and
+2.5 times as wide as the layer's `linewidth`. Use `diagonal.fill` and
+`diagonal.width` to change these. The border is drawn in the layer's
+`color` and `linewidth`. Each end extends `diagonal.length` past the
+sector it marks, measured along the diagonal in units of half the
+frame's width. By default, this length is 0.15 units past the arc of a
+circle, or `0.02 * sqrt(2)` (0.02 units on each axis) units past the
+outer corner of a square, short enough that the counts of a typical
+standardized display stay inside. The line can be omitted by setting
+`diagonal = FALSE`. This differs from
 [`vcd::fourfold()`](https://rdrr.io/pkg/vcd/man/fourfold.html), which
-marks the direction with two short black ticks, one at each of those
-sectors, instead of a line through the center; its `ticks` argument, the
-length of those ticks, corresponds to `diagonal.length`, except that
-`diagonal.length = 0` still draws the line (ending at the sectors),
-where `ticks = 0` in
+marks the direction with two short black ticks, one at each of the two
+sectors on that diagonal, instead of a line through the center.
+**vcd**'s `ticks` argument, which controls the length of those ticks,
+corresponds to `diagonal.length`, except that `diagonal.length = 0`
+still draws the line (ending at the sectors), whereas `ticks = 0` in
 [`vcd::fourfold()`](https://rdrr.io/pkg/vcd/man/fourfold.html) draws no
-ticks. The band's ends are perpendicular to the line on the page and its
-border has the same width on every side, whatever the native units per
-inch on each axis, such as with a theme's `aspect.ratio`. A line no
-longer than its border's width, as for tiny sectors in a tiny panel, is
-not drawn.
+ticks.
 
 With `counts = "auto"`, cell counts stay inside the frame corners unless
 a sector, either confidence outline, or an end of the diagonal line
-(including its border) comes close to the count text. Both shapes use
-the largest drawing extent across the layer; circles also account for
-the width of the layer's count labels. Counts then move just outside the
-frame corners. Clearance is measured at draw time, so placement can
-differ between panels of different physical sizes. Use
+comes close to the count text. If they come close, counts then move just
+outside the frame corners. Clearance is measured at draw time, so
+placement can differ between panels of different physical sizes. Use
 `counts = "inside"` or `"outside"` to force the placement, or `"none"`
-to hide counts without affecting any statistics. Outside counts can
-collide with category labels or neighboring panels at small sizes; use
-larger panels, more panel spacing, smaller text, or `counts = "inside"`.
+to hide counts. Outside counts can collide with category labels or
+neighboring panels at small sizes. If this occurs, use larger panels,
+more panel spacing, smaller text, or `counts = "inside"`.
 
 The six semantic fill colors are supplied by `palette`; they are not
-mapped through a ggplot2 fill scale. Typography and layout defaults are
-controlled by
+mapped through a **ggplot2** fill scale. Typography and layout defaults
+are controlled by
 [`theme_fourfold()`](https://gavinklorfine.com/ggfourfold/reference/theme_fourfold.md).
 
 ## Aesthetics
@@ -278,76 +271,68 @@ controlled by
 
 - `weight`: non-negative numeric cell frequencies; defaults to `1`.
 
-Each panel draws one table, so its drawing properties are set for the
-whole layer rather than mapped: give `colour`, `linewidth`, and `alpha`
-as fixed arguments, for example `geom_fourfold(colour = "grey30")`. As
-in ggplot2's filled geoms, `alpha` sets the transparency of the cell
-fills only; outlines, rings, the diagonal line, axes, the frame, labels,
-and counts are not affected by `alpha`. Text `size` and `family` are
-inherited from the plot theme, such as
-[`theme_fourfold()`](https://gavinklorfine.com/ggfourfold/reference/theme_fourfold.md),
-and can also be given as fixed arguments. Fill colors are set with
-`palette`. Mapping any of these five in `geom_fourfold()` is an error,
-including a mapping to a computed variable with
+Give `color`, `linewidth`, and `alpha` as fixed arguments rather than
+mappings, for example `geom_fourfold(color = "grey30")`. As in
+**ggplot2**'s filled geoms, `alpha` sets the transparency of the cell
+fills only. Fill colors are set with `palette`. Text `size` and `family`
+come from the plot theme, such as
+[`theme_fourfold()`](https://gavinklorfine.com/ggfourfold/reference/theme_fourfold.md).
+To override them for this layer only, give them to `geom_fourfold()`,
+for example `geom_fourfold(family = "serif")`. As elsewhere in
+**ggplot2**, `size` is in mm, while the theme's `base_size` is in
+points.
+
+Mapping a `color`, `linewidth`, `alpha`, `size`, or `family` aesthetic
+in `geom_fourfold()` is an error. This includes mappings to computed
+variables with
 [`ggplot2::after_stat()`](https://ggplot2.tidyverse.org/reference/aes_eval.html),
 [`ggplot2::after_scale()`](https://ggplot2.tidyverse.org/reference/aes_eval.html),
 or
 [`ggplot2::stage()`](https://ggplot2.tidyverse.org/reference/aes_eval.html).
-Any such mapping inherited from
+The same mappings inherited from
 [`ggplot2::ggplot()`](https://ggplot2.tidyverse.org/reference/ggplot.html)
-is ignored, since it may be meant for other layers. The exception is an
-inherited
+are ignored, because they may be meant for other layers. The one
+exception is an inherited
 [`after_stat()`](https://ggplot2.tidyverse.org/reference/aes_eval.html)
 mapping to a variable that `geom_fourfold()` does not compute, such as
 `after_stat(n)` for
-[`ggplot2::geom_count()`](https://ggplot2.tidyverse.org/reference/geom_count.html):
-ggplot2 evaluates it before the layer can ignore it, so it stops the
-plot. Use `inherit.aes = FALSE` in `geom_fourfold()`, or move the
-mapping to the layer that uses it.
+[`ggplot2::geom_count()`](https://ggplot2.tidyverse.org/reference/geom_count.html).
+**ggplot2** evaluates it before the layer can ignore it, so the plot
+stops with an error. To avoid this, set `inherit.aes = FALSE` in
+`geom_fourfold()`, or move the mapping into the layer that uses it.
 
 ## Coordinate systems
 
-The display is drawn in the plot's coordinate system, so axes,
-gridlines, and other layers agree with it. The first `x` level is at
-position 1 and the second at position 2, and likewise for `y`; the
-display fills the square from 0.5 to 2.5 on both axes, and each cell's
-quadrant is centered on its category position.
+The display is drawn in the plot's own coordinates, so axes, gridlines,
+and other layers line up with it. Each category sits at its usual
+discrete position, with the first `x` level at 1 and the second at 2,
+and likewise for `y`. The frame spans 0.5 to 2.5 on both axes, so each
+cell's quadrant is centered on its two category positions. A label
+placed at `x = 1, y = 2`, for example, lands in the middle of the cell
+for the first level of `x` and the second level of `y`.
 
 `geom_fourfold()` therefore also adds
 `coord_cartesian(reverse = "y", ratio = 1)` to the plot, as
 [`ggplot2::geom_sf()`](https://ggplot2.tidyverse.org/reference/ggsf.html)
 adds
 [`ggplot2::coord_sf()`](https://ggplot2.tidyverse.org/reference/ggsf.html).
-Reversing the `y` axis keeps the first `y` level at the top, as in
+`reverse = "y"` keeps the first `y` level at the top, as in
 [`vcd::fourfold()`](https://rdrr.io/pkg/vcd/man/fourfold.html), for
-every layer; reversing the `y` scale with `limits` would instead reorder
-the table. The unit `ratio` keeps circles round under any theme. Both
-axes span the same range by default, so it also makes the panels square.
-A theme's `aspect.ratio` overrides `ratio`: it fixes the panel's shape,
-and circles become ellipses when the ranges of the axes differ (see the
+every layer. `ratio = 1` keeps circles round, and because both axes span
+the same range by default, it also makes the panels square. A theme's
+`aspect.ratio` overrides `ratio`, fixing the panel's shape, with circles
+turning into ellipses when the ranges of the axes differ (see the
 Missing values section).
 
 A coordinate system that you add to the plot replaces this one, as usual
-in ggplot2. Add yours after the last `geom_fourfold()` in the plot: a
-later `geom_fourfold()` replaces your coordinate system with its own,
-with ggplot2's message. Without `reverse = "y"`, the first `y` level is
-drawn at the bottom, as for any ggplot2 layer. To keep it at the top and
-the circles round, add `coord_cartesian(reverse = "y", ratio = 1, ...)`:
-without `ratio`, the display stretches to fill the panel, so circles
-become ellipses wherever the panel is not square. Common additions such
-as
-[`ggplot2::coord_fixed()`](https://ggplot2.tidyverse.org/reference/coord_fixed.html)
-and
-[`ggplot2::coord_equal()`](https://ggplot2.tidyverse.org/reference/coord_fixed.html)
-also replace the default, and draw the first `y` level at the bottom
-unless reversed. Any `reverse` setting is drawn correctly.
-`GeomFourfold` and `StatFourfold` are the ggproto objects behind
-`geom_fourfold()`. Used directly with
+in **ggplot2**. Add yours after the last `geom_fourfold()` in the plot,
+because a later `geom_fourfold()` replaces it with its own. Without
+`reverse = "y"`, the first `y` level is drawn at the bottom, as for any
+**ggplot2** layer. To keep it at the top and the circles round, add
+`coord_cartesian(reverse = "y", ratio = 1, ...)`. Used directly with
 [`ggplot2::layer()`](https://ggplot2.tidyverse.org/reference/layer.html),
-they take the defaults of `geom_fourfold()` (the arguments for the
-diagonal line are the parameters `diagonal`, `diagonal_length`,
-`diagonal_fill`, and `diagonal_width`), and `GeomFourfold` adds no
-coordinate system and follows the one the plot has.
+`GeomFourfold` and `StatFourfold` take the defaults of `geom_fourfold()`
+but add no coordinate system.
 
 The coordinate system must be Cartesian, such as
 [`ggplot2::coord_cartesian()`](https://ggplot2.tidyverse.org/reference/coord_cartesian.html)
@@ -359,8 +344,8 @@ each table and keeps its odds ratio. So are
 [`ggplot2::coord_sf()`](https://ggplot2.tidyverse.org/reference/ggsf.html),
 [`ggplot2::coord_transform()`](https://ggplot2.tidyverse.org/reference/coord_transform.html),
 and polar coordinates, which would distort the areas that carry the
-display's meaning. Because of the fixed `ratio`, ggplot2 does not allow
-free facet scales (`scales = "free"`) with the default coordinate
+display's meaning. Because of the fixed `ratio`, **ggplot2** does not
+allow free facet scales (`scales = "free"`) with the default coordinate
 system. To use them, add your own coordinate system without `ratio`
 after `geom_fourfold()`, such as `coord_cartesian(reverse = "y")`. Then
 `facet_grid(space = "free")` also works, including with
@@ -384,9 +369,9 @@ A point or label that another layer, such as
 or
 [`ggplot2::annotate()`](https://ggplot2.tidyverse.org/reference/annotate.html),
 places at an `x` level and a `y` level is drawn at the center of that
-cell's quadrant. This is a fixed position, the same in every panel, not
-the center of the sector, whose size varies with the data. See the
-examples.
+cell's quadrant. This position is fixed, the same in every panel, and
+does not follow the cell's filled quarter-circle or square, whose size
+varies with the data. See the examples.
 
 ## Zero counts
 
@@ -399,14 +384,14 @@ count labels always show the observed counts.
 A panel whose four counts are all zero, such as an empty stratum in a
 faceted display, is drawn blank: only its frame, axes, labels, and zero
 counts are shown, with no sectors, rings, or diagonal line. It has no
-odds ratio, confidence interval, or p-value (they are `NA`) and is left
-out of the p-value adjustment, so it does not change the other panels.
-(With the default `margin = c(1, 2)`,
+odds ratio, confidence interval, or *p*-value (they are `NA`) and is
+left out of the *p*-value adjustment, so it does not change the other
+panels. With the default `margin = c(1, 2)`,
 [`vcd::fourfold()`](https://rdrr.io/pkg/vcd/man/fourfold.html) instead
 draws such a stratum from the corrected table, as four equal
-quarter-circles.) A facet level with no rows at all, for example with
-`drop = FALSE`, is left empty by ggplot2 as usual, without a frame or
-counts.
+quarter-circles. A facet level with no rows at all, for example with
+`drop = FALSE`, is left empty by **ggplot2** as usual, without a frame
+or counts.
 
 Each confidence ring shows the table that has the observed row and
 column totals and an odds ratio equal to one confidence limit,
@@ -422,11 +407,11 @@ rings.
 
 A table with an empty row or column contains no information about the
 odds ratio: with an empty row, for example, nothing is known about how
-that row would split between the columns. Its odds ratio and p-value
+that row would split between the columns. Its odds ratio and *p*-value
 exist only because of the correction. With an empty row, the odds ratio
 is the ratio of the two counts in the other row, each plus 0.5, so it
 reflects how that row splits rather than an association. The rings are
-correspondingly wide, but the p-value can still fall below the
+correspondingly wide, but the *p*-value can still fall below the
 significance level, so the color, significance shading, and diagonal
 line of such a panel say nothing about an association.
 
@@ -461,40 +446,39 @@ rings described above instead. Round such weights, for example with
 
 ## Missing values
 
-A row with a missing `x` or `y` cannot be placed in the table and is
-removed; a panel with no rows left is left empty. Values that the
-`limits` of a discrete scale exclude become missing and are removed the
-same way, with the same warning. A row with a missing `weight` but known
-`x` and `y` is different: its cell's count, and so the panel's table, is
-unknown. Counting it as zero would change the odds ratio, so its whole
-panel is left empty instead.
-([`vcd::fourfold()`](https://rdrr.io/pkg/vcd/man/fourfold.html) likewise
-draws no table with a missing count; it stops with an error.) A cell
-with no rows at all is still a zero count.
+A row with a missing `x` or `y` cannot be placed in the table, so it is
+removed, and a panel with no rows left is left empty. Values excluded by
+the `limits` of a discrete scale become missing and are removed the same
+way. A row with a missing `weight` but known `x` and `y` is different.
+Its cell's count, and so the panel's table, is unknown, and counting it
+as zero would change the odds ratio. Its whole panel is therefore left
+empty. A cell with no rows at all is not missing but a zero count. With
+a missing count,
+[`vcd::fourfold()`](https://rdrr.io/pkg/vcd/man/fourfold.html) instead
+stops with an error.
 
 An empty panel has no frame, counts, or labels, so it cannot be mistaken
 for a panel whose counts are all zero, and it looks the same as a facet
 level with no rows. It has no rows in the layer data and takes no part
-in `std = "all.max"` or the p-value adjustment, so the other panels are
-drawn exactly as if its stratum were not in the data. (With
-`facet_grid(margins = TRUE)`, the margin panels that pool that stratum
-are unknown too, and are also left empty.) With `na.rm = FALSE`, the
-default, a warning names each panel that lost rows or was left empty;
-with `na.rm = TRUE`, these warnings are not given. With free scales,
-which need a coordinate system you add without `ratio` (see the
-Coordinate systems section), ggplot2 itself may still warn about the
-axes of an empty panel ("Position guide is perpendicular to the intended
-axis"), as it does for its own layers.
+in `std = "all.max"` or the *p*-value adjustment, so the other panels
+are drawn exactly as if its stratum were not in the data. With
+`na.rm = FALSE`, the default, a warning names each panel that lost rows
+or was left empty. With `na.rm = TRUE`, these warnings are not given.
+With free scales, which need a coordinate system added without `ratio`
+(see the Coordinate systems section), **ggplot2** itself may still warn
+about the axes of an empty panel ("Position guide is perpendicular to
+the intended axis"), as it does for its own layers.
 
-A missing `x` or `y` keeps a place for missing values on its axis, as
-for every geom, because ggplot2 trains position scales before the stat
-runs. The display removes those rows, but the axis stays wider, so the
-panels that share that scale are wider (or taller) than the display,
-with space beside it. With the default coordinate system the display
-stays round, and the counts and statistics are not affected.
-`scale_x_discrete(na.translate = FALSE)`
-([`scale_y_discrete()`](https://ggplot2.tidyverse.org/reference/scale_discrete.html)
-for `y`) removes that place.
+`NA` values in the `x` or `y` variable leave empty space beside the
+display, which can then be drawn smaller. Only the layout changes:
+panels that share the scale shrink alike and stay comparable, the
+display stays round with the default coordinate system, and the areas,
+counts, and statistics are not affected. To remove the space, add
+`scale_x_discrete(na.translate = FALSE)` for `x`,
+`scale_y_discrete(na.translate = FALSE)` for `y`, or both. The space
+appears because **ggplot2** trains position scales before the stat runs,
+so the axis keeps a place for missing values, as for every geom, even
+though the display removes those rows.
 
 ## References
 
@@ -536,13 +520,14 @@ ggplot2::ggplot(
   theme_fourfold()
 
 
-# Quarter-squares of equal area instead of quarter-circles
+# Squares instead of quarter-circles
 ggplot2::ggplot(
   ucb,
   ggplot2::aes(x = Gender, y = Admit, weight = Freq)
 ) +
   geom_fourfold(shape = "square") +
   ggplot2::facet_wrap(ggplot2::vars(Dept), ncol = 3) +
+  ggplot2::labs(title = "Berkeley admissions") +
   theme_fourfold()
 
 
@@ -553,16 +538,20 @@ ggplot2::ggplot(
 ) +
   geom_fourfold(diagonal.length = 0.3, diagonal.fill = "gray80") +
   ggplot2::facet_wrap(ggplot2::vars(Dept), ncol = 3) +
+  ggplot2::labs(title = "Berkeley admissions") +
   theme_fourfold()
 
 
-# Other layers are placed by category: a label in the Male-Admitted cell
+# Other layers are placed by category: admission rates in the admitted cells
 ggplot2::ggplot(
   subset(ucb, Dept == "A"),
   ggplot2::aes(x = Gender, y = Admit, weight = Freq)
 ) +
   geom_fourfold() +
-  ggplot2::annotate("label", x = "Male", y = "Admitted", label = "Male") +
+  ggplot2::annotate(
+    "label", x = c("Male", "Female"), y = "Admitted",
+    label = c("62% admitted", "82% admitted")
+  ) +
   theme_fourfold()
 
 ```

@@ -6,12 +6,12 @@
     }
   };
 </script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"><link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet"><script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet"><script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><link href="../extra.css" rel="stylesheet"><meta property="og:title" content="Fourfold displays for 2-by-2 tables — geom_fourfold"><meta name="description" content="geom_fourfold() draws a fourfold display in each ggplot2 panel. Sector
-radii represent cell frequencies after the selected standardization, while
-sector colors, confidence rings, and a diagonal line show the direction
-and strength of association."><meta property="og:description" content="geom_fourfold() draws a fourfold display in each ggplot2 panel. Sector
-radii represent cell frequencies after the selected standardization, while
-sector colors, confidence rings, and a diagonal line show the direction
-and strength of association."><meta property="og:image" content="https://gavinklorfine.com/ggfourfold/logo.png"></head><body>
+areas are proportional to cell frequencies after the selected
+standardization, while sector colors, confidence rings, and a diagonal line
+show the direction and strength of association."><meta property="og:description" content="geom_fourfold() draws a fourfold display in each ggplot2 panel. Sector
+areas are proportional to cell frequencies after the selected
+standardization, while sector colors, confidence rings, and a diagonal line
+show the direction and strength of association."><meta property="og:image" content="https://gavinklorfine.com/ggfourfold/logo.png"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -46,10 +46,10 @@ and strength of association."><meta property="og:image" content="https://gavinkl
     </div>
 
     <div class="ref-description section level2">
-    <p><code>geom_fourfold()</code> draws a fourfold display in each ggplot2 panel. Sector
-radii represent cell frequencies after the selected standardization, while
-sector colors, confidence rings, and a diagonal line show the direction
-and strength of association.</p>
+    <p><code>geom_fourfold()</code> draws a fourfold display in each <strong>ggplot2</strong> panel. Sector
+areas are proportional to cell frequencies after the selected
+standardization, while sector colors, confidence rings, and a diagonal line
+show the direction and strength of association.</p>
     </div>
 
     <div class="section level2">
@@ -93,14 +93,15 @@ data are inherited from the plot.</p></dd>
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
 <dd><p>Other arguments passed to <code><a href="https://ggplot2.tidyverse.org/reference/layer.html" class="external-link">ggplot2::layer()</a></code>, typically fixed
-aesthetics such as <code>colour</code> or <code>linewidth</code>.</p></dd>
+aesthetics such as <code>color</code> or <code>linewidth</code>.</p></dd>
 
 
 <dt id="arg-std">std<a class="anchor" aria-label="anchor" href="#arg-std"></a></dt>
 <dd><p><code>"margins"</code> (the default) draws a standardized display, equating
 the margins chosen by <code>margin</code> while preserving the odds ratio.
 <code>"ind.max"</code> and <code>"all.max"</code> draw unstandardized displays of the raw
-counts, scaled by the largest cell in each panel or in the whole layer.</p></dd>
+counts, respectively scaled by the largest cell in each panel or in the
+whole layer.</p></dd>
 
 
 <dt id="arg-margin">margin<a class="anchor" aria-label="anchor" href="#arg-margin"></a></dt>
@@ -116,15 +117,15 @@ the <code>y</code> (row) margin, or <code>2</code> for the <code>x</code> (colum
 
 
 <dt id="arg-extended">extended<a class="anchor" aria-label="anchor" href="#arg-extended"></a></dt>
-<dd><p>A single <code>TRUE</code> or <code>FALSE</code>. If <code>FALSE</code>, omit the diagonal
-line, which marks the diagonal with more cases than expected under
-independence, and fill cells with the first two <code>palette</code> colors instead
-of shading by significance. Defaults to <code>TRUE</code>.</p></dd>
+<dd><p>A single <code>TRUE</code> (the default) or <code>FALSE</code>. If <code>FALSE</code>, omit
+the diagonal line, which marks the diagonal with more cases than expected
+under independence, and fill cells with the first two <code>palette</code> colors
+instead of shading by significance.</p></dd>
 
 
 <dt id="arg-diagonal">diagonal<a class="anchor" aria-label="anchor" href="#arg-diagonal"></a></dt>
-<dd><p>A single <code>TRUE</code> or <code>FALSE</code>: draw the diagonal line of an
-extended display (see <code>extended</code>) or not. Defaults to <code>TRUE</code>.</p></dd>
+<dd><p>A single <code>TRUE</code> (the default) or <code>FALSE</code>: draw the diagonal
+line of an extended display (see <code>extended</code>) or not.</p></dd>
 
 
 <dt id="arg-diagonal-length">diagonal.length<a class="anchor" aria-label="anchor" href="#arg-diagonal-length"></a></dt>
@@ -134,25 +135,26 @@ shapes (past the arc of a circle, or the outer corner of a square), where
 <code>1</code> is the largest possible sector radius. If <code>NULL</code>, the default, it is
 <code>0.15</code> for circles and <code>0.02 * sqrt(2)</code> (about <code>0.028</code>) for squares, which
 is <code>0.02</code> on each axis; a number applies to either shape as given. With
-<code>0</code> the line ends at the sectors but is still drawn: use
-<code>diagonal = FALSE</code> to omit it. Give <code>NULL</code> or a single non-negative
+<code>0</code>, the line ends at the sectors but is still drawn: use
+<code>diagonal = FALSE</code> to omit it. Supply <code>NULL</code> or a single non-negative
 number.</p></dd>
 
 
 <dt id="arg-diagonal-fill">diagonal.fill<a class="anchor" aria-label="anchor" href="#arg-diagonal-fill"></a></dt>
-<dd><p>The color of the diagonal line's interior, inside its
-border, which is drawn in the layer's <code>colour</code>. Defaults to <code>"white"</code>. As
-<code>fill</code> in ggplot2, <code>NA</code> or <code>"transparent"</code> leaves the line hollow, with its
-border only. Give a single color.</p></dd>
+<dd><p>The color of the diagonal line's interior (its border
+is drawn in the layer's <code>color</code>). Defaults to <code>"white"</code>. Like <code>fill</code> in
+<strong>ggplot2</strong>, <code>NA</code> or <code>"transparent"</code> leaves the line hollow, with its
+border only. Supply a single color.</p></dd>
 
 
 <dt id="arg-diagonal-width">diagonal.width<a class="anchor" aria-label="anchor" href="#arg-diagonal-width"></a></dt>
-<dd><p>The width of the diagonal line's interior, in mm as
-for <code>linewidth</code>, not counting its border, which is drawn outside it on each
-side with the layer's <code>colour</code> and <code>linewidth</code>. If <code>NULL</code>, the default, it
-is 2.5 times the layer's <code>linewidth</code>. Give <code>NULL</code> or a single non-negative
-number. With <code>0</code>, the two borders meet and the line is one line in the
-layer's <code>colour</code>, twice the layer's <code>linewidth</code> wide.</p></dd>
+<dd><p>The width of the diagonal line's interior, in
+millimeters like <code>linewidth</code>. This width does not count the line's border,
+which is drawn outside it with the layer's <code>color</code> and <code>linewidth</code>. If
+<code>NULL</code>, the default, it is 2.5 times the layer's <code>linewidth</code>. Supply <code>NULL</code>
+or a single non-negative number. With <code>0</code>, the two borders meet and the
+line interior disappears, leaving a line in the layer's <code>color</code> that is
+twice the layer's <code>linewidth</code> wide.</p></dd>
 
 
 <dt id="arg-p-adjust-method">p_adjust_method<a class="anchor" aria-label="anchor" href="#arg-p-adjust-method"></a></dt>
@@ -162,37 +164,34 @@ across panels. Defaults to <code>"holm"</code>, the first value in
 
 
 <dt id="arg-shape">shape<a class="anchor" aria-label="anchor" href="#arg-shape"></a></dt>
-<dd><p>Shape of the cell sectors: <code>"circle"</code> (the default, as in
-<code><a href="https://rdrr.io/pkg/vcd/man/fourfold.html" class="external-link">vcd::fourfold()</a></code>) draws quarter-circles; <code>"square"</code> draws
-quarter-squares of equal area.</p></dd>
+<dd><p>Shape of the cell sectors. <code>"circle"</code> (the default, as in
+<code><a href="https://rdrr.io/pkg/vcd/man/fourfold.html" class="external-link">vcd::fourfold()</a></code>) draws quarter-circles. <code>"square"</code> draws
+squares with equivalent area to the corresponding quarter-circle.</p></dd>
 
 
 <dt id="arg-counts">counts<a class="anchor" aria-label="anchor" href="#arg-counts"></a></dt>
 <dd><p>Placement of cell counts: <code>"auto"</code> (the default) moves counts
 outside when the drawing approaches them; <code>"inside"</code> always uses the inside
 corners, even if overlapped; <code>"outside"</code> always uses the outside corners;
-<code>"none"</code> hides the counts. Counts are labeled as <code><a href="https://rdrr.io/pkg/vcd/man/fourfold.html" class="external-link">vcd::fourfold()</a></code> labels
-the corresponding table, with <code><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character()</a></code>: counts of integer
-weights, or of unweighted rows, in full (<code>100000</code>) when they fit in an
-integer, and whole-number
-counts of double weights as R prints them, so that <code>1e5</code> is <code>1e+05</code>.
-Non-integer counts (weights) are rounded to three significant digits, or
-to a whole number when that is larger. A count that is only rounding noise
-next to a panel's other counts, such as <code>5.6e-17</code> beside counts in the
-tens, is shown as <code>0</code>.</p></dd>
+<code>"none"</code> hides the counts. Counts are labeled as in <code><a href="https://rdrr.io/pkg/vcd/man/fourfold.html" class="external-link">vcd::fourfold()</a></code>,
+so large round counts stored as doubles can appear as, for example,
+<code>1e+05</code>. Non-integer counts are rounded to three significant digits, and
+rounding noise such as <code>5.6e-17</code> is shown as <code>0</code>.</p></dd>
 
 
 <dt id="arg-palette">palette<a class="anchor" aria-label="anchor" href="#arg-palette"></a></dt>
 <dd><p>Character vector of at least six valid colors in the
 semantic order used by <code><a href="fourfold_palette.html">fourfold_palette()</a></code>. Defaults to
-<code><a href="fourfold_palette.html">fourfold_palette()</a></code>, the colors of <code><a href="https://rdrr.io/pkg/vcd/man/fourfold.html" class="external-link">vcd::fourfold()</a></code>; see that page for
-other built-in palettes such as <code>fourfold_palette("okabe-ito")</code>.</p></dd>
+<code><a href="fourfold_palette.html">fourfold_palette()</a></code>, the colors of <code><a href="https://rdrr.io/pkg/vcd/man/fourfold.html" class="external-link">vcd::fourfold()</a></code>. See
+<code><a href="fourfold_palette.html">fourfold_palette()</a></code> for other built-in palettes such as
+<code>fourfold_palette("okabe-ito")</code>.</p></dd>
 
 
 <dt id="arg-na-rm">na.rm<a class="anchor" aria-label="anchor" href="#arg-na-rm"></a></dt>
-<dd><p>If <code>FALSE</code>, the default, rows with a missing <code>x</code> or <code>y</code> are
-removed, and panels with a missing <code>weight</code> are left empty, with a
-warning. If <code>TRUE</code>, this is done silently. See the Missing values section.</p></dd>
+<dd><p>Missing values are handled the same way either way. Rows with
+<code>NA</code> in <code>x</code> or <code>y</code> are removed, and a panel with an <code>NA</code> weight is left
+empty. If <code>FALSE</code>, the default, a warning says so. If <code>TRUE</code>, this is done
+silently. See the Missing values section.</p></dd>
 
 
 <dt id="arg-show-legend">show.legend<a class="anchor" aria-label="anchor" href="#arg-show-legend"></a></dt>
@@ -208,7 +207,7 @@ default aesthetic mappings. Defaults to <code>TRUE</code>.</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A list of a ggplot2 layer and a default coordinate system,
+    <p>A list of a <strong>ggplot2</strong> layer and a default coordinate system,
 <code>coord_cartesian(reverse = "y", ratio = 1)</code>, which can be added to a
 <code><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot2::ggplot()</a></code> object (see the Coordinate systems section).
 <code>GeomFourfold</code> and <code>StatFourfold</code> are the <code><a href="https://ggplot2.tidyverse.org/reference/ggproto.html" class="external-link">ggplot2::ggproto()</a></code> objects
@@ -217,7 +216,7 @@ behind <code>geom_fourfold()</code>, a <code>Geom</code> and a <code>Stat</code>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>Map the two-level horizontal variable to <code>x</code>, the two-level vertical
+    <p>Map the binary horizontal variable to <code>x</code>, the binary vertical
 variable to <code>y</code>, and cell frequencies to <code>weight</code>. When <code>weight</code> is omitted,
 each row counts as one observation. The first <code>x</code> level is drawn on the left
 and the second on the right; the first <code>y</code> level is drawn at the top and the
@@ -232,56 +231,52 @@ scale <code>palette</code> that moves them, are errors.</p>
 tables. Duplicate <code>x</code>/<code>y</code> combinations within a panel are summed and cells
 with no rows are completed with zero counts. For missing values, see the
 Missing values section.</p>
-<p>Odds ratios, Wald confidence intervals, and extended-display p-values match
-the calculations in <code><a href="https://rdrr.io/pkg/vcd/man/fourfold.html" class="external-link">vcd::fourfold()</a></code>. If any observed cell is zero, 0.5 is
-added to all four cells for inference; see the Zero counts section for how
-such tables are drawn. P-values are adjusted across all panels in the
-layer that have one. A panel whose counts are all zero has none, whereas
-<code><a href="https://rdrr.io/pkg/vcd/man/fourfold.html" class="external-link">vcd::fourfold()</a></code> counts it with a p-value of 1, so in a layer with such a
-panel the adjusted p-values differ from those it gives. Confidence
-intervals themselves are not adjusted.</p>
-<p>With <code>shape = "square"</code>, each cell is drawn as a quarter-square with the
-same area as the corresponding quarter-circle (side
+<p>Odds ratios, Wald confidence intervals, and extended-display <em>p</em>-values
+match the calculations in <code><a href="https://rdrr.io/pkg/vcd/man/fourfold.html" class="external-link">vcd::fourfold()</a></code>. If any observed cell is zero,
+0.5 is added to all four cells for inference; see the Zero counts section
+for how such tables are drawn. <em>p</em>-values are adjusted for multiple testing
+across the panels of the layer. A panel whose counts are all zero has no
+<em>p</em>-value and is left out of this adjustment. <code><a href="https://rdrr.io/pkg/vcd/man/fourfold.html" class="external-link">vcd::fourfold()</a></code> instead
+includes such a panel with a <em>p</em>-value of 1, so in a layer that contains
+one, the adjusted <em>p</em>-values of the other panels are smaller here than in
+<code><a href="https://rdrr.io/pkg/vcd/man/fourfold.html" class="external-link">vcd::fourfold()</a></code>. Confidence intervals themselves are not adjusted.</p>
+<p>With <code>shape = "square"</code>, each cell is drawn as a square with the same area
+as the corresponding quarter-circle (side
 \(r\sqrt{\pi}/2\) for radius \(r\)), so the two
 shapes display a table with identical areas. Confidence rings
 become nested square outlines.</p>
-<p>In an extended display, one straight diagonal line through the center of
-the display marks the diagonal with more cases than expected under
-independence, and so the direction of the association; its two ends mark
-the sectors on that diagonal. The line is a band, drawn like a rectangle
-in <code><a href="https://ggplot2.tidyverse.org/reference/geom_tile.html" class="external-link">ggplot2::geom_rect()</a></code>: its interior is white (<code>diagonal.fill</code>) and
-2.5 times as wide as the layer's <code>linewidth</code> (<code>diagonal.width</code>), and its
-border, in the layer's <code>colour</code> and as wide as its <code>linewidth</code>, runs along
-both sides and across both ends, so that it stands out on pale and dark
-sectors alike. The border's outer edge ends <code>diagonal.length</code> past the
-outline of each of the two sectors, measured along the diagonal: past the
-arc of a circle, 0.15 by default, or past the outer corner of a square,
-<code>0.02 * sqrt(2)</code> by default, which is 0.02 on each axis and a stub short
-enough that the counts of a typical standardized display stay inside. Set
-<code>diagonal = FALSE</code> to omit the line. This differs from <code><a href="https://rdrr.io/pkg/vcd/man/fourfold.html" class="external-link">vcd::fourfold()</a></code>,
-which marks the direction with two short black ticks, one at each of those
-sectors, instead of a line through the center; its <code>ticks</code> argument, the
-length of those ticks, corresponds to <code>diagonal.length</code>, except that
-<code>diagonal.length = 0</code> still draws the line (ending at the sectors), where
-<code>ticks = 0</code> in <code><a href="https://rdrr.io/pkg/vcd/man/fourfold.html" class="external-link">vcd::fourfold()</a></code> draws no ticks. The band's ends are
-perpendicular to the line on the page and its border has the same width on
-every side, whatever the native units per inch on each axis, such as with a
-theme's <code>aspect.ratio</code>. A line no longer than its border's width, as for
-tiny sectors in a tiny panel, is not drawn.</p>
+<p>In an extended display (the default), one straight diagonal line through
+the center of the display marks the diagonal with more cases than expected
+under independence–the direction of the association. The line is a band,
+drawn like a rectangle in <code><a href="https://ggplot2.tidyverse.org/reference/geom_tile.html" class="external-link">ggplot2::geom_rect()</a></code>, with a border along both
+sides and across both ends so that it stands out on pale and dark sectors
+alike. By default its interior is white and 2.5 times as wide as the
+layer's <code>linewidth</code>. Use <code>diagonal.fill</code> and <code>diagonal.width</code> to change
+these. The border is drawn in the layer's <code>color</code> and <code>linewidth</code>.
+Each end extends <code>diagonal.length</code> past the sector it marks,
+measured along the diagonal in units of half the frame's width. By default,
+this length is 0.15 units past the arc of a circle, or <code>0.02 * sqrt(2)</code>
+(0.02 units on each axis) units past the outer corner of a square, short
+enough that the counts of a typical standardized display stay inside. The
+line can be omitted by setting <code>diagonal = FALSE</code>. This differs from
+<code><a href="https://rdrr.io/pkg/vcd/man/fourfold.html" class="external-link">vcd::fourfold()</a></code>, which marks the direction with two short black ticks, one
+at each of the two sectors on that diagonal, instead of a line through the
+center. <strong>vcd</strong>'s <code>ticks</code> argument, which controls the length of those ticks,
+corresponds to <code>diagonal.length</code>, except that <code>diagonal.length = 0</code> still
+draws the line (ending at the sectors), whereas <code>ticks = 0</code> in
+<code><a href="https://rdrr.io/pkg/vcd/man/fourfold.html" class="external-link">vcd::fourfold()</a></code> draws no ticks.</p>
 <p>With <code>counts = "auto"</code>, cell counts stay inside the frame corners unless
 a sector, either confidence outline, or an end of the diagonal line
-(including its border) comes close to the count text. Both
-shapes use the largest drawing extent across the layer; circles also
-account for the width of the layer's count labels. Counts then move
+comes close to the count text. If they come close, counts then move
 just outside the frame corners. Clearance is measured at draw time, so
 placement can differ between panels of different physical sizes.
 Use <code>counts = "inside"</code> or <code>"outside"</code> to force the placement, or <code>"none"</code>
-to hide counts without affecting any statistics. Outside counts can collide
-with category labels or neighboring panels at small sizes; use larger
-panels, more panel spacing, smaller text, or <code>counts = "inside"</code>.</p>
+to hide counts. Outside counts can collide with category labels or
+neighboring panels at small sizes. If this occurs, use larger panels, more
+panel spacing, smaller text, or <code>counts = "inside"</code>.</p>
 <p>The six semantic fill colors are supplied by <code>palette</code>; they are not mapped
-through a ggplot2 fill scale. Typography and layout defaults are controlled
-by <code><a href="theme_fourfold.html">theme_fourfold()</a></code>.</p>
+through a <strong>ggplot2</strong> fill scale. Typography and layout defaults are
+controlled by <code><a href="theme_fourfold.html">theme_fourfold()</a></code>.</p>
     </div>
     <div class="section level2">
     <h2 id="aesthetics">Aesthetics<a class="anchor" aria-label="anchor" href="#aesthetics"></a></h2>
@@ -292,66 +287,59 @@ with exactly two levels. Convert numeric codes, such as 0/1, with
 <code><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor()</a></code>.</p></li>
 <li><p><code>y</code> (required): a categorical variable with exactly two levels.</p></li>
 <li><p><code>weight</code>: non-negative numeric cell frequencies; defaults to <code>1</code>.</p></li>
-</ul><p>Each panel draws one table, so its drawing properties are set for the whole
-layer rather than mapped: give <code>colour</code>, <code>linewidth</code>, and <code>alpha</code> as fixed
-arguments, for example <code>geom_fourfold(colour = "grey30")</code>. As in
-ggplot2's filled geoms, <code>alpha</code> sets the transparency of the cell fills
-only; outlines, rings, the diagonal line, axes, the frame, labels, and
-counts are not affected by <code>alpha</code>. Text <code>size</code> and <code>family</code> are inherited
-from the plot theme, such as <code><a href="theme_fourfold.html">theme_fourfold()</a></code>, and can also be given as
-fixed arguments. Fill colors are set with <code>palette</code>.
-Mapping any of these five in <code>geom_fourfold()</code> is an error, including a
-mapping to a computed variable with <code><a href="https://ggplot2.tidyverse.org/reference/aes_eval.html" class="external-link">ggplot2::after_stat()</a></code>,
-<code><a href="https://ggplot2.tidyverse.org/reference/aes_eval.html" class="external-link">ggplot2::after_scale()</a></code>, or <code><a href="https://ggplot2.tidyverse.org/reference/aes_eval.html" class="external-link">ggplot2::stage()</a></code>. Any such mapping inherited
-from <code><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot2::ggplot()</a></code> is ignored, since it may be meant for other layers.
-The exception is an inherited <code><a href="https://ggplot2.tidyverse.org/reference/aes_eval.html" class="external-link">after_stat()</a></code> mapping to a variable that
-<code>geom_fourfold()</code> does not compute, such as <code>after_stat(n)</code> for
-<code><a href="https://ggplot2.tidyverse.org/reference/geom_count.html" class="external-link">ggplot2::geom_count()</a></code>: ggplot2 evaluates it before the layer can ignore
-it, so it stops the plot. Use <code>inherit.aes = FALSE</code> in <code>geom_fourfold()</code>, or
-move the mapping to the layer that uses it.</p>
+</ul><p>Give <code>color</code>, <code>linewidth</code>, and <code>alpha</code> as fixed arguments rather than
+mappings, for example <code>geom_fourfold(color = "grey30")</code>. As in <strong>ggplot2</strong>'s
+filled geoms, <code>alpha</code> sets the transparency of the cell fills only. Fill
+colors are set with <code>palette</code>. Text <code>size</code> and <code>family</code> come from the plot
+theme, such as <code><a href="theme_fourfold.html">theme_fourfold()</a></code>. To override them for this layer only,
+give them to <code>geom_fourfold()</code>, for example
+<code>geom_fourfold(family = "serif")</code>. As elsewhere in <strong>ggplot2</strong>, <code>size</code> is in
+mm, while the theme's <code>base_size</code> is in points.</p>
+<p>Mapping a <code>color</code>, <code>linewidth</code>, <code>alpha</code>, <code>size</code>, or <code>family</code> aesthetic in
+<code>geom_fourfold()</code> is an error. This includes mappings to computed variables
+with <code><a href="https://ggplot2.tidyverse.org/reference/aes_eval.html" class="external-link">ggplot2::after_stat()</a></code>, <code><a href="https://ggplot2.tidyverse.org/reference/aes_eval.html" class="external-link">ggplot2::after_scale()</a></code>, or
+<code><a href="https://ggplot2.tidyverse.org/reference/aes_eval.html" class="external-link">ggplot2::stage()</a></code>. The same mappings inherited from <code><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot2::ggplot()</a></code> are
+ignored, because they may be meant for other layers. The one exception is an
+inherited <code><a href="https://ggplot2.tidyverse.org/reference/aes_eval.html" class="external-link">after_stat()</a></code> mapping to a variable that <code>geom_fourfold()</code> does
+not compute, such as <code>after_stat(n)</code> for <code><a href="https://ggplot2.tidyverse.org/reference/geom_count.html" class="external-link">ggplot2::geom_count()</a></code>. <strong>ggplot2</strong>
+evaluates it before the layer can ignore it, so the plot stops with an error.
+To avoid this, set <code>inherit.aes = FALSE</code> in <code>geom_fourfold()</code>, or move the
+mapping into the layer that uses it.</p>
     </div>
     <div class="section level2">
     <h2 id="coordinate-systems">Coordinate systems<a class="anchor" aria-label="anchor" href="#coordinate-systems"></a></h2>
 
 
-<p>The display is drawn in the plot's coordinate system, so axes, gridlines,
-and other layers agree with it. The first <code>x</code> level is at position 1 and the
-second at position 2, and likewise for <code>y</code>; the display fills the square
-from 0.5 to 2.5 on both axes, and each cell's quadrant is centered on its
-category position.</p>
+<p>The display is drawn in the plot's own coordinates, so axes, gridlines,
+and other layers line up with it. Each category sits at its usual discrete
+position, with the first <code>x</code> level at 1 and the second at 2, and likewise
+for <code>y</code>. The frame spans 0.5 to 2.5 on both axes, so each cell's quadrant
+is centered on its two category positions. A label placed at <code>x = 1, y = 2</code>,
+for example, lands in the middle of the cell for the first level of <code>x</code> and
+the second level of <code>y</code>.</p>
 <p><code>geom_fourfold()</code> therefore also adds
 <code>coord_cartesian(reverse = "y", ratio = 1)</code> to the plot, as
-<code><a href="https://ggplot2.tidyverse.org/reference/ggsf.html" class="external-link">ggplot2::geom_sf()</a></code> adds <code><a href="https://ggplot2.tidyverse.org/reference/ggsf.html" class="external-link">ggplot2::coord_sf()</a></code>. Reversing the <code>y</code> axis
-keeps the first <code>y</code> level at the top, as in <code><a href="https://rdrr.io/pkg/vcd/man/fourfold.html" class="external-link">vcd::fourfold()</a></code>, for every
-layer; reversing the <code>y</code> scale with <code>limits</code> would instead reorder the
-table. The unit <code>ratio</code> keeps circles round under any theme. Both axes span
-the same range by default, so it also makes the panels square. A theme's
-<code>aspect.ratio</code> overrides <code>ratio</code>: it fixes the panel's shape, and circles
-become ellipses when the ranges of the axes differ (see the Missing values
+<code><a href="https://ggplot2.tidyverse.org/reference/ggsf.html" class="external-link">ggplot2::geom_sf()</a></code> adds <code><a href="https://ggplot2.tidyverse.org/reference/ggsf.html" class="external-link">ggplot2::coord_sf()</a></code>. <code>reverse = "y"</code> keeps the
+first <code>y</code> level at the top, as in <code><a href="https://rdrr.io/pkg/vcd/man/fourfold.html" class="external-link">vcd::fourfold()</a></code>, for every layer.
+<code>ratio = 1</code> keeps circles round, and because both axes span the same range
+by default, it also makes the panels square. A theme's <code>aspect.ratio</code>
+overrides <code>ratio</code>, fixing the panel's shape, with circles turning into
+ellipses when the ranges of the axes differ (see the Missing values
 section).</p>
 <p>A coordinate system that you add to the plot replaces this one, as usual in
-ggplot2. Add yours after the last <code>geom_fourfold()</code> in the plot: a later
-<code>geom_fourfold()</code> replaces your coordinate system with its own, with
-ggplot2's message. Without <code>reverse = "y"</code>, the first <code>y</code> level is drawn at
-the bottom, as for any ggplot2 layer. To keep it at the top and the circles
-round, add <code>coord_cartesian(reverse = "y", ratio = 1, ...)</code>: without
-<code>ratio</code>, the display stretches to fill the panel, so circles become
-ellipses wherever the panel is not square.
-Common additions such as <code><a href="https://ggplot2.tidyverse.org/reference/coord_fixed.html" class="external-link">ggplot2::coord_fixed()</a></code> and
-<code><a href="https://ggplot2.tidyverse.org/reference/coord_fixed.html" class="external-link">ggplot2::coord_equal()</a></code> also replace the default, and draw the first <code>y</code>
-level at the bottom unless reversed. Any <code>reverse</code> setting is drawn
-correctly. <code>GeomFourfold</code> and <code>StatFourfold</code> are the ggproto objects behind
-<code>geom_fourfold()</code>. Used directly with <code><a href="https://ggplot2.tidyverse.org/reference/layer.html" class="external-link">ggplot2::layer()</a></code>, they take the
-defaults of <code>geom_fourfold()</code> (the arguments for the diagonal line are the
-parameters <code>diagonal</code>, <code>diagonal_length</code>, <code>diagonal_fill</code>, and
-<code>diagonal_width</code>), and
-<code>GeomFourfold</code> adds no coordinate system and follows the one the plot has.</p>
+<strong>ggplot2</strong>. Add yours after the last <code>geom_fourfold()</code> in the plot, because
+a later <code>geom_fourfold()</code> replaces it with its own. Without
+<code>reverse = "y"</code>, the first <code>y</code> level is drawn at the bottom, as for any
+<strong>ggplot2</strong> layer. To keep it at the top and the circles round, add
+<code>coord_cartesian(reverse = "y", ratio = 1, ...)</code>. Used directly with
+<code><a href="https://ggplot2.tidyverse.org/reference/layer.html" class="external-link">ggplot2::layer()</a></code>, <code>GeomFourfold</code> and <code>StatFourfold</code> take the defaults of
+<code>geom_fourfold()</code> but add no coordinate system.</p>
 <p>The coordinate system must be Cartesian, such as <code><a href="https://ggplot2.tidyverse.org/reference/coord_cartesian.html" class="external-link">ggplot2::coord_cartesian()</a></code>
 or <code><a href="https://ggplot2.tidyverse.org/reference/coord_fixed.html" class="external-link">ggplot2::coord_fixed()</a></code>. <code><a href="https://ggplot2.tidyverse.org/reference/coord_flip.html" class="external-link">ggplot2::coord_flip()</a></code> is an error: swap the
 <code>x</code> and <code>y</code> aesthetics instead, which transposes each table and keeps its
 odds ratio. So are <code><a href="https://ggplot2.tidyverse.org/reference/ggsf.html" class="external-link">ggplot2::coord_sf()</a></code>, <code><a href="https://ggplot2.tidyverse.org/reference/coord_transform.html" class="external-link">ggplot2::coord_transform()</a></code>, and
 polar coordinates, which would distort the areas that carry the display's
-meaning. Because of the fixed <code>ratio</code>, ggplot2 does not allow free facet
+meaning. Because of the fixed <code>ratio</code>, <strong>ggplot2</strong> does not allow free facet
 scales (<code>scales = "free"</code>) with the default coordinate system. To use them,
 add your own coordinate system without <code>ratio</code> after <code>geom_fourfold()</code>,
 such as <code>coord_cartesian(reverse = "y")</code>. Then <code>facet_grid(space = "free")</code>
@@ -371,9 +359,10 @@ neighboring panels and strips.</p>
 
 <p>A point or label that another layer, such as <code><a href="https://ggplot2.tidyverse.org/reference/geom_point.html" class="external-link">ggplot2::geom_point()</a></code>,
 <code><a href="https://ggplot2.tidyverse.org/reference/geom_text.html" class="external-link">ggplot2::geom_text()</a></code>, or <code><a href="https://ggplot2.tidyverse.org/reference/annotate.html" class="external-link">ggplot2::annotate()</a></code>, places at an <code>x</code> level and
-a <code>y</code> level is drawn at the center of that cell's quadrant. This is a fixed
-position, the same in every panel, not the center of the sector, whose size
-varies with the data. See the examples.</p>
+a <code>y</code> level is drawn at the center of that cell's quadrant. This position
+is fixed, the same in every panel, and does not follow the cell's filled
+quarter-circle or square, whose size varies with the data. See the
+examples.</p>
     </div>
     <div class="section level2">
     <h2 id="zero-counts">Zero counts<a class="anchor" aria-label="anchor" href="#zero-counts"></a></h2>
@@ -386,12 +375,12 @@ observed counts.</p>
 <p>A panel whose four counts are all zero, such as an empty stratum in a
 faceted display, is drawn blank: only its frame, axes, labels, and zero
 counts are shown, with no sectors, rings, or diagonal line. It has no odds
-ratio, confidence interval, or p-value (they are <code>NA</code>) and is left out of
-the p-value adjustment, so it does not change the other panels.
-(With the default <code>margin = c(1, 2)</code>, <code><a href="https://rdrr.io/pkg/vcd/man/fourfold.html" class="external-link">vcd::fourfold()</a></code> instead draws such
-a stratum from the corrected table, as four equal quarter-circles.) A facet
+ratio, confidence interval, or <em>p</em>-value (they are <code>NA</code>) and is left out of
+the <em>p</em>-value adjustment, so it does not change the other panels.
+With the default <code>margin = c(1, 2)</code>, <code><a href="https://rdrr.io/pkg/vcd/man/fourfold.html" class="external-link">vcd::fourfold()</a></code> instead draws such
+a stratum from the corrected table, as four equal quarter-circles. A facet
 level with no rows at all, for example with <code>drop = FALSE</code>, is left empty
-by ggplot2 as usual, without a frame or counts.</p>
+by <strong>ggplot2</strong> as usual, without a frame or counts.</p>
 <p>Each confidence ring shows the table that has the observed row and column
 totals and an odds ratio equal to one confidence limit, standardized like
 the data. With the default <code>margin = c(1, 2)</code>, which depends only on the
@@ -404,11 +393,11 @@ Panels with isolated zero cells, but no empty row or column, keep the
 observed totals for their rings.</p>
 <p>A table with an empty row or column contains no information about the odds
 ratio: with an empty row, for example, nothing is known about how that row
-would split between the columns. Its odds ratio and p-value exist only
+would split between the columns. Its odds ratio and <em>p</em>-value exist only
 because of the correction. With an empty row, the odds ratio is the ratio
 of the two counts in the other row, each plus 0.5, so it reflects how that
 row splits rather than an association. The rings are correspondingly wide,
-but the p-value can still fall below the significance level, so the color,
+but the <em>p</em>-value can still fall below the significance level, so the color,
 significance shading, and diagonal line of such a panel say nothing about
 an association.</p>
 <p>The sectors show the observed table wherever the standardization can use
@@ -439,36 +428,35 @@ meant to be zero.</p>
     <h2 id="missing-values">Missing values<a class="anchor" aria-label="anchor" href="#missing-values"></a></h2>
 
 
-<p>A row with a missing <code>x</code> or <code>y</code> cannot be placed in the table and is
-removed; a panel with no rows left is left empty. Values that the <code>limits</code>
-of a discrete scale exclude become missing and are removed the same way,
-with the same warning. A row with a missing <code>weight</code> but known <code>x</code> and <code>y</code>
-is different: its cell's count, and so the panel's table, is unknown.
-Counting it as zero would change the odds ratio, so its whole panel is left
-empty instead. (<code><a href="https://rdrr.io/pkg/vcd/man/fourfold.html" class="external-link">vcd::fourfold()</a></code> likewise draws no table with a missing
-count; it stops with an error.) A cell with no rows at all is still a zero
-count.</p>
+<p>A row with a missing <code>x</code> or <code>y</code> cannot be placed in the table, so it is
+removed, and a panel with no rows left is left empty. Values excluded by
+the <code>limits</code> of a discrete scale become missing and are removed the same
+way. A row with a missing <code>weight</code> but known <code>x</code> and <code>y</code> is different. Its
+cell's count, and so the panel's table, is unknown, and counting it as zero
+would change the odds ratio. Its whole panel is therefore left empty. A cell
+with no rows at all is not missing but a zero count. With a missing count,
+<code><a href="https://rdrr.io/pkg/vcd/man/fourfold.html" class="external-link">vcd::fourfold()</a></code> instead stops with an error.</p>
 <p>An empty panel has no frame, counts, or labels, so it cannot be mistaken
 for a panel whose counts are all zero, and it looks the same as a facet
 level with no rows. It has no rows in the layer data and takes no part in
-<code>std = "all.max"</code> or the p-value adjustment, so the other panels are drawn
-exactly as if its stratum were not in the data. (With
-<code>facet_grid(margins = TRUE)</code>, the margin panels that pool that stratum are
-unknown too, and are also left empty.) With <code>na.rm = FALSE</code>, the default, a
-warning names each panel that lost rows or was left empty; with
-<code>na.rm = TRUE</code>, these warnings are not given. With free scales, which need
-a coordinate system you add without <code>ratio</code> (see the Coordinate systems
-section), ggplot2 itself may still warn about the axes of an empty panel
+<code>std = "all.max"</code> or the <em>p</em>-value adjustment, so the other panels are drawn
+exactly as if its stratum were not in the data. With <code>na.rm = FALSE</code>,
+the default, a warning names each panel that lost rows or was left empty.
+With <code>na.rm = TRUE</code>, these warnings are not given. With free scales, which
+need a coordinate system added without <code>ratio</code> (see the Coordinate systems
+section), <strong>ggplot2</strong> itself may still warn about the axes of an empty panel
 ("Position guide is perpendicular to the intended axis"), as it does for
 its own layers.</p>
-<p>A missing <code>x</code> or <code>y</code> keeps a place for missing values on its axis, as for
-every geom, because ggplot2 trains position scales before the stat runs.
-The display removes those rows, but the axis stays wider, so the panels that
-share that scale are wider (or taller) than the display, with space beside
-it. With the default coordinate system the display stays round, and the
-counts and statistics are not affected.
-<code>scale_x_discrete(na.translate = FALSE)</code> (<code><a href="https://ggplot2.tidyverse.org/reference/scale_discrete.html" class="external-link">scale_y_discrete()</a></code> for <code>y</code>)
-removes that place.</p>
+<p><code>NA</code> values in the <code>x</code> or <code>y</code> variable leave empty space beside the
+display, which can then be drawn smaller. Only the layout changes: panels
+that share the scale shrink alike and stay comparable, the display stays
+round with the default coordinate system, and the areas, counts, and
+statistics are not affected. To remove the space, add
+<code>scale_x_discrete(na.translate = FALSE)</code> for <code>x</code>,
+<code>scale_y_discrete(na.translate = FALSE)</code> for <code>y</code>, or both. The space appears
+because <strong>ggplot2</strong> trains position scales before the stat runs, so the axis
+keeps a place for missing values, as for every geom, even though the display
+removes those rows.</p>
     </div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
@@ -504,13 +492,14 @@ Visualizing Categorical Data</em> (R package).
 <span class="r-in"><span>  <span class="fu"><a href="theme_fourfold.html">theme_fourfold</a></span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="geom_fourfold-1.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Quarter-squares of equal area instead of quarter-circles</span></span></span>
+<span class="r-in"><span><span class="co"># Squares instead of quarter-circles</span></span></span>
 <span class="r-in"><span><span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span></span></span>
 <span class="r-in"><span>  <span class="va">ucb</span>,</span></span>
 <span class="r-in"><span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">Gender</span>, y <span class="op">=</span> <span class="va">Admit</span>, weight <span class="op">=</span> <span class="va">Freq</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">)</span> <span class="op">+</span></span></span>
 <span class="r-in"><span>  <span class="fu">geom_fourfold</span><span class="op">(</span>shape <span class="op">=</span> <span class="st">"square"</span><span class="op">)</span> <span class="op">+</span></span></span>
 <span class="r-in"><span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/facet_wrap.html" class="external-link">facet_wrap</a></span><span class="op">(</span><span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/vars.html" class="external-link">vars</a></span><span class="op">(</span><span class="va">Dept</span><span class="op">)</span>, ncol <span class="op">=</span> <span class="fl">3</span><span class="op">)</span> <span class="op">+</span></span></span>
+<span class="r-in"><span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>title <span class="op">=</span> <span class="st">"Berkeley admissions"</span><span class="op">)</span> <span class="op">+</span></span></span>
 <span class="r-in"><span>  <span class="fu"><a href="theme_fourfold.html">theme_fourfold</a></span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="geom_fourfold-2.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
@@ -521,16 +510,20 @@ Visualizing Categorical Data</em> (R package).
 <span class="r-in"><span><span class="op">)</span> <span class="op">+</span></span></span>
 <span class="r-in"><span>  <span class="fu">geom_fourfold</span><span class="op">(</span>diagonal.length <span class="op">=</span> <span class="fl">0.3</span>, diagonal.fill <span class="op">=</span> <span class="st">"gray80"</span><span class="op">)</span> <span class="op">+</span></span></span>
 <span class="r-in"><span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/facet_wrap.html" class="external-link">facet_wrap</a></span><span class="op">(</span><span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/vars.html" class="external-link">vars</a></span><span class="op">(</span><span class="va">Dept</span><span class="op">)</span>, ncol <span class="op">=</span> <span class="fl">3</span><span class="op">)</span> <span class="op">+</span></span></span>
+<span class="r-in"><span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>title <span class="op">=</span> <span class="st">"Berkeley admissions"</span><span class="op">)</span> <span class="op">+</span></span></span>
 <span class="r-in"><span>  <span class="fu"><a href="theme_fourfold.html">theme_fourfold</a></span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="geom_fourfold-3.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Other layers are placed by category: a label in the Male-Admitted cell</span></span></span>
+<span class="r-in"><span><span class="co"># Other layers are placed by category: admission rates in the admitted cells</span></span></span>
 <span class="r-in"><span><span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span></span></span>
 <span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/subset.html" class="external-link">subset</a></span><span class="op">(</span><span class="va">ucb</span>, <span class="va">Dept</span> <span class="op">==</span> <span class="st">"A"</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">Gender</span>, y <span class="op">=</span> <span class="va">Admit</span>, weight <span class="op">=</span> <span class="va">Freq</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">)</span> <span class="op">+</span></span></span>
 <span class="r-in"><span>  <span class="fu">geom_fourfold</span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span></span>
-<span class="r-in"><span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/annotate.html" class="external-link">annotate</a></span><span class="op">(</span><span class="st">"label"</span>, x <span class="op">=</span> <span class="st">"Male"</span>, y <span class="op">=</span> <span class="st">"Admitted"</span>, label <span class="op">=</span> <span class="st">"Male"</span><span class="op">)</span> <span class="op">+</span></span></span>
+<span class="r-in"><span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/annotate.html" class="external-link">annotate</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>    <span class="st">"label"</span>, x <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Male"</span>, <span class="st">"Female"</span><span class="op">)</span>, y <span class="op">=</span> <span class="st">"Admitted"</span>,</span></span>
+<span class="r-in"><span>    label <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"62% admitted"</span>, <span class="st">"82% admitted"</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  <span class="op">)</span> <span class="op">+</span></span></span>
 <span class="r-in"><span>  <span class="fu"><a href="theme_fourfold.html">theme_fourfold</a></span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="geom_fourfold-4.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
