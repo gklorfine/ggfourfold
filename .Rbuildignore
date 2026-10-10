@@ -16,3 +16,4 @@ Rplots.pdf
 ^issues$
 ^cran-comments\.md$
 ^\.release_check_result\.rds$
+^CRAN-SUBMISSION$
