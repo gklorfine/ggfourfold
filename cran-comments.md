@@ -7,6 +7,7 @@
   * Ubuntu 24.04.5 LTS, R-devel (2026-10-06 r90643)
   * Ubuntu 24.04.5 LTS, R 4.6.1
   * Ubuntu 24.04.5 LTS, R 4.5.3
+* win-builder: Windows Server 2022, R-devel (2026-10-09 r90655 ucrt)
 
 ## R CMD check results
 
