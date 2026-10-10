@@ -16,3 +16,6 @@ docs
 
 # Exports from dev/examples.R
 dev/output/
+
+# myutil::release_check() output
+.release_check_result.rds
