@@ -18,7 +18,7 @@
 #' `"okabe-ito"` uses the colors of Okabe and Ito (2008), chosen to remain
 #' distinguishable for readers with common forms of color-vision deficiency:
 #' sky blue and blue, then orange and sky blue lightened about halfway to
-#' white, then vermillion and blue.
+#' white, then vermilion and blue.
 #'
 #' @param palette Name of the palette: `"vcd"` (the default) or
 #'   `"okabe-ito"`.

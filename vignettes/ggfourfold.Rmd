@@ -316,14 +316,14 @@ expected under independence and the second fills the diagonal with *more*.
 For example, we can construct a palette based on the Okabe-Ito colors
 [@OkabeIto:2008], which remain distinguishable for readers with common forms of
 color-deficient vision. Lightened orange and sky blue mark strata whose
-association is not significant, while vermillion and blue mark those whose
+association is not significant, while vermilion and blue mark those whose
 association is significant.
 
 ```{r berkeley-okabe-ito, fig.width = 7, fig.height = 5}
 okabe_ito <- c(
   "#56B4E9", "#0072B2", # extended = FALSE: sky blue, blue
   "#F2CF7F", "#AAD9F3", # not significant: orange, sky blue (lightened)
-  "#D55E00", "#0072B2"  # significant: vermillion, blue
+  "#D55E00", "#0072B2"  # significant: vermilion, blue
 )
 
 berkeley +
