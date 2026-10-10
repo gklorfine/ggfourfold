@@ -38,8 +38,8 @@ quadrants when one group is much larger than another. A fully
 standardized display (the default) equates both the row *and* column
 totals, and gives a visual interpretation of the sample odds ratio:
 
-\\ \hat{\theta} = \frac{n\_{11} / n\_{12}}{n\_{21} / n\_{22}} =
-\frac{n\_{11} \\ n\_{22}}{n\_{12} \\ n\_{21}} . \\
+\\\hat{\theta} = \frac{n\_{11} / n\_{12}}{n\_{21} / n\_{22}} =
+\frac{n\_{11} \\ n\_{22}}{n\_{12} \\ n\_{21}} .\\
 
 In a fully standardized display, the quadrants form a circle if
 \\\hat{\theta} = 1\\. Otherwise, one diagonal pair of quadrants is
@@ -186,7 +186,7 @@ graduate admissions: Data from Berkeley. *Science*, *187*, 398–403.
 
 Friendly, M. (1994). *A fourfold display for 2 by 2 by \\k\\ tables*
 (No. 217). York University, Psychology Dept.
-<http://datavis.ca/papers/4fold/4fold.pdf>
+<https://datavis.ca/papers/4fold/4fold.pdf>
 
 Friendly, M. (2000). *Visualizing categorical data*. SAS Institute.
 <http://www.math.yorku.ca/SCS/vcd/>

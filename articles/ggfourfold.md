@@ -355,7 +355,7 @@ than expected under independence and the second fills the diagonal with
 For example, we can construct a palette based on the Okabe-Ito colors
 (Okabe & Ito, 2008), which remain distinguishable for readers with
 common forms of color-deficient vision. Lightened orange and sky blue
-mark strata whose association is not significant, while vermillion and
+mark strata whose association is not significant, while vermilion and
 blue mark those whose association is significant.
 
 ``` r
@@ -363,7 +363,7 @@ blue mark those whose association is significant.
 okabe_ito <- c(
   "#56B4E9", "#0072B2", # extended = FALSE: sky blue, blue
   "#F2CF7F", "#AAD9F3", # not significant: orange, sky blue (lightened)
-  "#D55E00", "#0072B2"  # significant: vermillion, blue
+  "#D55E00", "#0072B2"  # significant: vermilion, blue
 )
 
 berkeley +
@@ -474,7 +474,7 @@ Indicators Research*, *2*, 153–174.
 
 Friendly, M. (1994a). *A fourfold display for 2 by 2 by \\k\\ tables*
 (No. 217). York University, Psychology Dept.
-<http://datavis.ca/papers/4fold/4fold.pdf>
+<https://datavis.ca/papers/4fold/4fold.pdf>
 
 Friendly, M. (1994b). SAS/IML graphics for fourfold displays.
 *Observations*, *3*(4), 47–56.

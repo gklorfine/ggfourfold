@@ -37,7 +37,7 @@ red and navy.
 `"okabe-ito"` uses the colors of Okabe and Ito (2008), chosen to remain
 distinguishable for readers with common forms of color-vision
 deficiency: sky blue and blue, then orange and sky blue lightened about
-halfway to white, then vermillion and blue.
+halfway to white, then vermilion and blue.
 
 ## References
 
