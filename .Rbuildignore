@@ -1,7 +1,7 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
 ^dev$
-README.*
+^README\.Rmd$
 Rplots.pdf
 ^\.positai$
 ^\.claude$
