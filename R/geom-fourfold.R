@@ -1745,7 +1745,7 @@ GeomFourfold <- ggplot2::ggproto(
 #' @references
 #' Friendly, M. (1994a). *A fourfold display for 2 by 2 by k tables*
 #' (Technical Report No. 217). York University, Psychology Department.
-#' <http://datavis.ca/papers/4fold/4fold.pdf>
+#' <https://datavis.ca/papers/4fold/4fold.pdf>
 #'
 #' Friendly, M. (1994b). SAS/IML graphics for fourfold displays.
 #' *Observations*, *3*(4), 47--56.

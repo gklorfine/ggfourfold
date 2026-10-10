@@ -442,7 +442,7 @@ ggplot2::ggplot(
 \references{
 Friendly, M. (1994a). \emph{A fourfold display for 2 by 2 by k tables}
 (Technical Report No. 217). York University, Psychology Department.
-\url{http://datavis.ca/papers/4fold/4fold.pdf}
+\url{https://datavis.ca/papers/4fold/4fold.pdf}
 
 Friendly, M. (1994b). SAS/IML graphics for fourfold displays.
 \emph{Observations}, \emph{3}(4), 47--56.
