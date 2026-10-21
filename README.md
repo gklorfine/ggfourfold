@@ -3,18 +3,13 @@
 
 <!-- badges: start -->
 
-[![Lifecycle:
-experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
+[![CRAN_Status_Badge](https://www.r-pkg.org/badges/version/ggfourfold)](https://CRAN.R-project.org/package=ggfourfold)
 [![r-universe](https://gklorfine.r-universe.dev/ggfourfold/badges/version)](https://gklorfine.r-universe.dev/ggfourfold)
+[![Downloads](https://cranlogs.r-pkg.org/badges/grand-total/ggfourfold)](https://cran.r-project.org/package=ggfourfold)
 [![Last
 Commit](https://img.shields.io/github/last-commit/gklorfine/ggfourfold)](https://github.com/gklorfine/ggfourfold)
 [![Docs](https://img.shields.io/badge/pkgdown%20site-blue)](https://gavinklorfine.com/ggfourfold/)
 <!-- badges: end -->
-
-<!--
-[![CRAN_Status_Badge](http://www.r-pkg.org/badges/version/ggfourfold)](https://CRAN.R-project.org/package=ggfourfold)
-[![Downloads](http://cranlogs.r-pkg.org/badges/grand-total/ggfourfold)](https://cran.r-project.org/package=ggfourfold)
--->
 
 # ggfourfold <img src="man/figures/logo.png" align="right" height="200px" /><br><sub>Fourfold Displays for ‘ggplot2’</sub>
 
@@ -24,7 +19,13 @@ and **vcd** R package (Meyer et al., 2026).
 
 ## Installation
 
-The current development version (0.1.0) of **ggfourfold** can be
+Get the released version (0.1.0) from CRAN:
+
+``` r
+install.packages("ggfourfold")
+```
+
+The current development version (0.1.1) of **ggfourfold** can be
 installed from [R-universe](https://gklorfine.r-universe.dev/ggfourfold)
 or directly from the [GitHub
 repository](https://github.com/gklorfine/ggfourfold) with:
