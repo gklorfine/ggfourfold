@@ -35,7 +35,7 @@
 
     <a class="navbar-brand me-2" href="index.html">ggfourfold</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -61,10 +61,6 @@
 </nav><div class="container template-home">
 <div class="row">
   <main id="main" class="col-md-9">
-<!--
-[![CRAN_Status_Badge](http://www.r-pkg.org/badges/version/ggfourfold)](https://CRAN.R-project.org/package=ggfourfold)
-[![Downloads](http://cranlogs.r-pkg.org/badges/grand-total/ggfourfold)](https://cran.r-project.org/package=ggfourfold)
--->
 <div class="section level1">
 <div class="page-header">
 <img src="logo.png" class="logo" alt=""><h1 id="ggfourfold--fourfold-displays-for-ggplot2">ggfourfold <br><sub>Fourfold Displays for ‘ggplot2’</sub><a class="anchor" aria-label="anchor" href="#ggfourfold--fourfold-displays-for-ggplot2"></a>
@@ -74,8 +70,11 @@
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
-<p>The current development version (0.1.0) of <strong>ggfourfold</strong> can be installed from <a href="https://gklorfine.r-universe.dev/ggfourfold" class="external-link">R-universe</a> or directly from the <a href="https://github.com/gklorfine/ggfourfold" class="external-link">GitHub repository</a> with:</p>
+<p>Get the released version (0.1.0) from CRAN:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"ggfourfold"</span><span class="op">)</span></span></code></pre></div>
+<p>The current development version (0.1.1) of <strong>ggfourfold</strong> can be installed from <a href="https://gklorfine.r-universe.dev/ggfourfold" class="external-link">R-universe</a> or directly from the <a href="https://github.com/gklorfine/ggfourfold" class="external-link">GitHub repository</a> with:</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># == R-universe ==</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"ggfourfold"</span>, repos <span class="op">=</span> <span class="st">"https://gklorfine.r-universe.dev"</span><span class="op">)</span></span>
 <span></span>
@@ -97,12 +96,12 @@
 <h2 id="examples">Examples<a class="anchor" aria-label="anchor" href="#examples"></a>
 </h2>
 <p>The below examples use the <code>UCBAdmissions</code> data (Bickel et al., 1975), which contains applicants to the six largest graduate departments at UC Berkeley in 1973, classified by admission and gender. They examine the association between gender (<code>Gender</code>) and admission (<code>Admit</code>), both overall and within each department (<code>Dept</code>).</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://gavinklorfine.com/ggfourfold/">ggfourfold</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span></code></pre></div>
 <p>To construct a fourfold display with <strong>ggfourfold</strong>, you add <code><a href="reference/geom_fourfold.html">geom_fourfold()</a></code> and <code><a href="reference/theme_fourfold.html">theme_fourfold()</a></code> to a <code><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot2::ggplot()</a></code> call. Then use <code><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">ggplot2::aes()</a></code> to map the two binary variables to <code>x</code> and <code>y</code>. If the data are in frequency form, also supply a mapping for <code>weight</code>. For a review of the different forms of categorical data in R, and how to convert among them, see the <strong>vcdExtra</strong> (Friendly &amp; Klorfine, 2026) vignettes <a href="https://friendly.github.io/vcdExtra/articles/a1-creating.html" class="external-link"><em>1. Creating and manipulating frequency tables</em></a> and <a href="https://friendly.github.io/vcdExtra/articles/a1a-convert-collapse.html" class="external-link"><em>1a. Steps Toward Tidy Categorical Data Analysis</em></a>.</p>
 <p>The below code constructs an unstandardized fourfold display from the <code>UCBAdmissions</code> data. These data are in table form, so the first step is to convert them into frequency form using <code><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame()</a></code>. Without faceting, <code><a href="reference/geom_fourfold.html">geom_fourfold()</a></code> sums the counts over the excluded variables, in this case, only <code>Dept</code>.</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ucb</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="va">UCBAdmissions</span><span class="op">)</span> <span class="co"># Table form -&gt; frequency form</span></span>
 <span></span>
 <span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">ucb</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">Gender</span>, y <span class="op">=</span> <span class="va">Admit</span>, weight <span class="op">=</span> <span class="va">Freq</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
@@ -110,14 +109,14 @@
 <span>  <span class="fu"><a href="reference/theme_fourfold.html">theme_fourfold</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p><img src="reference/figures/README-ucb_unstd_noFacet-1.png"><!-- --></p>
 <p>Depicting raw counts, unstandardized displays are constructed by specifying <code>std = "ind.max"</code> in <code><a href="reference/geom_fourfold.html">geom_fourfold()</a></code>. Quadrant sizes mostly reflect that more men applied than women, and that most applicants were rejected, so the association is difficult to discern. The default, fully standardized display adjusts for these differences, making the association easier to see.</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">ucb</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">Gender</span>, y <span class="op">=</span> <span class="va">Admit</span>, weight <span class="op">=</span> <span class="va">Freq</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="reference/geom_fourfold.html">geom_fourfold</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="reference/theme_fourfold.html">theme_fourfold</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p><img src="reference/figures/README-ucb_std_noFacet-1.png"><!-- --></p>
 <p>This display depicts an association between <code>Admit</code> and <code>Gender</code> and appears to show a gender bias; that is, men are significantly more likely to be admitted than women, pooling over department. This is illustrated through the much larger area and intense blue shading of the male-admitted and female-rejected quadrants, along with the non-overlapping confidence rings of adjacent quadrants. The white diagonal line through the male-admitted and female-rejected quadrants marks the direction of association.</p>
 <p>To see the relationship between <code>Admit</code> and <code>Gender</code> across <code>Dept</code>, add <code><a href="https://ggplot2.tidyverse.org/reference/facet_wrap.html" class="external-link">ggplot2::facet_wrap()</a></code> or <code><a href="https://ggplot2.tidyverse.org/reference/facet_grid.html" class="external-link">ggplot2::facet_grid()</a></code> to draw one display per <code>Dept</code>. Panels are fully standardized individually, facilitating direct comparison.</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">ucb</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">Gender</span>, y <span class="op">=</span> <span class="va">Admit</span>, weight <span class="op">=</span> <span class="va">Freq</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="reference/geom_fourfold.html">geom_fourfold</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/facet_wrap.html" class="external-link">facet_wrap</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/vars.html" class="external-link">vars</a></span><span class="op">(</span><span class="va">Dept</span><span class="op">)</span>, labeller <span class="op">=</span> <span class="va">label_both</span><span class="op">)</span> <span class="op">+</span></span>
@@ -128,7 +127,7 @@
 <h3 id="square-displays">Square displays<a class="anchor" aria-label="anchor" href="#square-displays"></a>
 </h3>
 <p>Four squares can be drawn instead of quarter-circles with <code>shape = "square"</code>. Each square has the same area as the quarter-circle it replaces, so both shapes display a table with identical areas. The line through the center ends just past the outer corners of the two squares it marks. A square, confidence ring, or line that reaches the corners of the frame where the cell counts are drawn moves the counts of every panel just outside those corners; here they all stay inside.</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">ucb</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">Gender</span>, y <span class="op">=</span> <span class="va">Admit</span>, weight <span class="op">=</span> <span class="va">Freq</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="reference/geom_fourfold.html">geom_fourfold</a></span><span class="op">(</span>shape <span class="op">=</span> <span class="st">"square"</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/facet_wrap.html" class="external-link">facet_wrap</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/vars.html" class="external-link">vars</a></span><span class="op">(</span><span class="va">Dept</span><span class="op">)</span>, labeller <span class="op">=</span> <span class="va">label_both</span><span class="op">)</span> <span class="op">+</span></span>
@@ -165,6 +164,7 @@ Meyer, D., Zeileis, A., Hornik, K., &amp; Friendly, M. (2026). <em>Vcd: Visualiz
   </main><aside class="col-md-3"><div class="links">
 <h2 data-toc-skip>Links</h2>
 <ul class="list-unstyled">
+<li><a href="https://cloud.r-project.org/package=ggfourfold" class="external-link">View on CRAN</a></li>
 <li><a href="https://github.com/gklorfine/ggfourfold/" class="external-link">Browse source code</a></li>
 <li><a href="https://github.com/gklorfine/ggfourfold/issues" class="external-link">Report a bug</a></li>
 </ul>
@@ -196,8 +196,9 @@ Meyer, D., Zeileis, A., Hornik, K., &amp; Friendly, M. (2026). <em>Vcd: Visualiz
 <div class="dev-status">
 <h2 data-toc-skip>Dev status</h2>
 <ul class="list-unstyled">
-<li><a href="https://lifecycle.r-lib.org/articles/stages.html#experimental" class="external-link"><img src="https://img.shields.io/badge/lifecycle-experimental-orange.svg" alt="Lifecycle: experimental"></a></li>
+<li><a href="https://CRAN.R-project.org/package=ggfourfold" class="external-link"><img src="https://www.r-pkg.org/badges/version/ggfourfold" alt="CRAN_Status_Badge"></a></li>
 <li><a href="https://gklorfine.r-universe.dev/ggfourfold" class="external-link"><img src="https://gklorfine.r-universe.dev/ggfourfold/badges/version" alt="r-universe"></a></li>
+<li><a href="https://cran.r-project.org/package=ggfourfold" class="external-link"><img src="https://cranlogs.r-pkg.org/badges/grand-total/ggfourfold" alt="Downloads"></a></li>
 <li><a href="https://github.com/gklorfine/ggfourfold" class="external-link"><img src="https://img.shields.io/github/last-commit/gklorfine/ggfourfold" alt="Last Commit"></a></li>
 <li><a href="https://gavinklorfine.com/ggfourfold/"><img src="https://img.shields.io/badge/pkgdown%20site-blue" alt="Docs"></a></li>
 </ul>
