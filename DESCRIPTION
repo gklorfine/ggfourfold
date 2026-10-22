@@ -28,7 +28,7 @@ Suggests:
 Description: Draws fourfold displays of 2 x 2 (x k) contingency tables as a
     'ggplot2' layer, following Friendly (1994)
     <https://datavis.ca/papers/4fold/4fold.pdf> and Friendly and Meyer (2016)
-    <doi:10.1201/9781315374413>. Cell frequencies are shown as quarter-circles
+    <doi:10.1201/b19022>. Cell frequencies are shown as quarter-circles
     or squares of proportional area, with confidence rings for the
     odds ratio and shading for the direction and strength of association.
     Stratified tables are shown with 'ggplot2' faceting and a corresponding
