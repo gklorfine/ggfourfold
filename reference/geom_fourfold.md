@@ -23,6 +23,7 @@ geom_fourfold(
   p_adjust_method = stats::p.adjust.methods,
   shape = c("circle", "square"),
   counts = c("auto", "inside", "outside", "none"),
+  labels = c("levels", "both"),
   palette = fourfold_palette(),
   na.rm = FALSE,
   show.legend = FALSE,
@@ -136,6 +137,13 @@ geom_fourfold(
   `1e+05`. Non-integer counts are rounded to three significant digits,
   and rounding noise such as `5.6e-17` is shown as `0`.
 
+- labels:
+
+  `"levels"` (the default) labels each side of the display with a level.
+  `"both"` labels it with the name of the variable and the level, such
+  as `"Gender: Male"`, like in
+  [`vcd::fourfold()`](https://rdrr.io/pkg/vcd/man/fourfold.html).
+
 - palette:
 
   Character vector of at least six valid colors in the semantic order
@@ -171,8 +179,15 @@ geom_fourfold(
 A list of a **ggplot2** layer and a default coordinate system,
 `coord_cartesian(reverse = "y", ratio = 1)`, which can be added to a
 [`ggplot2::ggplot()`](https://ggplot2.tidyverse.org/reference/ggplot.html)
-object (see the Coordinate systems section). `GeomFourfold` and
-`StatFourfold` are the
+object (see the Coordinate systems section).
+
+With `labels = "both"`, the list has a third element, of class
+`fourfold_labels`, which gives the layer the names of the `x` and `y`
+variables. Add the result to the plot as usual, as in
+`ggplot(...) + geom_fourfold(labels = "both")`. If the layer is taken
+out of the list and added alone, the labels show only the levels.
+
+`GeomFourfold` and `StatFourfold` are the
 [`ggplot2::ggproto()`](https://ggplot2.tidyverse.org/reference/ggproto.html)
 objects behind `geom_fourfold()`, a `Geom` and a `Stat`, for use with
 [`ggplot2::layer()`](https://ggplot2.tidyverse.org/reference/layer.html).
@@ -191,6 +206,15 @@ or
 [`ggplot2::scale_y_discrete()`](https://ggplot2.tidyverse.org/reference/scale_discrete.html),
 and rename them with `labels`. Scale `breaks` that reorder or omit
 categories, and a scale `palette` that moves them, are errors.
+
+[`theme_fourfold()`](https://gavinklorfine.com/ggfourfold/reference/theme_fourfold.md)
+hides the axis titles. If they are turned back on, **ggplot2** draws the
+`x` title below the panel, next to the `y` levels, and the `y` title on
+the left, next to the `x` levels. So give the name of the `y` variable
+as [`labs(x = )`](https://ggplot2.tidyverse.org/reference/labs.html) and
+the name of the `x` variable as
+[`labs(y = )`](https://ggplot2.tidyverse.org/reference/labs.html), or
+use `labels = "both"` instead.
 
 One panel must contain exactly one 2-by-2 table. Use
 [`ggplot2::facet_grid()`](https://ggplot2.tidyverse.org/reference/facet_grid.html)
@@ -293,7 +317,7 @@ The same mappings inherited from
 [`ggplot2::ggplot()`](https://ggplot2.tidyverse.org/reference/ggplot.html)
 are ignored, because they may be meant for other layers. The one
 exception is an inherited
-[`after_stat()`](https://ggplot2.tidyverse.org/reference/aes_eval.html)
+[`ggplot2::after_stat()`](https://ggplot2.tidyverse.org/reference/aes_eval.html)
 mapping to a variable that `geom_fourfold()` does not compute, such as
 `after_stat(n)` for
 [`ggplot2::geom_count()`](https://ggplot2.tidyverse.org/reference/geom_count.html).
@@ -552,6 +576,15 @@ ggplot2::ggplot(
     "label", x = c("Male", "Female"), y = "Admitted",
     label = c("62% admitted", "82% admitted")
   ) +
+  theme_fourfold()
+
+
+# The variable on each side, as in vcd::fourfold()
+ggplot2::ggplot(
+  subset(ucb, Dept == "A"),
+  ggplot2::aes(x = Gender, y = Admit, weight = Freq)
+) +
+  geom_fourfold(labels = "both") +
   theme_fourfold()
 
 ```
