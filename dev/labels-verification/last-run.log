@@ -1,0 +1,322 @@
+NEW = /Users/gklorfine/Non-iCloud/m-packages/ggfourfold 
+Output = /Users/gklorfine/Non-iCloud/m-packages/ggfourfold/dev/labels-verification 
+Scratch = /var/folders/qk/ztrr2d195yz64m9__40wxywh0000gn/T//RtmpFR4mDb/labels-verify-1f2e4ddb5dc1 
+ragg available: TRUE 
+
+OLD = /var/folders/qk/ztrr2d195yz64m9__40wxywh0000gn/T//RtmpFR4mDb/labels-verify-1f2e4ddb5dc1/old (git HEAD 6872644 )
+
+== S: self-test of the comparison machinery (OLD vs OLD) ==
+[PASS] S  OLD vs OLD: 230 plots x channels, 0 mismatches (must be 0)
+[PASS] S  0 of 46 battery plots errored in OLD
+[PASS] S  perturbation (conf_level 0.95 -> 0.5 in one plot) is detected by channel layer_data
+[PASS] S  perturbation (conf_level 0.95 -> 0.5 in one plot) is detected by channel grob_dump
+[PASS] S  perturbation (conf_level 0.95 -> 0.5 in one plot) is detected by channel pixels
+[PASS] S  perturbation (extra class on one plot object) is detected by channel class/length
+[PASS] S  perturbation leaves all other plots unreported (no false alarms)
+[PASS] S  one flipped pixel is counted by the pixel comparer (got 1)
+[PASS] S  a 1e-10 change to one coordinate in the grob dump is detected
+[PASS] S  dump contains the label strings (so label changes would be seen by the default dump comparison)
+
+== A: OLD vs NEW, default path (no labels argument) ==
+[PASS] A  ucb_agg  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] A  ucb_agg_theme  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] A  ucb_wrap  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] A  ucb_wrap_theme  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] A  ucb_grid_cols  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] A  ucb_grid_rows  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] A  ucb_grid_year  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] A  ucb_grid_year_notheme  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] A  single  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] A  single_theme  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] A  indiv  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] A  indiv_theme  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] A  indiv_wrap  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] A  margins_1  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] A  margins_2  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] A  margins_12  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] A  ind_max  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] A  all_max  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] A  ind_max_m1  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] A  all_max_m2  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] A  square_agg  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] A  square_wrap  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] A  counts_auto_circle  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] A  counts_auto_square  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] A  counts_inside_circle  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] A  counts_inside_square  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] A  counts_outside_circle  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] A  counts_outside_square  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] A  counts_none_circle  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] A  counts_none_square  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] A  extended_false  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] A  diagonal_false  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] A  conf0  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] A  zero_cell  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] A  zero_cell_square  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] A  zero_two_cells  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] A  palette_okabe  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] A  palette_custom  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] A  fixed_colour  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] A  fixed_colour_notheme  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] A  scale_labels  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] A  scale_labels_notheme  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] A  realuse_circle  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] A  realuse_square  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] A  realuse_outside  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] A  realuse_notheme  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] A  length(geom_fourfold()): OLD 2, NEW 2 (must both be 2)
+[PASS] A  class(geom_fourfold()): OLD list, NEW list
+   (A: 46 plots x 5 channels compared)
+
+
+== B: NEW, labels = "both" ==
+[PASS] B0  labels = "levels" == default: ucb_agg  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] B0  labels = "levels" == default: ucb_agg_theme  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] B0  labels = "levels" == default: ucb_wrap  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] B0  labels = "levels" == default: ucb_wrap_theme  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] B0  labels = "levels" == default: ucb_grid_cols  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] B0  labels = "levels" == default: ucb_grid_rows  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] B0  labels = "levels" == default: ucb_grid_year  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] B0  labels = "levels" == default: ucb_grid_year_notheme  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] B0  labels = "levels" == default: single  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] B0  labels = "levels" == default: single_theme  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] B0  labels = "levels" == default: indiv  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] B0  labels = "levels" == default: indiv_theme  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] B0  labels = "levels" == default: indiv_wrap  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] B0  labels = "levels" == default: margins_1  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] B0  labels = "levels" == default: margins_2  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] B0  labels = "levels" == default: margins_12  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] B0  labels = "levels" == default: ind_max  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] B0  labels = "levels" == default: all_max  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] B0  labels = "levels" == default: ind_max_m1  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] B0  labels = "levels" == default: all_max_m2  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] B0  labels = "levels" == default: square_agg  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] B0  labels = "levels" == default: square_wrap  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] B0  labels = "levels" == default: counts_auto_circle  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] B0  labels = "levels" == default: counts_auto_square  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] B0  labels = "levels" == default: counts_inside_circle  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] B0  labels = "levels" == default: counts_inside_square  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] B0  labels = "levels" == default: counts_outside_circle  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] B0  labels = "levels" == default: counts_outside_square  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] B0  labels = "levels" == default: counts_none_circle  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] B0  labels = "levels" == default: counts_none_square  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] B0  labels = "levels" == default: extended_false  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] B0  labels = "levels" == default: diagonal_false  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] B0  labels = "levels" == default: conf0  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] B0  labels = "levels" == default: zero_cell  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] B0  labels = "levels" == default: zero_cell_square  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] B0  labels = "levels" == default: zero_two_cells  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] B0  labels = "levels" == default: palette_okabe  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] B0  labels = "levels" == default: palette_custom  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] B0  labels = "levels" == default: fixed_colour  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] B0  labels = "levels" == default: fixed_colour_notheme  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] B0  labels = "levels" == default: scale_labels  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] B0  labels = "levels" == default: scale_labels_notheme  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] B0  labels = "levels" == default: realuse_circle  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] B0  labels = "levels" == default: realuse_square  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] B0  labels = "levels" == default: realuse_outside  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] B0  labels = "levels" == default: realuse_notheme  [layer_data, grob_dump, pixels, class/length, messages]
+[PASS] B0  length(geom_fourfold(labels = 'levels')) = 2 (must be 2)
+[PASS] B1  length(geom_fourfold(labels = 'both')) = 3 (spec: 3, tagger class fourfold_labels)
+[PASS] B1  both vs levels: ucb_agg  (8048 px differ; labels ok)
+[PASS] B1  both vs levels: ucb_agg_theme  (10093 px differ; labels ok)
+[PASS] B1  both vs levels: ucb_wrap  (15074 px differ; labels ok)
+[PASS] B1  both vs levels: ucb_wrap_theme  (20274 px differ; labels ok)
+[PASS] B1  both vs levels: ucb_grid_cols  (14423 px differ; labels ok)
+[PASS] B1  both vs levels: ucb_grid_rows  (14424 px differ; labels ok)
+[PASS] B1  both vs levels: ucb_grid_year  (28848 px differ; labels ok)
+[PASS] B1  both vs levels: ucb_grid_year_notheme  (24792 px differ; labels ok)
+[PASS] B1  both vs levels: single  (4416 px differ; labels ok)
+[PASS] B1  both vs levels: single_theme  (5708 px differ; labels ok)
+[PASS] B1  both vs levels: indiv  (8048 px differ; labels ok)
+[PASS] B1  both vs levels: indiv_theme  (10093 px differ; labels ok)
+[PASS] B1  both vs levels: indiv_wrap  (20274 px differ; labels ok)
+[PASS] B1  both vs levels: margins_1  (20274 px differ; labels ok)
+[PASS] B1  both vs levels: margins_2  (20274 px differ; labels ok)
+[PASS] B1  both vs levels: margins_12  (20274 px differ; labels ok)
+[PASS] B1  both vs levels: ind_max  (20274 px differ; labels ok)
+[PASS] B1  both vs levels: all_max  (20274 px differ; labels ok)
+[PASS] B1  both vs levels: ind_max_m1  (20274 px differ; labels ok)
+[PASS] B1  both vs levels: all_max_m2  (20274 px differ; labels ok)
+[PASS] B1  both vs levels: square_agg  (10093 px differ; labels ok)
+[PASS] B1  both vs levels: square_wrap  (20274 px differ; labels ok)
+[PASS] B1  both vs levels: counts_auto_circle  (20274 px differ; labels ok)
+[PASS] B1  both vs levels: counts_auto_square  (20274 px differ; labels ok)
+[PASS] B1  both vs levels: counts_inside_circle  (20274 px differ; labels ok)
+[PASS] B1  both vs levels: counts_inside_square  (20274 px differ; labels ok)
+[PASS] B1  both vs levels: counts_outside_circle  (20274 px differ; labels ok)
+[PASS] B1  both vs levels: counts_outside_square  (20274 px differ; labels ok)
+[PASS] B1  both vs levels: counts_none_circle  (20274 px differ; labels ok)
+[PASS] B1  both vs levels: counts_none_square  (20274 px differ; labels ok)
+[PASS] B1  both vs levels: extended_false  (20274 px differ; labels ok)
+[PASS] B1  both vs levels: diagonal_false  (20274 px differ; labels ok)
+[PASS] B1  both vs levels: conf0  (20274 px differ; labels ok)
+[PASS] B1  both vs levels: zero_cell  (5708 px differ; labels ok)
+[PASS] B1  both vs levels: zero_cell_square  (5708 px differ; labels ok)
+[PASS] B1  both vs levels: zero_two_cells  (5708 px differ; labels ok)
+[PASS] B1  both vs levels: palette_okabe  (20274 px differ; labels ok)
+[PASS] B1  both vs levels: palette_custom  (20274 px differ; labels ok)
+[PASS] B1  both vs levels: fixed_colour  (20274 px differ; labels ok)
+[PASS] B1  both vs levels: fixed_colour_notheme  (8048 px differ; labels ok)
+[PASS] B1  both vs levels: scale_labels  (20940 px differ; labels ok)
+[PASS] B1  both vs levels: scale_labels_notheme  (7958 px differ; labels ok)
+[PASS] B1  both vs levels: realuse_circle  (17851 px differ; labels ok)
+[PASS] B1  both vs levels: realuse_square  (17851 px differ; labels ok)
+[PASS] B1  both vs levels: realuse_outside  (17851 px differ; labels ok)
+[PASS] B1  both vs levels: realuse_notheme  (14190 px differ; labels ok)
+
+-- B2: name resolution --
+[PASS] B2  mapping in ggplot()
+[PASS] B2  mapping in the geom
+[PASS] B2  mapping split plot/geom
+[PASS] B2  inherit.aes = FALSE
+[PASS] B2  inherit.aes = TRUE, layer overrides x
+[PASS] B2  .data pronoun
+[PASS] B2  non-syntactic (backticks)
+[PASS] B2  non-syntactic (.data[[ ]])
+[PASS] B2  expression factor(admit)
+[PASS] B2  labs() and scale names are ignored
+[PASS] B2  scale_x_discrete(labels=) renames levels
+[PASS] B2  aes() added after the layer
+[PASS] B2  aes() replaced after the layer (x, y swapped)
+[PASS] B2  aes() replaced after the layer (other variables)
+[PASS] B2  aes() replaced after the layer, with a theme in between
+[PASS] B2  facetted
+[PASS] B2  two fourfold layers, different mappings (panel 1 = layer 1, panel 2 = layer 2)
+[PASS] B2  reuse: derived plot p1 (built first)
+[PASS] B2  reuse: original plot p0 (built after p1)
+[PASS] B2  reuse: derived plot p2
+[PASS] B2  reuse: original plot p0 (built again)
+[PASS] B2  reuse: p1 again
+[PASS] B2  one layer in two plots: plot A
+[PASS] B2  one layer in two plots: plot B
+[PASS] B2  one layer in two plots: plot A again
+[PASS] B2  shared layer object is not mutated by adding it to plots (geom_params$label_names stays NULL)
+[PASS] B2  fallback: untagged layer draws bare levels and emits exactly one message for 2 panels
+      messages (1): `labels = "both"` could not find the names of the `x` and `y` variables, so only the levels are shown. Supply the mapping, in `ggplot()` or in the layer, before adding `geom_fourfold()`.
+      
+      labels: Admitted | Male | Rejected | Female
+[PASS] B2  invalid labels value errors
+      error text: `labels` must be one of "levels" or "both"
+[PASS] B2  labels = c('levels','both') behaves as 'levels'
+[INFO] B2  class(plot)[1]: levels -> ggplot2::ggplot, both -> fourfold_plot
+
+-- B3: gallery (PNG pairs in dev/labels-verification/) --
+[PASS] B3  gallery-single-short-circle-counts-auto.png (labels in 1 panel(s) as expected)
+[PASS] B3  gallery-single-medium-circle-counts-auto.png (labels in 1 panel(s) as expected)
+[PASS] B3  gallery-single-long-circle-counts-auto.png (labels in 1 panel(s) as expected)
+[PASS] B3  gallery-single-short-square-counts-auto.png (labels in 1 panel(s) as expected)
+[PASS] B3  gallery-single-medium-square-counts-auto.png (labels in 1 panel(s) as expected)
+[PASS] B3  gallery-single-long-square-counts-auto.png (labels in 1 panel(s) as expected)
+[PASS] B3  gallery-single-medium-circle-counts-outside.png (labels in 1 panel(s) as expected)
+[PASS] B3  gallery-single-long-circle-counts-outside.png (labels in 1 panel(s) as expected)
+[PASS] B3  gallery-single-long-square-counts-outside.png (labels in 1 panel(s) as expected)
+[PASS] B3  gallery-facets7-medium-circle-counts-auto.png (labels in 7 panel(s) as expected)
+[PASS] B3  gallery-facets7-long-circle-counts-auto.png (labels in 7 panel(s) as expected)
+[PASS] B3  gallery-facets7-long-square-counts-auto.png (labels in 7 panel(s) as expected)
+[PASS] B3  gallery-facets7-long-circle-counts-outside.png (labels in 7 panel(s) as expected)
+[PASS] B3  gallery-facets7-long-square-counts-outside.png (labels in 7 panel(s) as expected)
+[PASS] B3  gallery-single-long-circle-counts-auto-default-theme.png (labels in 1 panel(s) as expected)
+[PASS] B3  gallery-facets7-medium-circle-counts-auto-default-theme.png (labels in 7 panel(s) as expected)
+   (Visual review of the gallery is manual: open the PNG files.)
+
+== C: NEW with other packages ==
+[PASS] C  patchwork: A | B
+[PASS] C  patchwork: A / B
+[PASS] C  patchwork: (A | B) & theme
+[PASS] C  patchwork: wrap_plots(A, B, S, L, ncol = 2)
+[PASS] C  patchwork: swapped-after-layer sub-plot (A | S)
+[PASS] C  patchwork: aes-added-after-layer sub-plot (L | A)
+[PASS] C  patchwork: A | (B / S)
+[PASS] C  patchwork: plot_layout(guides = 'collect')
+[PASS] C  patchwork: plot_annotation
+[PASS] C  patchwork: set_dim/get_dim (labels read via draw_panel log)
+[PASS] C  patchwork: wrap_plots of facetted plot
+[PASS] C  cowplot: plot_grid(A, B)
+[PASS] C  cowplot: plot_grid(A, S, L, labels = AUTO, align = hv)
+[PASS] C  cowplot: plot_grid(A / B column)
+[PASS] C  cowplot: as_grob(S)
+[PASS] C  gganimate H: labels = levels control, transition after layer - plot state
+      class head: gganim/ggplot2::ggplot/ggplot
+      add-time names: NULL
+      build-time resolution (helper, inferred; gganimate's build is not what runs here): NULL
+      names that would be used: NULL  (gganimate's ggplot_build() method wins; build-time step skipped)
+[INFO] C  gganimate H: labels = levels control, transition after layer - animate() to 2 PNG frames
+      animate() fails even with labels = 'levels': invalid 'times' argument
+      frames: 0
+[PASS] C  gganimate A: aes before layer, transition after layer - names
+      class head: gganim/fourfold_plot/ggplot2::ggplot
+      add-time names: x=Gender, y=Admit
+      build-time resolution (helper, inferred; gganimate's build is not what runs here): x=Gender, y=Admit
+      names that would be used: x=Gender, y=Admit  (gganimate's ggplot_build() method wins; build-time step skipped)
+[PASS] C  gganimate B: aes before layer, transition before layer - names
+      class head: fourfold_plot/gganim/ggplot2::ggplot
+      add-time names: x=Gender, y=Admit
+      build-time resolution (helper, inferred; gganimate's build is not what runs here): x=Gender, y=Admit
+      names that would be used: x=Gender, y=Admit  (fourfold_plot method runs first)
+[EXPECTED-LIMITATION] C  gganimate C: aes added after layer, transition after layer - names
+      no names: bare levels + one message, as the spec's limitation describes
+      class head: gganim/fourfold_plot/ggplot2::ggplot
+      add-time names: NULL
+      build-time resolution (helper, inferred; gganimate's build is not what runs here): x=Gender, y=Admit
+      names that would be used: NULL  (gganimate's ggplot_build() method wins; build-time step skipped)
+[PASS] C  gganimate D: aes added after layer, transition before layer - names
+      class head: fourfold_plot/gganim/ggplot2::ggplot
+      add-time names: NULL
+      build-time resolution (helper, inferred; gganimate's build is not what runs here): x=Gender, y=Admit
+      names that would be used: x=Gender, y=Admit  (fourfold_plot method runs first)
+[EXPECTED-LIMITATION] C  gganimate E: aes replaced after layer, transition after layer - names
+      stale add-time names, as the spec's limitation describes
+      class head: gganim/fourfold_plot/ggplot2::ggplot
+      add-time names: x=Gender, y=Admit
+      build-time resolution (helper, inferred; gganimate's build is not what runs here): x=Smoker, y=Cancer
+      names that would be used: x=Gender, y=Admit  (gganimate's ggplot_build() method wins; build-time step skipped)
+[PASS] C  gganimate F: aes replaced after layer, transition before layer - names
+      class head: fourfold_plot/gganim/ggplot2::ggplot
+      add-time names: x=Gender, y=Admit
+      build-time resolution (helper, inferred; gganimate's build is not what runs here): x=Smoker, y=Cancer
+      names that would be used: x=Smoker, y=Cancer  (fourfold_plot method runs first)
+[EXPECTED-LIMITATION] C  gganimate G: aes replaced after the transition and the layer - names
+      stale add-time names, as the spec's limitation describes
+      class head: gganim/fourfold_plot/ggplot2::ggplot
+      add-time names: x=Gender, y=Admit
+      build-time resolution (helper, inferred; gganimate's build is not what runs here): x=Smoker, y=Cancer
+      names that would be used: x=Gender, y=Admit  (gganimate's ggplot_build() method wins; build-time step skipped)
+
+== D: vcd comparison ==
+   vcd source lines placing labels:
+     grid.text(paste(names(dimnames(x))[1], dimnames(x)[[1]][1],
+     grid.text(paste(names(dimnames(x))[2], dimnames(x)[[2]][1],
+     grid.text(paste(names(dimnames(x))[1], dimnames(x)[[1]][2],
+     grid.text(paste(names(dimnames(x))[2], dimnames(x)[[2]][2],
+   vcd labels of the first stratum (read from vcd's drawn grobs):
+           label    x    y rot   side
+ Admit: Admitted  0.0  1.1   0    top
+    Gender: Male -1.1  0.0  90   left
+ Admit: Rejected  0.0 -1.1   0 bottom
+  Gender: Female  1.1  0.0  90  right
+[PASS] D  first stratum: label on each side equals vcd's (top/left/bottom/right)
+      vcd: top=Admit: Admitted | left=Gender: Male | bottom=Admit: Rejected | right=Gender: Female
+      ggfourfold: top=Admit: Admitted | left=Gender: Male | bottom=Admit: Rejected | right=Gender: Female
+[PASS] D  all six ggfourfold panels carry the same four label strings (Admit/Gender fixed)
+   images: /Users/gklorfine/Non-iCloud/m-packages/ggfourfold/dev/labels-verification/vcd-fourfold-UCBAdmissions.png, /Users/gklorfine/Non-iCloud/m-packages/ggfourfold/dev/labels-verification/ggfourfold-UCBAdmissions-labels-both.png 
+
+== SUMMARY ==
+
+EXPECTED-LIMITATION                INFO                PASS 
+                  3                   2                 219 
+
+By part:
+    
+     EXPECTED-LIMITATION INFO PASS
+  A                    0    0   48
+  B0                   0    0   47
+  B1                   0    0   47
+  B2                   0    1   29
+  B3                   0    0   16
+  C                    3    1   20
+  D                    0    0    2
+  S                    0    0   10
+
+OVERALL: PASS (0 FAIL)
+exit 0
