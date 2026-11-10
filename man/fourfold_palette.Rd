@@ -26,7 +26,7 @@ color fills the diagonal with fewer cases than expected under independence
 and the second fills the diagonal with more.
 }
 \details{
-\code{"vcd"}, the default, gives the colors of \code{vcd::fourfold()} (Meyer et
+\code{"vcd"}, the default, gives the colors of \code{\link[vcd:fourfold]{vcd::fourfold()}} (Meyer et
 al., 2026): light and darker blue, then light red and light blue, then red
 and navy.
 

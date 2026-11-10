@@ -20,13 +20,13 @@ A complete \strong{ggplot2} theme.
 }
 \description{
 \code{theme_fourfold()} is a minimal theme for \code{\link[=geom_fourfold]{geom_fourfold()}} that gives
-plots the plain look of \code{vcd::fourfold()}: a white panel without axes or
+plots the plain look of \code{\link[vcd:fourfold]{vcd::fourfold()}}: a white panel without axes or
 gridlines, facet labels without boxes, centered titles, and compact spacing
 between panels. It also sets the text size, font, and line width.
 }
 \details{
 \code{base_size} and \code{base_family} control all text, including the category
-labels and cell counts drawn by \code{geom_fourfold()}. These grow with the size
+labels and cell counts drawn by \code{\link[=geom_fourfold]{geom_fourfold()}}. These grow with the size
 of each panel, so larger plots get larger labels, but never shrink below
 five-sixths of \code{base_size} (10 points by default). Additional theme elements
 passed through \code{...} are applied last and therefore override the defaults.

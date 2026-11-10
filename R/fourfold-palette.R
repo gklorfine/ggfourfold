@@ -11,7 +11,7 @@
 #' color fills the diagonal with fewer cases than expected under independence
 #' and the second fills the diagonal with more.
 #'
-#' `"vcd"`, the default, gives the colors of `vcd::fourfold()` (Meyer et
+#' `"vcd"`, the default, gives the colors of [vcd::fourfold()] (Meyer et
 #' al., 2026): light and darker blue, then light red and light blue, then red
 #' and navy.
 #'

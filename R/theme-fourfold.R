@@ -1,13 +1,13 @@
 #' Theme for fourfold displays
 #'
 #' `theme_fourfold()` is a minimal theme for [geom_fourfold()] that gives
-#' plots the plain look of `vcd::fourfold()`: a white panel without axes or
+#' plots the plain look of [vcd::fourfold()]: a white panel without axes or
 #' gridlines, facet labels without boxes, centered titles, and compact spacing
 #' between panels. It also sets the text size, font, and line width.
 #'
 #' @details
 #' `base_size` and `base_family` control all text, including the category
-#' labels and cell counts drawn by `geom_fourfold()`. These grow with the size
+#' labels and cell counts drawn by [geom_fourfold()]. These grow with the size
 #' of each panel, so larger plots get larger labels, but never shrink below
 #' five-sixths of `base_size` (10 points by default). Additional theme elements
 #' passed through `...` are applied last and therefore override the defaults.
