@@ -25,7 +25,8 @@ NULL
   std = "margins", margin = c(1, 2), conf_level = 0.95, extended = TRUE,
   diagonal = TRUE, diagonal.length = NULL, diagonal.fill = "white",
   diagonal.width = NULL, p_adjust_method = "holm", shape = "circle",
-  counts = "auto", palette = fourfold_palette(), na.rm = FALSE
+  counts = "auto", labels = "levels", palette = fourfold_palette(),
+  na.rm = FALSE
 )
 
 .fourfold_pt <- 72.27 / 25.4
@@ -1159,6 +1160,87 @@ makeContent.fourfold_diagonal <- function(x) {
   invisible()
 }
 
+# The names of the x and y variables, for labels = "both". The geom cannot see
+# the mapping when it draws, so they reach it as the geom parameter
+# `label_names`, c(x = , y = ), or NULL when they are not known. The name is
+# the label of the mapped expression, as rlang::as_label() gives it.
+.fourfold_label_names <- function(layer, plot) {
+  mapped <- function(aesthetic) {
+    # An aesthetic named in the layer's mapping is that mapping, even if NULL,
+    # which removes the plot's (as in ggplot2).
+    if (!is.null(layer$mapping) && aesthetic %in% names(layer$mapping)) {
+      return(layer$mapping[[aesthetic]])
+    }
+    if (isTRUE(layer$inherit.aes)) plot@mapping[[aesthetic]] else NULL
+  }
+  x <- mapped("x")
+  y <- mapped("y")
+  if (is.null(x) || is.null(y)) {
+    return(NULL)
+  }
+  c(x = rlang::as_label(x), y = rlang::as_label(y))
+}
+
+# Whether `label_names` can label the sides: a name for each of x and y.
+.fourfold_usable_label_names <- function(label_names) {
+  is.character(label_names) && length(label_names) == 2L &&
+    setequal(names(label_names), c("x", "y")) && !anyNA(label_names) &&
+    all(nzchar(label_names))
+}
+
+# A copy of `layer` (a ggproto child of it) whose geom parameter `label_names`
+# is `label_names`. Layer objects are shared by reference, so the layer the user
+# holds, and any other plot it was added to, must not change. (This is a
+# function of its own because ggproto() evaluates its parent lazily: a copy made
+# in a loop would take the parent from a later pass.)
+.fourfold_layer_with_names <- function(layer, label_names) {
+  params <- layer$geom_params
+  # (A NULL is assigned as a list element, or it would remove the parameter.)
+  params["label_names"] <- list(label_names)
+  ggplot2::ggproto(NULL, layer, geom_params = params)
+}
+
+# Gives every layer of `plot` that draws labels = "both" the names of its
+# variables from the mapping as it stands, in a copy of the layer.
+.fourfold_resolve_label_names <- function(plot) {
+  layers <- plot@layers
+  for (i in seq_along(layers)) {
+    layer <- layers[[i]]
+    if (inherits(layer$geom, "GeomFourfold") &&
+        identical(layer$geom_params$labels, "both")) {
+      label_names <- .fourfold_label_names(layer, plot)
+      # A layer that already has these names is kept, so that copies of copies
+      # do not pile up as layers are added and the plot is built again.
+      if (!identical(layer$geom_params$label_names, label_names)) {
+        layers[[i]] <- .fourfold_layer_with_names(layer, label_names)
+      }
+    }
+  }
+  plot@layers <- layers
+  plot
+}
+
+# geom_fourfold(labels = "both") returns this after the layer. Adding it
+# resolves the names from the mapping so far and marks the plot (class
+# "fourfold_plot"), so that they are resolved again when the plot is built, by
+# which time a later aes() has changed the mapping.
+#' @exportS3Method ggplot2::ggplot_add
+ggplot_add.fourfold_labels <- function(object, plot, ...) {
+  plot <- .fourfold_resolve_label_names(plot)
+  if (!inherits(plot, "fourfold_plot")) {
+    class(plot) <- c("fourfold_plot", class(plot))
+  }
+  plot
+}
+
+#' @exportS3Method ggplot2::ggplot_build
+ggplot_build.fourfold_plot <- function(plot, ...) {
+  # NextMethod() passes on the modified plot, so ggplot2 (or the method of
+  # another package) builds the layers with the names.
+  plot <- .fourfold_resolve_label_names(plot)
+  NextMethod()
+}
+
 #' @rdname geom_fourfold
 #' @name geom_fourfold
 #' @format NULL
@@ -1182,7 +1264,7 @@ GeomFourfold <- ggplot2::ggproto(
   ),
   extra_params = c(
     "na.rm", "palette", "diagonal", "diagonal.length", "diagonal.fill",
-    "diagonal.width", "extended", "shape", "counts"
+    "diagonal.width", "extended", "shape", "counts", "labels", "label_names"
   ),
   draw_key = ggplot2::draw_key_blank,
   setup_params = function(data, params) {
@@ -1195,6 +1277,18 @@ GeomFourfold <- ggplot2::ggproto(
       length = params[["diagonal.length"]]
     )
     params[names(counts_params)] <- counts_params
+    # Once per build and layer, not per panel. The names are missing when the
+    # layer was added without the tagger that geom_fourfold(labels = "both")
+    # returns after it, or was made with layer() (see
+    # .fourfold_resolve_label_names()).
+    if (identical(params[["labels"]], "both") &&
+        !.fourfold_usable_label_names(params[["label_names"]])) {
+      message(
+        "`labels = \"both\"` could not find the names of the `x` and `y` ",
+        "variables, so only the levels are shown. Add everything that ",
+        "`geom_fourfold()` returns to the plot, not the layer alone."
+      )
+    }
     params
   },
   setup_data = function(data, params) {
@@ -1232,6 +1326,7 @@ GeomFourfold <- ggplot2::ggproto(
       extended = .fourfold_defaults$extended,
       shape = .fourfold_defaults$shape, counts = .fourfold_defaults$counts,
       counts_reach = NULL, counts_tick_reach = NULL, counts_labels = NULL,
+      labels = .fourfold_defaults$labels, label_names = NULL,
       na.rm = FALSE) {
     .fourfold_check_coord(coord)
     data <- data[order(data$cell), , drop = FALSE]
@@ -1338,6 +1433,15 @@ GeomFourfold <- ggplot2::ggproto(
     label_offset <- 1.16
     x_labels <- data$x_label[match(1:2, data$x_index)]
     y_labels <- data$y_label[match(1:2, data$y_index)]
+    # Without usable names (see setup_params()), only the levels are drawn.
+    if (identical(labels, "both") && .fourfold_usable_label_names(label_names)) {
+      # A missing level label stays missing, which draws nothing, as it does
+      # without the name.
+      x_labels[!is.na(x_labels)] <-
+        paste0(label_names[["x"]], ": ", x_labels[!is.na(x_labels)])
+      y_labels[!is.na(y_labels)] <-
+        paste0(label_names[["y"]], ": ", y_labels[!is.na(y_labels)])
+    }
     outer <- list(
       list(y_labels[1], 0, label_offset, 0),
       list(x_labels[1], -label_offset, 0, 90),
@@ -1424,6 +1528,12 @@ GeomFourfold <- ggplot2::ggproto(
 #' them with `labels`. Scale `breaks` that reorder or omit categories, and a
 #' scale `palette` that moves them, are errors.
 #'
+#' [theme_fourfold()] hides the axis titles. If they are turned back on,
+#' **ggplot2** draws the `x` title below the panel, next to the `y` levels, and
+#' the `y` title on the left, next to the `x` levels. So give the name of the
+#' `y` variable as [`labs(x = )`][ggplot2::labs] and the name of the `x`
+#' variable as [`labs(y = )`][ggplot2::labs], or use `labels = "both"` instead.
+#'
 #' One panel must contain exactly one 2-by-2 table. Use
 #' [ggplot2::facet_grid()] or [ggplot2::facet_wrap()] to display stratified
 #' tables. Duplicate `x`/`y` combinations within a panel are summed and cells
@@ -1431,14 +1541,14 @@ GeomFourfold <- ggplot2::ggproto(
 #' Missing values section.
 #'
 #' Odds ratios, Wald confidence intervals, and extended-display *p*-values
-#' match the calculations in `vcd::fourfold()`. If any observed cell is zero,
+#' match the calculations in [vcd::fourfold()]. If any observed cell is zero,
 #' 0.5 is added to all four cells for inference; see the Zero counts section
 #' for how such tables are drawn. *p*-values are adjusted for multiple testing
 #' across the panels of the layer. A panel whose counts are all zero has no
-#' *p*-value and is left out of this adjustment. `vcd::fourfold()` instead
+#' *p*-value and is left out of this adjustment. [vcd::fourfold()] instead
 #' includes such a panel with a *p*-value of 1, so in a layer that contains
 #' one, the adjusted *p*-values of the other panels are smaller here than in
-#' `vcd::fourfold()`. Confidence intervals themselves are not adjusted.
+#' [vcd::fourfold()]. Confidence intervals themselves are not adjusted.
 #'
 #' With `shape = "square"`, each cell is drawn as a square with the same area
 #' as the corresponding quarter-circle (side
@@ -1460,12 +1570,12 @@ GeomFourfold <- ggplot2::ggproto(
 #' (0.02 units on each axis) units past the outer corner of a square, short
 #' enough that the counts of a typical standardized display stay inside. The
 #' line can be omitted by setting `diagonal = FALSE`. This differs from
-#' `vcd::fourfold()`, which marks the direction with two short black ticks, one
+#' [vcd::fourfold()], which marks the direction with two short black ticks, one
 #' at each of the two sectors on that diagonal, instead of a line through the
 #' center. **vcd**'s `ticks` argument, which controls the length of those ticks,
 #' corresponds to `diagonal.length`, except that `diagonal.length = 0` still
 #' draws the line (ending at the sectors), whereas `ticks = 0` in
-#' `vcd::fourfold()` draws no ticks.
+#' [vcd::fourfold()] draws no ticks.
 #'
 #' With `counts = "auto"`, cell counts stay inside the frame corners unless
 #' a sector, either confidence outline, or an end of the diagonal line
@@ -1486,7 +1596,7 @@ GeomFourfold <- ggplot2::ggproto(
 #'
 #' - `x` (required): a categorical variable (factor, character, or logical)
 #'   with exactly two levels. Convert numeric codes, such as 0/1, with
-#'   `factor()`.
+#'   [factor()].
 #' - `y` (required): a categorical variable with exactly two levels.
 #' - `weight`: non-negative numeric cell frequencies; defaults to `1`.
 #'
@@ -1504,8 +1614,9 @@ GeomFourfold <- ggplot2::ggproto(
 #' with [ggplot2::after_stat()], [ggplot2::after_scale()], or
 #' [ggplot2::stage()]. The same mappings inherited from [ggplot2::ggplot()] are
 #' ignored, because they may be meant for other layers. The one exception is an
-#' inherited `after_stat()` mapping to a variable that `geom_fourfold()` does
-#' not compute, such as `after_stat(n)` for [ggplot2::geom_count()]. **ggplot2**
+#' inherited [ggplot2::after_stat()] mapping to a variable that
+#' `geom_fourfold()` does not compute, such as `after_stat(n)` for
+#' [ggplot2::geom_count()]. **ggplot2**
 #' evaluates it before the layer can ignore it, so the plot stops with an error.
 #' To avoid this, set `inherit.aes = FALSE` in `geom_fourfold()`, or move the
 #' mapping into the layer that uses it.
@@ -1522,7 +1633,7 @@ GeomFourfold <- ggplot2::ggproto(
 #' `geom_fourfold()` therefore also adds
 #' `coord_cartesian(reverse = "y", ratio = 1)` to the plot, as
 #' [ggplot2::geom_sf()] adds [ggplot2::coord_sf()]. `reverse = "y"` keeps the
-#' first `y` level at the top, as in `vcd::fourfold()`, for every layer.
+#' first `y` level at the top, as in [vcd::fourfold()], for every layer.
 #' `ratio = 1` keeps circles round, and because both axes span the same range
 #' by default, it also makes the panels square. A theme's `aspect.ratio`
 #' overrides `ratio`, fixing the panel's shape, with circles turning into
@@ -1569,7 +1680,7 @@ GeomFourfold <- ggplot2::ggproto(
 #' @section Zero counts:
 #' If any cell of a panel's table is zero, 0.5 is added to all four cells
 #' before the odds ratio, its standard error, and the confidence interval are
-#' computed, as in `vcd::fourfold()`. The count labels always show the
+#' computed, as in [vcd::fourfold()]. The count labels always show the
 #' observed counts.
 #'
 #' A panel whose four counts are all zero, such as an empty stratum in a
@@ -1577,7 +1688,7 @@ GeomFourfold <- ggplot2::ggproto(
 #' counts are shown, with no sectors, rings, or diagonal line. It has no odds
 #' ratio, confidence interval, or *p*-value (they are `NA`) and is left out of
 #' the *p*-value adjustment, so it does not change the other panels.
-#' With the default `margin = c(1, 2)`, `vcd::fourfold()` instead draws such
+#' With the default `margin = c(1, 2)`, [vcd::fourfold()] instead draws such
 #' a stratum from the corrected table, as four equal quarter-circles. A facet
 #' level with no rows at all, for example with `drop = FALSE`, is left empty
 #' by **ggplot2** as usual, without a frame or counts.
@@ -1638,7 +1749,7 @@ GeomFourfold <- ggplot2::ggproto(
 #' cell's count, and so the panel's table, is unknown, and counting it as zero
 #' would change the odds ratio. Its whole panel is therefore left empty. A cell
 #' with no rows at all is not missing but a zero count. With a missing count,
-#' `vcd::fourfold()` instead stops with an error.
+#' [vcd::fourfold()] instead stops with an error.
 #'
 #' An empty panel has no frame, counts, or labels, so it cannot be mistaken
 #' for a panel whose counts are all zero, and it looks the same as a facet
@@ -1711,18 +1822,21 @@ GeomFourfold <- ggplot2::ggproto(
 #'   across panels. Defaults to `"holm"`, the first value in
 #'   [stats::p.adjust.methods].
 #' @param shape Shape of the cell sectors. `"circle"` (the default, as in
-#'   `vcd::fourfold()`) draws quarter-circles. `"square"` draws
+#'   [vcd::fourfold()]) draws quarter-circles. `"square"` draws
 #'   squares with equivalent area to the corresponding quarter-circle.
 #' @param counts Placement of cell counts: `"auto"` (the default) moves counts
 #'   outside when the drawing approaches them; `"inside"` always uses the inside
 #'   corners, even if overlapped; `"outside"` always uses the outside corners;
-#'   `"none"` hides the counts. Counts are labeled as in `vcd::fourfold()`,
+#'   `"none"` hides the counts. Counts are labeled as in [vcd::fourfold()],
 #'   so large round counts stored as doubles can appear as, for example,
 #'   `1e+05`. Non-integer counts are rounded to three significant digits, and
 #'   rounding noise such as `5.6e-17` is shown as `0`.
+#' @param labels `"levels"` (the default) labels each side of the display with
+#'   a level. `"both"` labels it with the name of the variable and the level,
+#'   such as `"Gender: Male"`, like in [vcd::fourfold()].
 #' @param palette Character vector of at least six valid colors in the
 #'   semantic order used by [fourfold_palette()]. Defaults to
-#'   `fourfold_palette()`, the colors of `vcd::fourfold()`. See
+#'   [fourfold_palette()], the colors of [vcd::fourfold()]. See
 #'   [fourfold_palette()] for other built-in palettes such as
 #'   `fourfold_palette("okabe-ito")`.
 #' @param na.rm Missing values are handled the same way either way. Rows with
@@ -1738,6 +1852,13 @@ GeomFourfold <- ggplot2::ggproto(
 #' @return A list of a **ggplot2** layer and a default coordinate system,
 #'   `coord_cartesian(reverse = "y", ratio = 1)`, which can be added to a
 #'   [ggplot2::ggplot()] object (see the Coordinate systems section).
+#'
+#'   With `labels = "both"`, the list has a third element, of class
+#'   `fourfold_labels`, which gives the layer the names of the `x` and `y`
+#'   variables. Add the result to the plot as usual, as in
+#'   `ggplot(...) + geom_fourfold(labels = "both")`. If the layer is taken out
+#'   of the list and added alone, the labels show only the levels.
+#'
 #'   `GeomFourfold` and `StatFourfold` are the [ggplot2::ggproto()] objects
 #'   behind `geom_fourfold()`, a `Geom` and a `Stat`, for use with
 #'   [ggplot2::layer()].
@@ -1805,6 +1926,14 @@ GeomFourfold <- ggplot2::ggproto(
 #'   ) +
 #'   theme_fourfold()
 #'
+#' # The variable on each side, as in vcd::fourfold()
+#' ggplot2::ggplot(
+#'   subset(ucb, Dept == "A"),
+#'   ggplot2::aes(x = Gender, y = Admit, weight = Freq)
+#' ) +
+#'   geom_fourfold(labels = "both") +
+#'   theme_fourfold()
+#'
 #' @importFrom grDevices col2rgb
 #' @importFrom ggplot2 aes ggproto layer Stat
 #' @importFrom stats p.adjust p.adjust.methods pnorm qnorm
@@ -1824,6 +1953,7 @@ geom_fourfold <- function(
     p_adjust_method = stats::p.adjust.methods,
     shape = c("circle", "square"),
     counts = c("auto", "inside", "outside", "none"),
+    labels = c("levels", "both"),
     palette = fourfold_palette(),
     na.rm = FALSE,
     show.legend = FALSE,
@@ -1832,11 +1962,17 @@ geom_fourfold <- function(
   counts <- .fourfold_match_arg(
     counts, c("auto", "inside", "outside", "none"), "counts"
   )
+  labels <- .fourfold_match_arg(labels, c("levels", "both"), "labels")
   validated <- .fourfold_validate_params(
     std, margin, conf_level, extended, p_adjust_method, palette, shape,
     diagonal = diagonal, diagonal.length = diagonal.length,
     diagonal.fill = diagonal.fill, diagonal.width = diagonal.width
   )
+  dots <- list(...)
+  # The names always come from the mapping, so one given here is dropped.
+  if (labels == "both" && !is.null(names(dots))) {
+    dots <- dots[names(dots) != "label_names"]
+  }
   layer <- ggplot2::layer(
     data = data,
     mapping = mapping,
@@ -1859,14 +1995,23 @@ geom_fourfold <- function(
         palette = validated$palette,
         shape = validated$shape,
         counts = counts,
+        labels = labels,
         na.rm = na.rm
       ),
-      list(...)
+      # The names are not known until the layer is added to a plot.
+      if (labels == "both") list(label_names = NULL),
+      dots
     )
   )
   # As geom_sf() adds coord_sf(): keeps the first row on top, with unit ratio.
-  list(
+  result <- list(
     layer,
     ggplot2::coord_cartesian(reverse = "y", ratio = 1, default = TRUE)
   )
+  if (labels == "both") {
+    # Adding this (after the layer) supplies the names; see
+    # ggplot_add.fourfold_labels().
+    result[[3L]] <- structure(list(), class = "fourfold_labels")
+  }
+  result
 }

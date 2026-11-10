@@ -21,6 +21,7 @@ geom_fourfold(
   p_adjust_method = stats::p.adjust.methods,
   shape = c("circle", "square"),
   counts = c("auto", "inside", "outside", "none"),
+  labels = c("levels", "both"),
   palette = fourfold_palette(),
   na.rm = FALSE,
   show.legend = FALSE,
@@ -88,20 +89,24 @@ across panels. Defaults to \code{"holm"}, the first value in
 \link[stats:p.adjust.methods]{stats::p.adjust.methods}.}
 
 \item{shape}{Shape of the cell sectors. \code{"circle"} (the default, as in
-\code{vcd::fourfold()}) draws quarter-circles. \code{"square"} draws
+\code{\link[vcd:fourfold]{vcd::fourfold()}}) draws quarter-circles. \code{"square"} draws
 squares with equivalent area to the corresponding quarter-circle.}
 
 \item{counts}{Placement of cell counts: \code{"auto"} (the default) moves counts
 outside when the drawing approaches them; \code{"inside"} always uses the inside
 corners, even if overlapped; \code{"outside"} always uses the outside corners;
-\code{"none"} hides the counts. Counts are labeled as in \code{vcd::fourfold()},
+\code{"none"} hides the counts. Counts are labeled as in \code{\link[vcd:fourfold]{vcd::fourfold()}},
 so large round counts stored as doubles can appear as, for example,
 \code{1e+05}. Non-integer counts are rounded to three significant digits, and
 rounding noise such as \code{5.6e-17} is shown as \code{0}.}
 
+\item{labels}{\code{"levels"} (the default) labels each side of the display with
+a level. \code{"both"} labels it with the name of the variable and the level,
+such as \code{"Gender: Male"}, like in \code{\link[vcd:fourfold]{vcd::fourfold()}}.}
+
 \item{palette}{Character vector of at least six valid colors in the
 semantic order used by \code{\link[=fourfold_palette]{fourfold_palette()}}. Defaults to
-\code{fourfold_palette()}, the colors of \code{vcd::fourfold()}. See
+\code{\link[=fourfold_palette]{fourfold_palette()}}, the colors of \code{\link[vcd:fourfold]{vcd::fourfold()}}. See
 \code{\link[=fourfold_palette]{fourfold_palette()}} for other built-in palettes such as
 \code{fourfold_palette("okabe-ito")}.}
 
@@ -121,6 +126,13 @@ default aesthetic mappings. Defaults to \code{TRUE}.}
 A list of a \strong{ggplot2} layer and a default coordinate system,
 \code{coord_cartesian(reverse = "y", ratio = 1)}, which can be added to a
 \code{\link[ggplot2:ggplot]{ggplot2::ggplot()}} object (see the Coordinate systems section).
+
+With \code{labels = "both"}, the list has a third element, of class
+\code{fourfold_labels}, which gives the layer the names of the \code{x} and \code{y}
+variables. Add the result to the plot as usual, as in
+\code{ggplot(...) + geom_fourfold(labels = "both")}. If the layer is taken out
+of the list and added alone, the labels show only the levels.
+
 \code{GeomFourfold} and \code{StatFourfold} are the \code{\link[ggplot2:ggproto]{ggplot2::ggproto()}} objects
 behind \code{geom_fourfold()}, a \code{Geom} and a \code{Stat}, for use with
 \code{\link[ggplot2:layer]{ggplot2::layer()}}.
@@ -143,6 +155,12 @@ Alternatively, reorder categories with the \code{limits} argument of
 them with \code{labels}. Scale \code{breaks} that reorder or omit categories, and a
 scale \code{palette} that moves them, are errors.
 
+\code{\link[=theme_fourfold]{theme_fourfold()}} hides the axis titles. If they are turned back on,
+\strong{ggplot2} draws the \code{x} title below the panel, next to the \code{y} levels, and
+the \code{y} title on the left, next to the \code{x} levels. So give the name of the
+\code{y} variable as \code{\link[ggplot2:labs]{labs(x = )}} and the name of the \code{x}
+variable as \code{\link[ggplot2:labs]{labs(y = )}}, or use \code{labels = "both"} instead.
+
 One panel must contain exactly one 2-by-2 table. Use
 \code{\link[ggplot2:facet_grid]{ggplot2::facet_grid()}} or \code{\link[ggplot2:facet_wrap]{ggplot2::facet_wrap()}} to display stratified
 tables. Duplicate \code{x}/\code{y} combinations within a panel are summed and cells
@@ -150,14 +168,14 @@ with no rows are completed with zero counts. For missing values, see the
 Missing values section.
 
 Odds ratios, Wald confidence intervals, and extended-display \emph{p}-values
-match the calculations in \code{vcd::fourfold()}. If any observed cell is zero,
+match the calculations in \code{\link[vcd:fourfold]{vcd::fourfold()}}. If any observed cell is zero,
 0.5 is added to all four cells for inference; see the Zero counts section
 for how such tables are drawn. \emph{p}-values are adjusted for multiple testing
 across the panels of the layer. A panel whose counts are all zero has no
-\emph{p}-value and is left out of this adjustment. \code{vcd::fourfold()} instead
+\emph{p}-value and is left out of this adjustment. \code{\link[vcd:fourfold]{vcd::fourfold()}} instead
 includes such a panel with a \emph{p}-value of 1, so in a layer that contains
 one, the adjusted \emph{p}-values of the other panels are smaller here than in
-\code{vcd::fourfold()}. Confidence intervals themselves are not adjusted.
+\code{\link[vcd:fourfold]{vcd::fourfold()}}. Confidence intervals themselves are not adjusted.
 
 With \code{shape = "square"}, each cell is drawn as a square with the same area
 as the corresponding quarter-circle (side
@@ -179,12 +197,12 @@ this length is 0.15 units past the arc of a circle, or \code{0.02 * sqrt(2)}
 (0.02 units on each axis) units past the outer corner of a square, short
 enough that the counts of a typical standardized display stay inside. The
 line can be omitted by setting \code{diagonal = FALSE}. This differs from
-\code{vcd::fourfold()}, which marks the direction with two short black ticks, one
+\code{\link[vcd:fourfold]{vcd::fourfold()}}, which marks the direction with two short black ticks, one
 at each of the two sectors on that diagonal, instead of a line through the
 center. \strong{vcd}'s \code{ticks} argument, which controls the length of those ticks,
 corresponds to \code{diagonal.length}, except that \code{diagonal.length = 0} still
 draws the line (ending at the sectors), whereas \code{ticks = 0} in
-\code{vcd::fourfold()} draws no ticks.
+\code{\link[vcd:fourfold]{vcd::fourfold()}} draws no ticks.
 
 With \code{counts = "auto"}, cell counts stay inside the frame corners unless
 a sector, either confidence outline, or an end of the diagonal line
@@ -206,7 +224,7 @@ controlled by \code{\link[=theme_fourfold]{theme_fourfold()}}.
 \itemize{
 \item \code{x} (required): a categorical variable (factor, character, or logical)
 with exactly two levels. Convert numeric codes, such as 0/1, with
-\code{factor()}.
+\code{\link[=factor]{factor()}}.
 \item \code{y} (required): a categorical variable with exactly two levels.
 \item \code{weight}: non-negative numeric cell frequencies; defaults to \code{1}.
 }
@@ -225,8 +243,9 @@ Mapping a \code{color}, \code{linewidth}, \code{alpha}, \code{size}, or \code{fa
 with \code{\link[ggplot2:after_stat]{ggplot2::after_stat()}}, \code{\link[ggplot2:after_scale]{ggplot2::after_scale()}}, or
 \code{\link[ggplot2:stage]{ggplot2::stage()}}. The same mappings inherited from \code{\link[ggplot2:ggplot]{ggplot2::ggplot()}} are
 ignored, because they may be meant for other layers. The one exception is an
-inherited \code{after_stat()} mapping to a variable that \code{geom_fourfold()} does
-not compute, such as \code{after_stat(n)} for \code{\link[ggplot2:geom_count]{ggplot2::geom_count()}}. \strong{ggplot2}
+inherited \code{\link[ggplot2:after_stat]{ggplot2::after_stat()}} mapping to a variable that
+\code{geom_fourfold()} does not compute, such as \code{after_stat(n)} for
+\code{\link[ggplot2:geom_count]{ggplot2::geom_count()}}. \strong{ggplot2}
 evaluates it before the layer can ignore it, so the plot stops with an error.
 To avoid this, set \code{inherit.aes = FALSE} in \code{geom_fourfold()}, or move the
 mapping into the layer that uses it.
@@ -245,7 +264,7 @@ the second level of \code{y}.
 \code{geom_fourfold()} therefore also adds
 \code{coord_cartesian(reverse = "y", ratio = 1)} to the plot, as
 \code{\link[ggplot2:geom_sf]{ggplot2::geom_sf()}} adds \code{\link[ggplot2:coord_sf]{ggplot2::coord_sf()}}. \code{reverse = "y"} keeps the
-first \code{y} level at the top, as in \code{vcd::fourfold()}, for every layer.
+first \code{y} level at the top, as in \code{\link[vcd:fourfold]{vcd::fourfold()}}, for every layer.
 \code{ratio = 1} keeps circles round, and because both axes span the same range
 by default, it also makes the panels square. A theme's \code{aspect.ratio}
 overrides \code{ratio}, fixing the panel's shape, with circles turning into
@@ -296,7 +315,7 @@ examples.
 
 If any cell of a panel's table is zero, 0.5 is added to all four cells
 before the odds ratio, its standard error, and the confidence interval are
-computed, as in \code{vcd::fourfold()}. The count labels always show the
+computed, as in \code{\link[vcd:fourfold]{vcd::fourfold()}}. The count labels always show the
 observed counts.
 
 A panel whose four counts are all zero, such as an empty stratum in a
@@ -304,7 +323,7 @@ faceted display, is drawn blank: only its frame, axes, labels, and zero
 counts are shown, with no sectors, rings, or diagonal line. It has no odds
 ratio, confidence interval, or \emph{p}-value (they are \code{NA}) and is left out of
 the \emph{p}-value adjustment, so it does not change the other panels.
-With the default \code{margin = c(1, 2)}, \code{vcd::fourfold()} instead draws such
+With the default \code{margin = c(1, 2)}, \code{\link[vcd:fourfold]{vcd::fourfold()}} instead draws such
 a stratum from the corrected table, as four equal quarter-circles. A facet
 level with no rows at all, for example with \code{drop = FALSE}, is left empty
 by \strong{ggplot2} as usual, without a frame or counts.
@@ -368,7 +387,7 @@ way. A row with a missing \code{weight} but known \code{x} and \code{y} is diffe
 cell's count, and so the panel's table, is unknown, and counting it as zero
 would change the odds ratio. Its whole panel is therefore left empty. A cell
 with no rows at all is not missing but a zero count. With a missing count,
-\code{vcd::fourfold()} instead stops with an error.
+\code{\link[vcd:fourfold]{vcd::fourfold()}} instead stops with an error.
 
 An empty panel has no frame, counts, or labels, so it cannot be mistaken
 for a panel whose counts are all zero, and it looks the same as a facet
@@ -436,6 +455,14 @@ ggplot2::ggplot(
     "label", x = c("Male", "Female"), y = "Admitted",
     label = c("62\% admitted", "82\% admitted")
   ) +
+  theme_fourfold()
+
+# The variable on each side, as in vcd::fourfold()
+ggplot2::ggplot(
+  subset(ucb, Dept == "A"),
+  ggplot2::aes(x = Gender, y = Admit, weight = Freq)
+) +
+  geom_fourfold(labels = "both") +
   theme_fourfold()
 
 }
