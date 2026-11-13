@@ -13,7 +13,7 @@ Get the released version (0.1.0) from CRAN:
 install.packages("ggfourfold")
 ```
 
-The current development version (0.1.1) of **ggfourfold** can be
+The current development version (0.1.1.9000) of **ggfourfold** can be
 installed from [R-universe](https://gklorfine.r-universe.dev/ggfourfold)
 or directly from the [GitHub
 repository](https://github.com/gklorfine/ggfourfold) with:
@@ -45,8 +45,8 @@ quadrants when one group is much larger than another. A fully
 standardized display (the default) equates both the row *and* column
 totals, and gives a visual interpretation of the sample odds ratio:
 
-\\\hat{\theta} = \frac{n\_{11} / n\_{12}}{n\_{21} / n\_{22}} =
-\frac{n\_{11} \\ n\_{22}}{n\_{12} \\ n\_{21}} .\\
+\\ \hat{\theta} = \frac{n\_{11} / n\_{12}}{n\_{21} / n\_{22}} =
+\frac{n\_{11} \\ n\_{22}}{n\_{12} \\ n\_{21}} . \\
 
 In a fully standardized display, the quadrants form a circle if
 \\\hat{\theta} = 1\\. Otherwise, one diagonal pair of quadrants is
