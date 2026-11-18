@@ -199,7 +199,7 @@ graduate admissions: Data from Berkeley. *Science*, *187*, 398–403.
 
 Friendly, M. (1994). *A fourfold display for 2 by 2 by $k$ tables* (No.
 217). York University, Psychology Dept.
-<https://datavis.ca/papers/4fold/4fold.pdf>
+<https://friendly.github.io/papers/4fold/4fold.pdf>
 
 </div>
 
