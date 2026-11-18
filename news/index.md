@@ -15,6 +15,9 @@
   (e.g., an *x*-axis label would appear next to the levels of *y*, being
   that its variable levels appear at the top and bottom of the fourfold
   display). Suggested by Michael Friendly.
+- The link to Friendly (1994) now points to
+  <https://friendly.github.io/papers/4fold/4fold.pdf>, since datavis.ca
+  is offline.
 
 ## ggfourfold 0.1.1
 

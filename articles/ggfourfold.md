@@ -474,7 +474,7 @@ Indicators Research*, *2*, 153–174.
 
 Friendly, M. (1994a). *A fourfold display for 2 by 2 by \\k\\ tables*
 (No. 217). York University, Psychology Dept.
-<https://datavis.ca/papers/4fold/4fold.pdf>
+<https://friendly.github.io/papers/4fold/4fold.pdf>
 
 Friendly, M. (1994b). SAS/IML graphics for fourfold displays.
 *Observations*, *3*(4), 47–56.
