@@ -1,3 +1,5 @@
+# ggfourfold (development version)
+
 # ggfourfold 0.2.0
 
 * `geom_fourfold()` has a new argument `labels`. With `labels = "both"`, each
