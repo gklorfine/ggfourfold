@@ -10,7 +10,7 @@ corrects a DOI in the package description.
 * GitHub Actions (R-CMD-check):
   * macOS Tahoe 26.7.2, R 4.6.2
   * Windows Server 2022, R 4.6.2 (ucrt)
-  * Ubuntu 26.04.1 LTS, R-devel (2026-11-17 r90926)
+  * Ubuntu 26.04.1 LTS, R-devel (2026-11-24 r90980)
   * Ubuntu 26.04.1 LTS, R 4.6.2
   * Ubuntu 26.04.1 LTS, R 4.5.3
 * win-builder: Windows Server 2022, R-devel (2026-11-17 r90926 ucrt)
