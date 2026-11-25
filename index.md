@@ -13,7 +13,7 @@ Get the released version (0.1.0) from CRAN:
 install.packages("ggfourfold")
 ```
 
-The current development version (0.1.1.9000) of **ggfourfold** can be
+The current development version (0.2.0) of **ggfourfold** can be
 installed from [R-universe](https://gklorfine.r-universe.dev/ggfourfold)
 or directly from the [GitHub
 repository](https://github.com/gklorfine/ggfourfold) with:
@@ -203,7 +203,7 @@ additions*. <https://doi.org/10.32614/CRAN.package.vcdExtra>
 
 Friendly, M., & Meyer, D. (2016). *Discrete data analysis with R:
 Visualization and modeling techniques for categorical and count data*.
-Chapman & Hall/CRC. <http://ddar.datavis.ca>
+Chapman & Hall/CRC. <https://doi.org/10.1201/b19022>
 
 Meyer, D., Zeileis, A., Hornik, K., & Friendly, M. (2026). *Vcd:
 Visualizing categorical data*.

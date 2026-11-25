@@ -1,6 +1,6 @@
 # Changelog
 
-## ggfourfold 0.1.1.9000
+## ggfourfold 0.2.0
 
 - [`geom_fourfold()`](https://gavinklorfine.com/ggfourfold/reference/geom_fourfold.md)
   has a new argument `labels`. With `labels = "both"`, each side of the
@@ -18,9 +18,8 @@
 - The link to Friendly (1994) now points to
   <https://friendly.github.io/papers/4fold/4fold.pdf>, since datavis.ca
   is offline.
-
-## ggfourfold 0.1.1
-
+- The reference to Friendly and Meyer (2016) now gives its DOI,
+  <doi:10.1201/b19022>, instead of the offline ddar.datavis.ca.
 - Corrected the DOI for Friendly and Meyer (2016) in the package
   description.
 

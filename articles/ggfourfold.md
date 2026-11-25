@@ -484,7 +484,7 @@ Nightingale. *SORT*, *45*(1). <https://doi.org/10.2436/20.8080.02.106>
 
 Friendly, M., & Meyer, D. (2016). *Discrete data analysis with R:
 Visualization and modeling techniques for categorical and count data*.
-Chapman & Hall/CRC. <http://ddar.datavis.ca>
+Chapman & Hall/CRC. <https://doi.org/10.1201/b19022>
 
 Nightingale, F. (1858). *Notes on matters affecting the health,
 efficiency, and hospital administration of the British army*. Harrison
