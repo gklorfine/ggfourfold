@@ -476,7 +476,7 @@ Friendly, M. (1994b). SAS/IML graphics for fourfold displays.
 
 Friendly, M., & Meyer, D. (2016). \emph{Discrete Data Analysis with R:
 Visualization and Modeling Techniques for Categorical and Count Data}
-(Section 4.4). Chapman & Hall/CRC. \url{http://ddar.datavis.ca}
+(Section 4.4). Chapman & Hall/CRC. \doi{10.1201/b19022}
 
 Meyer, D., Zeileis, A., Hornik, K., & Friendly, M. (2026). \emph{vcd:
 Visualizing Categorical Data} (R package).

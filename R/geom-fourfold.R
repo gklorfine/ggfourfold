@@ -1873,7 +1873,7 @@ GeomFourfold <- ggplot2::ggproto(
 #'
 #' Friendly, M., & Meyer, D. (2016). *Discrete Data Analysis with R:
 #' Visualization and Modeling Techniques for Categorical and Count Data*
-#' (Section 4.4). Chapman & Hall/CRC. <http://ddar.datavis.ca>
+#' (Section 4.4). Chapman & Hall/CRC. \doi{10.1201/b19022}
 #'
 #' Meyer, D., Zeileis, A., Hornik, K., & Friendly, M. (2026). *vcd:
 #' Visualizing Categorical Data* (R package).
