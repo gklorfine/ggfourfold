@@ -1,5 +1,7 @@
 # Changelog
 
+## ggfourfold (development version)
+
 ## ggfourfold 0.2.0
 
 - [`geom_fourfold()`](https://gavinklorfine.com/ggfourfold/reference/geom_fourfold.md)

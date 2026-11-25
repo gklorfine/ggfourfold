@@ -11,16 +11,16 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/gklorfine/ggfourfold/blob/v0.2.0/DESCRIPTION)
+[`DESCRIPTION`](https://github.com/gklorfine/ggfourfold/blob/main/DESCRIPTION)
 
 Klorfine G, Friendly M (2026). *ggfourfold: Fourfold Displays for
-'ggplot2'*. R package version 0.2.0,
+'ggplot2'*. R package version 0.2.0.9000,
 <https://gavinklorfine.com/ggfourfold/>.
 
     @Manual{,
       title = {ggfourfold: Fourfold Displays for 'ggplot2'},
       author = {Gavin Klorfine and Michael Friendly},
       year = {2026},
-      note = {R package version 0.2.0},
+      note = {R package version 0.2.0.9000},
       url = {https://gavinklorfine.com/ggfourfold/},
     }
