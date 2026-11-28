@@ -19,13 +19,13 @@ and **vcd** R package (Meyer et al., 2026).
 
 ## Installation
 
-Get the released version (0.1.0) from CRAN:
+Get the released version (0.2.0) from CRAN:
 
 ``` r
 install.packages("ggfourfold")
 ```
 
-The current development version (0.2.0) of **ggfourfold** can be
+The current development version (0.2.0.9000) of **ggfourfold** can be
 installed from [R-universe](https://gklorfine.r-universe.dev/ggfourfold)
 or directly from the [GitHub
 repository](https://github.com/gklorfine/ggfourfold) with:
