@@ -4,6 +4,8 @@
 
 ## ggfourfold 0.2.0
 
+CRAN release: 2026-11-25
+
 - [`geom_fourfold()`](https://gavinklorfine.com/ggfourfold/reference/geom_fourfold.md)
   has a new argument `labels`. With `labels = "both"`, each side of the
   display is labeled with the name of the variable and the level, as in
